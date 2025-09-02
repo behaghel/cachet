@@ -1,0 +1,12 @@
+id: policy.cachet.manifest
+version: 0.1.0
+issuedAt: 2025-08-31T11:41:30Z
+signingDid: did:web:cachet.id#keys-1
+charter:
+  - Consent is explicit, revocable, and logged.
+  - Minimum disclosure by default; predicates over attributes.
+  - Context-only outcomes (badges), no global scores.
+security:
+  cryptoSuites:
+    credentials: [sd-jwt-vc, vc-bbs]
+    predicates: [range-proofs, zk-snark]

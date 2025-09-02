@@ -1,0 +1,17 @@
+{
+  "@context": "https://schemas.cachet.id/consent-receipt/v1",
+  "id": "receipt-0b410943",
+  "holder": "did:key:z6MkChildcareEE",
+  "rp": "did:web:parent.ee.example",
+  "purpose": "Example purpose",
+  "policyId": "pack.childcare.readiness.ee@0.1.0",
+  "timestamp": "2025-08-31T11:41:30Z",
+  "predicatesProven": [
+    "age.ge.18",
+    "identity.verified",
+    "criminal.clear.ee",
+    "references.verified"
+  ],
+  "issuers": ["did:veriff:ee:456", "did:e-gov:ee:justice", "did:cachet:vouch"],
+  "proofReceiptHash": "urn:sha256:0b410943627dbd7b294473c835ee4426ed07f21d455db57cf498f377aa217a73"
+}

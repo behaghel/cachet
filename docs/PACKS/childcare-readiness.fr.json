@@ -1,0 +1,55 @@
+{
+  "id": "pack.childcare.readiness.fr",
+  "version": "0.1.0",
+  "name": "Childcare Readiness (France)",
+  "purpose": "Assess suitability for paid childcare work in private homes",
+  "jurisdictions": ["FR"],
+  "badge": {
+    "label": "Childcare‑Ready (FR)",
+    "ttl": "P90D",
+    "jurisdiction": "FR"
+  },
+  "predicates": [
+    {
+      "id": "age.ge.18",
+      "claim": "age",
+      "operator": ">=",
+      "value": 18,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "identity.verified",
+      "claim": "identity_liveness",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "criminal.clear.fr",
+      "claim": "casier_b3_clear",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:justice:fr"],
+      "proofType": "vc-bbs"
+    },
+    {
+      "id": "firstaid.valid.fr",
+      "claim": "first_aid_cert_valid",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:croixrouge:fr"],
+      "proofType": "vc-bbs",
+      "required": false
+    },
+    {
+      "id": "references.verified",
+      "claim": "references_count",
+      "operator": ">=",
+      "value": 2,
+      "issuersAccepted": ["did:cachet:vouch"],
+      "proofType": "zk-snark"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "pack.childcare.readiness.ee",
+  "version": "0.1.0",
+  "name": "Childcare Readiness (Estonia)",
+  "purpose": "Assess suitability for paid childcare work in private homes",
+  "jurisdictions": ["EE"],
+  "badge": {
+    "label": "Childcare‑Ready (EE)",
+    "ttl": "P90D",
+    "jurisdiction": "EE"
+  },
+  "predicates": [
+    {
+      "id": "age.ge.18",
+      "claim": "age",
+      "operator": ">=",
+      "value": 18,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "identity.verified",
+      "claim": "identity_liveness",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "criminal.clear.ee",
+      "claim": "criminal_record_clear",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:e-gov:ee:justice"],
+      "proofType": "vc-bbs"
+    },
+    {
+      "id": "firstaid.valid.ee",
+      "claim": "first_aid_cert_valid",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:redcross:ee"],
+      "proofType": "vc-bbs",
+      "required": false
+    },
+    {
+      "id": "references.verified",
+      "claim": "references_count",
+      "operator": ">=",
+      "value": 2,
+      "issuersAccepted": ["did:cachet:vouch"],
+      "proofType": "zk-snark"
+    }
+  ]
+}

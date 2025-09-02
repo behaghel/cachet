@@ -1,0 +1,47 @@
+{
+  "id": "pack.safe.seller",
+  "version": "0.1.0",
+  "name": "Safe Seller",
+  "purpose": "Reduce counterparty and fraud risk in peer-to-peer sales",
+  "jurisdictions": ["EU"],
+  "badge": {
+    "label": "Safe Seller (EU)",
+    "ttl": "P60D",
+    "jurisdiction": "EU"
+  },
+  "predicates": [
+    {
+      "id": "identity.verified",
+      "claim": "identity_liveness",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "platform.tenure",
+      "claim": "platform_tenure_months_max",
+      "operator": ">=",
+      "value": 6,
+      "issuersAccepted": ["did:platform:*"],
+      "proofType": "zk-snark"
+    },
+    {
+      "id": "platform.fulfilment",
+      "claim": "fulfilment_rate",
+      "operator": ">=",
+      "value": 0.95,
+      "issuersAccepted": ["did:platform:*"],
+      "proofType": "zk-snark"
+    },
+    {
+      "id": "chargeback.risk.low",
+      "claim": "chargeback_ratio",
+      "operator": "<",
+      "value": 0.01,
+      "issuersAccepted": ["did:payments:*"],
+      "proofType": "vc-bbs",
+      "required": false
+    }
+  ]
+}

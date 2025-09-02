@@ -1,0 +1,340 @@
+---
+openapi: 3.0.3
+info:
+  title: Cachet Trust Provider API
+  description: |
+    OpenAPI specification for Cachet trust provider services.
+    This schema ensures compatibility between Go backend and Kotlin/mobile 
+    frontend.
+  version: 1.0.0
+  contact:
+    name: Cachet Team
+    url: https://cachet.id
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8090
+    description: Local development server
+
+paths:
+  /oauth/token:
+    post:
+      summary: Request OAuth2 access token
+      description: OAuth2 client credentials flow for obtaining access tokens
+      operationId: requestToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: Access token issued successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /credential:
+    post:
+      summary: Request verifiable credential
+      description: Issue a verifiable credential using OpenID4VCI protocol
+      operationId: requestCredential
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CredentialRequest"
+      responses:
+        "200":
+          description: Credential issued successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CredentialResponse"
+        "401":
+          description: Invalid or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Invalid credential request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /webhooks/veriff:
+    post:
+      summary: Veriff webhook endpoint
+      description: Receives verification status updates from Veriff
+      operationId: handleVeriffWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VeriffSession"
+      responses:
+        "200":
+          description: Webhook processed successfully
+        "202":
+          description: Webhook acknowledged but not processed
+
+  /healthz:
+    get:
+      summary: Health check endpoint
+      description: Returns service health status
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "ok"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # OAuth2 / OpenID4VCI Types
+    TokenRequest:
+      type: object
+      required: [grant_type, client_id, scope]
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials]
+          description: OAuth2 grant type
+        client_id:
+          type: string
+          description: Client identifier
+          example: "cachet-android-wallet"
+        scope:
+          type: string
+          description: Requested scope
+          example: "credential_issuance"
+      additionalProperties: false
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in, scope]
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          enum: [Bearer]
+          description: Token type
+        expires_in:
+          type: integer
+          description: Token expiration time in seconds
+          example: 3600
+        scope:
+          type: string
+          description: Granted scope
+          example: "credential_issuance"
+      additionalProperties: false
+
+    CredentialRequest:
+      type: object
+      required: [format, types]
+      properties:
+        format:
+          type: string
+          description: Credential format
+          enum: [jwt_vc, vc+sd-jwt, ldp_vc]
+          example: "jwt_vc"
+        types:
+          type: array
+          items:
+            type: string
+          description: Credential types
+          example: ["VerifiableCredential", "IdentityCredential"]
+        proof:
+          type: object
+          description: Cryptographic proof (optional)
+          additionalProperties: true
+      additionalProperties: false
+
+    CredentialResponse:
+      type: object
+      required: [credential, format]
+      properties:
+        credential:
+          $ref: "#/components/schemas/VerifiableCredential"
+        format:
+          type: string
+          description: Credential format used
+          example: "jwt_vc"
+      additionalProperties: false
+
+    # W3C Verifiable Credentials Types
+    VerifiableCredential:
+      type: object
+      required: [id, "@context", type, issuer, issuanceDate, credentialSubject]
+      properties:
+        id:
+          type: string
+          description: Unique credential identifier
+          pattern: "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          example: "urn:uuid:3fc541a8-103c-4f9c-8d54-9a7a72aed350"
+        "@context":
+          type: array
+          items:
+            type: string
+          description: JSON-LD context
+          minItems: 1
+          example:
+            - "https://www.w3.org/2018/credentials/v1"
+            - "https://cachet.id/contexts/identity/v1"
+        type:
+          type: array
+          items:
+            type: string
+          description: Credential types
+          minItems: 1
+          example: ["VerifiableCredential", "IdentityCredential"]
+        issuer:
+          type: string
+          description: Credential issuer DID
+          pattern: "^did:"
+          example: "did:web:cachet.id"
+        issuanceDate:
+          type: string
+          format: date-time
+          description: When the credential was issued
+          example: "2025-09-01T21:27:40+02:00"
+        expirationDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the credential expires (optional)
+          example: "2026-09-01T21:27:40+02:00"
+        credentialSubject:
+          type: object
+          description: Claims about the subject
+          required: [id]
+          properties:
+            id:
+              type: string
+              description: Subject DID
+              example: "did:example:holder"
+            verified:
+              type: boolean
+              description: Whether identity is verified
+              example: true
+            verification_method:
+              type: string
+              description: Verification method used
+              example: "veriff"
+            verification_level:
+              type: string
+              description: Level of verification performed
+              example: "identity_document_liveness"
+          additionalProperties: true
+        credentialStatus:
+          $ref: "#/components/schemas/CredentialStatus"
+      additionalProperties: false
+
+    CredentialStatus:
+      type: object
+      required: [id, type]
+      properties:
+        id:
+          type: string
+          format: uri
+          description: Status list entry URI
+          example: "https://cachet.id/status/1#1e99bbcd-5be8-4bf4-9dff-88cf13fb25b8"
+        type:
+          type: string
+          description: Status mechanism type
+          enum: [StatusList2021Entry]
+          example: "StatusList2021Entry"
+      additionalProperties: false
+
+    # Veriff Integration Types
+    VeriffSession:
+      type: object
+      required: [session_id, status]
+      properties:
+        session_id:
+          type: string
+          description: Veriff session identifier
+          example: "veriff-session-1234567890"
+        status:
+          type: string
+          description: Verification status
+          enum: [approved, declined, expired, abandoned]
+          example: "approved"
+        person:
+          type: object
+          properties:
+            firstName:
+              type: string
+              example: "John"
+            lastName:
+              type: string
+              example: "Doe"
+            dateOfBirth:
+              type: string
+              format: date
+              example: "1990-01-15"
+        document:
+          type: object
+          properties:
+            number:
+              type: string
+              description: Document number
+              example: "P123456789"
+            type:
+              type: string
+              description: Document type
+              enum: [passport, driver_license, national_id]
+              example: "passport"
+            country:
+              type: string
+              description: ISO country code
+              pattern: "^[A-Z]{2}$"
+              example: "US"
+      additionalProperties: false
+
+    # Error Response
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "invalid_request"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Invalid or missing grant_type parameter"
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+      additionalProperties: false

@@ -1,0 +1,21 @@
+{
+  "@context": "https://schemas.cachet.id/consent-receipt/v1",
+  "id": "receipt-ac801770",
+  "holder": "did:key:z6MkChildcareES",
+  "rp": "did:web:parents.es.example",
+  "purpose": "Example purpose",
+  "policyId": "pack.childcare.readiness.es@0.1.0",
+  "timestamp": "2025-08-31T11:41:30Z",
+  "predicatesProven": [
+    "age.ge.18",
+    "identity.verified",
+    "criminal.clear.es",
+    "references.verified"
+  ],
+  "issuers": [
+    "did:veriff:es:789",
+    "did:justice:es:sexual-offences",
+    "did:cachet:vouch"
+  ],
+  "proofReceiptHash": "urn:sha256:ac8017705680dc2b06083225e847371b0698743626838f961c515cd9e361421a"
+}
