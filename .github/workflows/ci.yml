@@ -94,10 +94,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Gosec Security Scanner
-        uses: securecodewarrior/github-action-gosec@master
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          args: "./services/..."
+          go-version: "1.22"
+          
+      - name: Run Gosec Security Scanner
+        uses: securecodewarrior/gosec@master
+        with:
+          args: './services/...'
 
   build:
     name: Build Docker Images

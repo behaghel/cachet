@@ -60,7 +60,9 @@ func (s *Server) setupRoutes() {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Health check requested")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	if _, err := w.Write([]byte("ok")); err != nil {
+		log.Error().Err(err).Msg("Failed to write health check response")
+	}
 }
 
 func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
