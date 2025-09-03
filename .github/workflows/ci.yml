@@ -16,16 +16,33 @@ jobs:
         shell: devenv shell bash -- -e {0}
 
     steps:
-      - name: Free Disk Space
+      # Check disk space first, only cleanup if needed
+      - name: Check disk space
+        id: disk-space
+        run: |
+          AVAILABLE=$(df / --output=avail | tail -1)
+          echo "Available disk space: ${AVAILABLE} KB"
+          # Only cleanup if less than 6GB available (backend needs less space)
+          if [ "$AVAILABLE" -lt 6291456 ]; then
+            echo "needs_cleanup=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Low disk space detected, will cleanup"
+          else
+            echo "needs_cleanup=false" >> $GITHUB_OUTPUT
+            echo "✅ Sufficient disk space, skipping cleanup"
+          fi
+
+      - name: Free Disk Space (Conditional)
+        if: steps.disk-space.outputs.needs_cleanup == 'true'
         uses: jlumbroso/free-disk-space@main
         with:
+          # Fast cleanup for backend
           tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
+          android: false
+          dotnet: true  
+          haskell: false
+          large-packages: false
+          docker-images: false
+          swap-storage: false
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -129,15 +146,33 @@ jobs:
         shell: devenv shell bash -- -e {0}
 
     steps:
-      - name: Free Disk Space
+      # Check disk space first, only cleanup if needed
+      - name: Check disk space
+        id: disk-space
+        run: |
+          AVAILABLE=$(df / --output=avail | tail -1)
+          echo "Available disk space: ${AVAILABLE} KB"
+          # Only cleanup if less than 8GB available
+          if [ "$AVAILABLE" -lt 8388608 ]; then
+            echo "needs_cleanup=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Low disk space detected, will cleanup"
+          else
+            echo "needs_cleanup=false" >> $GITHUB_OUTPUT  
+            echo "✅ Sufficient disk space, skipping cleanup"
+          fi
+
+      - name: Free Disk Space (Conditional)
+        if: steps.disk-space.outputs.needs_cleanup == 'true'
         uses: jlumbroso/free-disk-space@main
         with:
+          # Fast, targeted cleanup when needed
           tool-cache: false
+          android: false
           dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
+          haskell: false
+          large-packages: false
+          docker-images: false
+          swap-storage: false
 
       - name: Checkout code
         uses: actions/checkout@v4

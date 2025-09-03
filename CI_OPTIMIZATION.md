@@ -45,13 +45,26 @@ This enables:
 **Without the token**: Public Cachix access (still very fast)  
 **With the token**: Authenticated access (optimal performance)
 
-### 📊 Expected Performance After Caching
+### 📊 Expected Performance After Optimization
 
-| Job | First Run | Subsequent Runs | Speedup |
-|-----|-----------|-----------------|---------|
-| Backend | ~8-12 min | ~3-5 min | 2-3x faster |
-| Android | ~12-18 min | ~4-7 min | 3-4x faster |
-| Schema | ~1-2 min | ~30-60s | 2x faster |
+| Job | Before | After Caching | After Smart Cleanup | Total Speedup |
+|-----|--------|---------------|-------------------|-------------- |
+| Backend | ~8-12 min | ~3-5 min | ~2-4 min | **3-4x faster** |
+| Android | ~12-18 min | ~4-7 min | ~3-5 min | **4-5x faster** |
+| Schema | ~1-2 min | ~30-60s | ~30-45s | **2-3x faster** |
+
+### 🚀 Smart Disk Space Management
+
+**New Conditional Cleanup Strategy:**
+- **Checks disk space first** (takes ~2 seconds)
+- **Only runs cleanup when needed** (< 6GB backend, < 8GB Android)
+- **Skips cleanup entirely** when sufficient space available
+- **Uses minimal, targeted cleanup** when triggered
+
+**Performance Impact:**
+- **First run**: Still slow (builds caches, may need cleanup)
+- **Subsequent runs**: Often skips cleanup entirely = **2-4 minutes saved**
+- **Cache hit rate**: ~80-90% after initial runs
 
 ### 🎯 Cache Invalidation Strategy
 
