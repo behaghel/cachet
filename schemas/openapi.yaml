@@ -341,3 +341,5 @@ components:
           description: Additional error details
           additionalProperties: true
       additionalProperties: false
+# Test comment
+# Test pre-commit hooks
