@@ -3,7 +3,7 @@ module github.com/cachet-id/cachet/services/registry
 go 1.22
 
 require (
-	github.com/go-chi/chi/v5 v5.0.12
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
 )
