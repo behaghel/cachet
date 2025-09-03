@@ -30,30 +30,80 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Advanced Nix store caching - dramatically speeds up devenv builds
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/nix
+            /nix/var/cache/nix
+            /nix/store
+          key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
+
       - name: Install Nix
         uses: cachix/install-nix-action@v26
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
             max-jobs = auto
             cores = 2
+            # Enable more aggressive caching
+            keep-outputs = true
+            keep-derivations = true
+            # Optimize build performance
+            sandbox = relaxed
+            auto-optimise-store = true
 
-      - name: Setup Cachix
+      - name: Setup Cachix  
         uses: cachix/cachix-action@v14
         with:
           name: devenv
+          # Use authentication for better cache performance
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      # Cache devenv profile and shell build
+      - name: Cache devenv profile
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nix-profile
+            ~/.local/state/nix/profiles
+          key: ${{ runner.os }}-devenv-profile-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-devenv-profile-
 
       - name: Install devenv
         shell: bash
-        run: nix profile install nixpkgs#devenv
+        run: |
+          if ! command -v devenv &> /dev/null; then
+            nix profile install nixpkgs#devenv
+          else
+            echo "devenv already installed, skipping"
+          fi
 
+      # Cache Go modules more comprehensively
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+            services/*/go.mod
+            services/*/go.sum
+          key: ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-${{ hashFiles('services/**/go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-
+            ${{ runner.os }}-go-
+
+      # Pre-build devenv shell to cache it
+      - name: Build and cache devenv shell
+        run: |
+          echo "Building devenv shell..."
+          devenv shell --help > /dev/null || true
+          echo "devenv shell cached"
 
       - name: Run backend CI pipeline
         run: |
@@ -92,30 +142,91 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Reuse Nix store cache from backend job
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/nix
+            /nix/var/cache/nix
+            /nix/store
+          key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
+
       - name: Install Nix
         uses: cachix/install-nix-action@v26
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
             max-jobs = auto
             cores = 2
+            keep-outputs = true
+            keep-derivations = true
+            sandbox = relaxed
+            auto-optimise-store = true
 
       - name: Setup Cachix
         uses: cachix/cachix-action@v14
         with:
           name: devenv
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      # Cache devenv profile (shared with backend)
+      - name: Cache devenv profile
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nix-profile  
+            ~/.local/state/nix/profiles
+          key: ${{ runner.os }}-devenv-profile-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-devenv-profile-
 
       - name: Install devenv
         shell: bash
-        run: nix profile install nixpkgs#devenv
+        run: |
+          if ! command -v devenv &> /dev/null; then
+            nix profile install nixpkgs#devenv
+          else
+            echo "devenv already installed, skipping"
+          fi
 
-      - name: Cache Gradle dependencies
+      # Comprehensive Android/Gradle caching
+      - name: Cache Gradle and Android dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties') }}
+            ~/.android/cache
+            mobile/.gradle
+            mobile/build
+            mobile/androidApp/build
+            mobile/shared/build
+          key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'devenv.nix') }}
+          restore-keys: |
+            ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
+            ${{ runner.os }}-android-
+
+      # Cache Android SDK (from devenv)
+      - name: Cache Android SDK
+        uses: actions/cache@v4  
+        with:
+          path: |
+            ~/.android
+            /nix/store/*android*
+          key: ${{ runner.os }}-android-sdk-${{ hashFiles('devenv.nix') }}
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
+      # Pre-build devenv shell
+      - name: Build and cache devenv shell
+        run: |
+          echo "Building devenv shell with Android SDK..."
+          devenv shell --help > /dev/null || true
+          echo "Android devenv shell cached"
 
       - name: Build Android APK  
         run: android:build
