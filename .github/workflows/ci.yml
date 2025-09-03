@@ -6,8 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  GO_VERSION: "1.22"
+defaults:
+  run:
+    shell: devenv shell bash -- -e {0}
 
 jobs:
   test:
@@ -18,10 +19,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+
+      - name: Install devenv
+        shell: bash
+        run: nix profile install nixpkgs#devenv
 
       - name: Cache Go modules
         uses: actions/cache@v4
@@ -34,18 +37,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Download dependencies
-        run: |
-          cd services/verifier && go mod download
-          cd ../registry && go mod download  
-          cd ../receipts-log && go mod download
-          cd ../common && go mod download
+        run: ci:deps
 
       - name: Run tests with coverage
-        run: |
-          mkdir -p coverage
-          cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
-          cd ../registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...
-          cd ../receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
+        run: ci:test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -63,28 +58,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: services/verifier
+      - name: Install devenv
+        shell: bash
+        run: nix profile install nixpkgs#devenv
 
-      - name: golangci-lint registry
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: services/registry
-
-      - name: golangci-lint receipts-log
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: services/receipts-log
+      - name: Run linting
+        run: ci:lint
 
   security:
     name: Security Scan
@@ -94,15 +76,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.22"
-          
-      - name: Install and Run Gosec Security Scanner
-        run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          gosec ./services/...
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+
+      - name: Install devenv
+        shell: bash
+        run: nix profile install nixpkgs#devenv
+
+      - name: Run security scan
+        run: ci:security
 
   build:
     name: Build Docker Images

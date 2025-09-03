@@ -48,6 +48,41 @@
   scripts."dev:stop".exec = "devenv processes stop";
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
+  scripts."ci:deps".exec = ''
+    echo "📦 Downloading dependencies..."
+    cd services/verifier && go mod download
+    cd ../registry && go mod download  
+    cd ../receipts-log && go mod download
+    cd ../common && go mod download
+    cd ../connector-hub && go mod download
+    cd ../transparency-log && go mod download
+    cd ../vouching-service && go mod download
+    echo "✅ Dependencies downloaded"
+  '';
+  scripts."ci:test".exec = ''
+    echo "🧪 Running tests with coverage..."
+    mkdir -p coverage
+    cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
+    cd ../registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...
+    cd ../receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
+    echo "✅ Tests completed with coverage"
+  '';
+  scripts."ci:lint".exec = ''
+    echo "🔍 Running golangci-lint on all services..."
+    cd services/verifier && golangci-lint run
+    cd ../registry && golangci-lint run
+    cd ../receipts-log && golangci-lint run
+    cd ../connector-hub && golangci-lint run
+    cd ../transparency-log && golangci-lint run
+    cd ../vouching-service && golangci-lint run
+    echo "✅ All services passed linting"
+  '';
+  scripts."ci:security".exec = ''
+    echo "🔒 Running security scan..."
+    go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+    gosec ./services/...
+    echo "✅ Security scan completed"
+  '';
   scripts."test:all".exec = ''
     echo "Running tests for all services..."
     cd services/verifier && go test -v ./... && echo "✅ Verifier tests passed"
