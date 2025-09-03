@@ -112,7 +112,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build verifier image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/verifier
           push: false
@@ -121,7 +121,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build registry image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/registry
           push: false
@@ -130,7 +130,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build receipts-log image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/receipts-log
           push: false
