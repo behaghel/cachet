@@ -24,6 +24,7 @@ paths:
       summary: Request OAuth2 access token
       description: OAuth2 client credentials flow for obtaining access tokens
       operationId: requestToken
+      security: []
       requestBody:
         required: true
         content:

@@ -21,9 +21,12 @@
 
   # Extra packages available in the shell
   packages = with pkgs; [
+    nodejs
+    nodePackages.npm
     pnpm
     nodePackages.typescript
     nodePackages.prettier
+    yamllint
     git
     golangci-lint
     jq
@@ -159,6 +162,14 @@
   scripts."schema:validate".exec = ''
     echo "🔍 Validating OpenAPI schema..."
     yamllint schemas/openapi.yaml
+    
+    # Install and use redocly for OpenAPI validation
+    if ! command -v redocly &> /dev/null; then
+        echo "📦 Installing @redocly/cli..."
+        npm install -g @redocly/cli
+    fi
+    
+    redocly lint schemas/openapi.yaml
     echo "✅ Schema validation passed!"
   '';
   scripts."schema:generate".exec = ''
