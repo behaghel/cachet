@@ -228,6 +228,32 @@ jobs:
           devenv shell --help > /dev/null || true
           echo "Android devenv shell cached"
 
+      # Debug: Check file structure before build
+      - name: Debug - Verify AndroidManifest.xml exists
+        run: |
+          echo "=== Debugging AndroidManifest.xml location ==="
+          echo "Current directory: $(pwd)"
+          echo "Mobile directory contents:"
+          ls -la mobile/
+          echo "AndroidApp directory contents:"
+          ls -la mobile/androidApp/
+          echo "Source directory contents:"
+          ls -la mobile/androidApp/src/
+          echo "Main directory contents:"
+          ls -la mobile/androidApp/src/main/
+          echo "Checking for AndroidManifest.xml:"
+          if [ -f "mobile/androidApp/src/main/AndroidManifest.xml" ]; then
+            echo "✅ AndroidManifest.xml exists"
+            ls -la mobile/androidApp/src/main/AndroidManifest.xml
+          else
+            echo "❌ AndroidManifest.xml NOT found"
+            find mobile/ -name "AndroidManifest.xml" -type f 2>/dev/null || echo "No AndroidManifest.xml files found anywhere"
+          fi
+          echo "Working directory for Gradle:"
+          cd mobile && pwd
+          echo "Relative path check:"
+          ls -la androidApp/src/main/AndroidManifest.xml || echo "Relative path also fails"
+
       - name: Build Android APK  
         run: android:build
 

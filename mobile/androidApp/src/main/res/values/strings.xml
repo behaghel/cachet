@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cachet Wallet</string>
+    <string name="verify_identity">Verify Identity</string>
+    <string name="verification_in_progress">Verification in Progress</string>
+    <string name="credentials">Credentials</string>
+    <string name="no_credentials">No credentials found</string>
+    <string name="error_loading_credentials">Error loading credentials</string>
+    <string name="retry">Try Again</string>
+</resources>
