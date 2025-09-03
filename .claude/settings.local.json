@@ -29,7 +29,10 @@
       "Bash(gh run view:*)",
       "Bash(gh workflow:*)",
       "Bash(git commit:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "WebFetch(domain:devenv.sh)",
+      "WebSearch",
+      "Bash(redocly --version)"
     ],
     "deny": [],
     "ask": []

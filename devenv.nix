@@ -38,6 +38,7 @@
     oapi-codegen
     openapi-generator-cli
     yamllint
+    redocly
   ];
 
   # Useful env vars (used by docs and examples)
@@ -277,10 +278,35 @@
   processes.receipts.exec = "go run ./services/receipts-log";
   processes.issuance-gateway.exec = "go run ./services/issuance-gateway";
 
-  # Pre-commit hooks - temporarily disabled for initial commit to avoid conflicts
-  # git-hooks.hooks.gofmt.enable = true;
-  # git-hooks.hooks.golangci-lint.enable = true;
-  # git-hooks.hooks.prettier.enable = true;
+  # Pre-commit hooks for consistent build cycle
+  git-hooks = {
+    hooks = {
+      # Go formatting and linting
+      gofmt.enable = true;
+      golangci-lint.enable = true;
+      
+      # Schema validation
+      check-yaml.enable = true;
+      
+      # Custom hooks
+      schema-validate = {
+        enable = true;
+        name = "OpenAPI Schema Validation";
+        entry = "redocly lint schemas/openapi.yaml";
+        files = "schemas/.*\\.yaml$";
+        language = "system";
+      };
+      
+      # Go mod tidy for all services (disabled temporarily due to hook conflicts)
+      # go-mod-tidy = {
+      #   enable = true;
+      #   name = "Go mod tidy";
+      #   entry = "bash -c 'for dir in services/*/; do if [ -f \"$dir/go.mod\" ]; then (cd \"$dir\" && go mod tidy); fi; done'";
+      #   files = ".*\\.go$|go\\.(mod|sum)$";
+      #   language = "system";
+      # };
+    };
+  };
 
   enterShell = ''
     echo "✅ Cachet devenv ready."
