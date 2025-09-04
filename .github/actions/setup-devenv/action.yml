@@ -16,6 +16,10 @@ inputs:
     description: 'Enable Android/Gradle caching'
     required: false
     default: 'false'
+  enable-android-sdk:
+    description: 'Enable Android SDK in devenv (set DEVENV_ENABLE_ANDROID)'
+    required: false
+    default: 'false'
   cachix-auth-token:
     description: 'Cachix authentication token'
     required: false
@@ -23,6 +27,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # Set Android environment variable if enabled
+    - name: Set Android environment
+      if: inputs.enable-android-sdk == 'true'
+      shell: bash
+      run: echo "DEVENV_ENABLE_ANDROID=1" >> $GITHUB_ENV
+
     # Check disk space first with regular bash (before devenv setup)
     - name: Check disk space
       id: disk-space

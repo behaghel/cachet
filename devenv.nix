@@ -1,15 +1,19 @@
 { pkgs, lib, ... }:
 
+let
+  # Enable Android only when DEVENV_ENABLE_ANDROID is set
+  enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
+in
 {
   # Languages / toolchains
   languages.go.enable = true;
   languages.javascript.enable = true;
   languages.java.enable = true;
-  languages.java.gradle.enable = true;
+  languages.java.gradle.enable = enableAndroid;  # Only needed for Android
   claude.code.enable = true;
 
-  # Android development
-  android = {
+  # Android development (conditional)
+  android = lib.mkIf enableAndroid {
     enable = true;
     platforms.version = [ "34" ];
     systemImageTypes = [ "google_apis_playstore" ];

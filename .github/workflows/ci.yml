@@ -55,6 +55,7 @@ jobs:
           cache-prefix: android
           disk-threshold-gb: 8
           enable-android-cache: true
+          enable-android-sdk: true
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       # Debug: Check file structure before build
