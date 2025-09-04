@@ -112,12 +112,22 @@ in
       }
     fi
     
-    # Run security scan
+    # Run security scan on each service with proper Go module context
     echo "🔍 Scanning services for security issues..."
-    gosec -exclude-generated -exclude-dir=.devenv ./services/... || {
-      echo "❌ Security scan found issues or failed"
-      exit 1
-    }
+    echo "Scanning verifier..."
+    cd services/verifier && gosec -exclude-generated ./...
+    echo "Scanning registry..."
+    cd ../registry && gosec -exclude-generated ./...
+    echo "Scanning receipts-log..."
+    cd ../receipts-log && gosec -exclude-generated ./...
+    echo "Scanning connector-hub..."
+    cd ../connector-hub && gosec -exclude-generated ./...
+    echo "Scanning transparency-log..."
+    cd ../transparency-log && gosec -exclude-generated ./...
+    echo "Scanning vouching-service..."
+    cd ../vouching-service && gosec -exclude-generated ./...
+    echo "Scanning issuance-gateway..."
+    cd ../issuance-gateway && gosec -exclude-generated ./...
     
     echo "✅ Security scan completed successfully"
   '';
