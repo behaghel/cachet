@@ -11,123 +11,22 @@ jobs:
   backend:
     name: Backend (Go Services)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: devenv shell bash -- -e {0}
 
     steps:
-      # Check disk space first, only cleanup if needed
-      - name: Check disk space
-        id: disk-space
-        run: |
-          AVAILABLE=$(df / --output=avail | tail -1)
-          echo "Available disk space: ${AVAILABLE} KB"
-          # Only cleanup if less than 6GB available (backend needs less space)
-          if [ "$AVAILABLE" -lt 6291456 ]; then
-            echo "needs_cleanup=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Low disk space detected, will cleanup"
-          else
-            echo "needs_cleanup=false" >> $GITHUB_OUTPUT
-            echo "✅ Sufficient disk space, skipping cleanup"
-          fi
-
-      - name: Free Disk Space (Conditional)
-        if: steps.disk-space.outputs.needs_cleanup == 'true'
-        uses: jlumbroso/free-disk-space@main
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
         with:
-          # Fast cleanup for backend
-          tool-cache: false
-          android: false
-          dotnet: true  
-          haskell: false
-          large-packages: false
-          docker-images: false
-          swap-storage: false
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Advanced Nix store caching - dramatically speeds up devenv builds
-      - name: Cache Nix store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/nix
-            /nix/var/cache/nix
-            /nix/store
-          key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-nix-
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v26
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-            max-jobs = auto
-            cores = 2
-            # Enable more aggressive caching
-            keep-outputs = true
-            keep-derivations = true
-            # Optimize build performance
-            sandbox = relaxed
-            auto-optimise-store = true
-
-      - name: Setup Cachix  
-        uses: cachix/cachix-action@v14
-        with:
-          name: devenv
-          # Use authentication for better cache performance
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-      # Cache devenv profile and shell build
-      - name: Cache devenv profile
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.nix-profile
-            ~/.local/state/nix/profiles
-          key: ${{ runner.os }}-devenv-profile-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-devenv-profile-
-
-      - name: Install devenv
-        shell: bash
-        run: |
-          if ! command -v devenv &> /dev/null; then
-            nix profile install nixpkgs#devenv
-          else
-            echo "devenv already installed, skipping"
-          fi
-
-      # Cache Go modules more comprehensively
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            services/*/go.mod
-            services/*/go.sum
-          key: ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-${{ hashFiles('services/**/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-
-            ${{ runner.os }}-go-
-
-      # Pre-build devenv shell to cache it
-      - name: Build and cache devenv shell
-        run: |
-          echo "Building devenv shell..."
-          devenv shell --help > /dev/null || true
-          echo "devenv shell cached"
+          cache-prefix: backend
+          disk-threshold-gb: 6
+          enable-go-cache: true
 
       - name: Run backend CI pipeline
+        shell: bash
         run: |
-          ci:deps
-          ci:test
-          ci:lint
-          ci:security
+          devenv shell -- ci:deps
+          devenv shell -- ci:test
+          devenv shell -- ci:lint
+          devenv shell -- ci:security
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -141,130 +40,18 @@ jobs:
   android:
     name: Android App  
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: devenv shell bash -- -e {0}
 
     steps:
-      # Check disk space first, only cleanup if needed
-      - name: Check disk space
-        id: disk-space
-        run: |
-          AVAILABLE=$(df / --output=avail | tail -1)
-          echo "Available disk space: ${AVAILABLE} KB"
-          # Only cleanup if less than 8GB available
-          if [ "$AVAILABLE" -lt 8388608 ]; then
-            echo "needs_cleanup=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Low disk space detected, will cleanup"
-          else
-            echo "needs_cleanup=false" >> $GITHUB_OUTPUT  
-            echo "✅ Sufficient disk space, skipping cleanup"
-          fi
-
-      - name: Free Disk Space (Conditional)
-        if: steps.disk-space.outputs.needs_cleanup == 'true'
-        uses: jlumbroso/free-disk-space@main
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
         with:
-          # Fast, targeted cleanup when needed
-          tool-cache: false
-          android: false
-          dotnet: true
-          haskell: false
-          large-packages: false
-          docker-images: false
-          swap-storage: false
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Reuse Nix store cache from backend job
-      - name: Cache Nix store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/nix
-            /nix/var/cache/nix
-            /nix/store
-          key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-nix-
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v26
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-            max-jobs = auto
-            cores = 2
-            keep-outputs = true
-            keep-derivations = true
-            sandbox = relaxed
-            auto-optimise-store = true
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v14
-        with:
-          name: devenv
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-      # Cache devenv profile (shared with backend)
-      - name: Cache devenv profile
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.nix-profile  
-            ~/.local/state/nix/profiles
-          key: ${{ runner.os }}-devenv-profile-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-devenv-profile-
-
-      - name: Install devenv
-        shell: bash
-        run: |
-          if ! command -v devenv &> /dev/null; then
-            nix profile install nixpkgs#devenv
-          else
-            echo "devenv already installed, skipping"
-          fi
-
-      # Comprehensive Android/Gradle caching
-      - name: Cache Gradle and Android dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.android/cache
-            mobile/.gradle
-            mobile/build
-            mobile/androidApp/build
-            mobile/shared/build
-          key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'devenv.nix') }}
-          restore-keys: |
-            ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
-            ${{ runner.os }}-android-
-
-      # Cache Android SDK (from devenv)
-      - name: Cache Android SDK
-        uses: actions/cache@v4  
-        with:
-          path: |
-            ~/.android
-            /nix/store/*android*
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('devenv.nix') }}
-          restore-keys: |
-            ${{ runner.os }}-android-sdk-
-
-      # Pre-build devenv shell
-      - name: Build and cache devenv shell
-        run: |
-          echo "Building devenv shell with Android SDK..."
-          devenv shell --help > /dev/null || true
-          echo "Android devenv shell cached"
+          cache-prefix: android
+          disk-threshold-gb: 8
+          enable-android-cache: true
 
       # Debug: Check file structure before build
       - name: Debug - Verify AndroidManifest.xml exists
+        shell: bash
         run: |
           echo "=== Debugging AndroidManifest.xml location ==="
           echo "Current directory: $(pwd)"
@@ -290,11 +77,13 @@ jobs:
           ls -la androidApp/src/main/AndroidManifest.xml || echo "Relative path also fails"
 
       - name: Build Android APK  
-        run: android:build
+        shell: bash
+        run: devenv shell -- android:build
 
       # Note: Skipping unit tests temporarily due to compilation issues - will fix separately
       # - name: Run Android tests
-      #   run: android:test-unit
+      #   shell: bash
+      #   run: devenv shell -- android:test-unit
 
   # Schema validation (lightweight, no devenv needed)
   schema:
@@ -318,72 +107,60 @@ jobs:
       - name: Validate OpenAPI schema
         run: redocly lint schemas/openapi.yaml
 
-  # Docker builds (separate from devenv)
+  # Build devenv containers (consistent with development)
   build:
-    name: Build Docker Images
+    name: Build devenv Containers
     runs-on: ubuntu-latest
     needs: [backend]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build verifier image
-        uses: docker/build-push-action@v5
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
         with:
-          context: ./services/verifier
-          push: false
-          tags: cachet/verifier:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-prefix: build
+          disk-threshold-gb: 6
 
-      - name: Build registry image
-        uses: docker/build-push-action@v5
+      # Cache container builds
+      - name: Cache container builds
+        uses: actions/cache@v4
         with:
-          context: ./services/registry
-          push: false
-          tags: cachet/registry:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          path: |
+            ~/.cache/nix/eval-cache-v5
+            ~/.cache/devenv
+          key: ${{ runner.os }}-containers-${{ hashFiles('devenv.nix', 'devenv.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-containers-${{ hashFiles('devenv.nix', 'devenv.lock') }}-
+            ${{ runner.os }}-containers-
 
-      - name: Build receipts-log image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/receipts-log
-          push: false
-          tags: cachet/receipts-log:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build verifier container
+        shell: bash
+        run: devenv container build verifier
 
-  # Integration tests
+      - name: Build registry container
+        shell: bash
+        run: devenv container build registry
+
+      - name: Build receipts container
+        shell: bash
+        run: devenv container build receipts
+
+      - name: Build issuance container
+        shell: bash
+        run: devenv container build issuance
+
+  # Integration tests using devenv
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [build]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
+        with:
+          cache-prefix: integration
+          disk-threshold-gb: 6
 
-      - name: Start services
-        run: docker compose -f infra/docker-compose.yaml up -d --build
-
-      - name: Wait for services
-        run: |
-          timeout 60 bash -c 'until curl -f http://localhost:8081/healthz; do sleep 2; done'
-          timeout 60 bash -c 'until curl -f http://localhost:8082/healthz; do sleep 2; done'
-          timeout 60 bash -c 'until curl -f http://localhost:8083/healthz; do sleep 2; done'
-
-      - name: Run integration tests
-        run: |
-          curl -f http://localhost:8081/packs
-          curl -f -X POST http://localhost:8081/presentations/verify \
-            -H "Content-Type: application/json" \
-            -d '{"policyId":"test","bundle":{}}'
-          curl -f http://localhost:8082/policy/manifest
-
-      - name: Stop services
-        run: docker compose -f infra/docker-compose.yaml down
+      - name: Run integration tests using devenv
+        shell: bash
+        run: devenv shell -- test:integration

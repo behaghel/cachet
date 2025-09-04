@@ -32,7 +32,8 @@
       "Bash(gh pr view:*)",
       "WebFetch(domain:devenv.sh)",
       "WebSearch",
-      "Bash(redocly --version)"
+      "Bash(redocly --version)",
+      "Bash(test:integration)"
     ],
     "deny": [],
     "ask": []

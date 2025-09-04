@@ -278,6 +278,97 @@
   processes.receipts.exec = "go run ./services/receipts-log";
   processes.issuance-gateway.exec = "go run ./services/issuance-gateway";
 
+  # Container definitions - single source of truth for dev and production
+  containers = {
+    # Verifier service container
+    verifier = {
+      name = "cachet-verifier";
+      startupCommand = pkgs.writeShellScriptBin "start-verifier" ''
+        export PORT=''${PORT:-8081}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/verifier
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Registry service container
+    registry = {
+      name = "cachet-registry";
+      startupCommand = pkgs.writeShellScriptBin "start-registry" ''
+        export PORT=''${PORT:-8082}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/registry
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Receipts service container
+    receipts = {
+      name = "cachet-receipts";
+      startupCommand = pkgs.writeShellScriptBin "start-receipts" ''
+        export PORT=''${PORT:-8083}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/receipts-log
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Issuance Gateway container
+    issuance = {
+      name = "cachet-issuance";
+      startupCommand = pkgs.writeShellScriptBin "start-issuance" ''
+        export PORT=''${PORT:-8090}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/issuance-gateway
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+  };
+
   # Pre-commit hooks for consistent build cycle
   git-hooks = {
     hooks = {
