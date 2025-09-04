@@ -5,6 +5,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -19,7 +20,16 @@ func main() {
 		port = "8090"
 	}
 	log.Info().Str("port", port).Msg("Starting transparency-log")
-	if err := http.ListenAndServe(":"+port, r); err != nil {
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal().Err(err).Msg("Server failed to start")
 	}
 }

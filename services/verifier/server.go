@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -105,5 +106,14 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 
 func (s *Server) Start(addr string) error {
 	log.Info().Str("addr", addr).Msg("Server starting")
-	return http.ListenAndServe(addr, s.router)
+
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      s.router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }

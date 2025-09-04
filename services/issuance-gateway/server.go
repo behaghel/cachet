@@ -189,7 +189,11 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 		Msg("Access token issued")
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error().Err(err).Msg("Failed to encode token response")
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request) {
@@ -265,7 +269,11 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		Msg("Credential issued successfully")
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error().Err(err).Msg("Failed to encode credential response")
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
@@ -305,5 +313,14 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Start(addr string) error {
 	log.Info().Str("addr", addr).Msg("Issuance gateway starting")
-	return http.ListenAndServe(addr, s.router)
+
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      s.router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }
