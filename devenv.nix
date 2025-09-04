@@ -33,6 +33,7 @@ in
     yamllint
     git
     golangci-lint
+    gosec
     jq
     openssl
     just
@@ -69,27 +70,56 @@ in
   '';
   scripts."ci:test".exec = ''
     echo "🧪 Running tests with coverage..."
+    set -euo pipefail  # Exit on any error
+    
     mkdir -p coverage
+    echo "Testing verifier..."
     cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
+    echo "Testing registry..."
     cd ../registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...
+    echo "Testing receipts-log..."
     cd ../receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
-    echo "✅ Tests completed with coverage"
+    echo "✅ All tests completed successfully with coverage"
   '';
   scripts."ci:lint".exec = ''
     echo "🔍 Running golangci-lint on all services..."
+    set -euo pipefail  # Exit on any error
+    
+    echo "Linting verifier..."
     cd services/verifier && golangci-lint run
+    echo "Linting registry..."
     cd ../registry && golangci-lint run
+    echo "Linting receipts-log..."
     cd ../receipts-log && golangci-lint run
+    echo "Linting connector-hub..."
     cd ../connector-hub && golangci-lint run
+    echo "Linting transparency-log..."
     cd ../transparency-log && golangci-lint run
+    echo "Linting vouching-service..."
     cd ../vouching-service && golangci-lint run
-    echo "✅ All services passed linting"
+    echo "✅ All services passed linting successfully"
   '';
   scripts."ci:security".exec = ''
     echo "🔒 Running security scan..."
-    go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-    gosec ./services/...
-    echo "✅ Security scan completed"
+    set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
+    
+    # Install gosec if not already available
+    if ! command -v gosec &> /dev/null; then
+      echo "📦 Installing gosec..."
+      go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest || {
+        echo "❌ Failed to install gosec"
+        exit 1
+      }
+    fi
+    
+    # Run security scan
+    echo "🔍 Scanning services for security issues..."
+    gosec -exclude-generated -exclude-dir=.devenv ./services/... || {
+      echo "❌ Security scan found issues or failed"
+      exit 1
+    }
+    
+    echo "✅ Security scan completed successfully"
   '';
   scripts."test:all".exec = ''
     echo "Running tests for all services..."
