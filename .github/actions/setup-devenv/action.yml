@@ -50,8 +50,6 @@ runs:
         docker-images: false
         swap-storage: false
 
-    - name: Checkout code
-      uses: actions/checkout@v4
 
     # Advanced Nix store caching
     - name: Cache Nix store

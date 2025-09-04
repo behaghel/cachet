@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
         with:
@@ -42,6 +45,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
         with:
@@ -114,6 +120,9 @@ jobs:
     needs: [backend]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
         with:
@@ -155,6 +164,9 @@ jobs:
     needs: [build]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
         with:
