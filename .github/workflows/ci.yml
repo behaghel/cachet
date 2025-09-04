@@ -22,6 +22,7 @@ jobs:
           cache-prefix: backend
           disk-threshold-gb: 6
           enable-go-cache: true
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Run backend CI pipeline
         shell: bash
@@ -54,6 +55,7 @@ jobs:
           cache-prefix: android
           disk-threshold-gb: 8
           enable-android-cache: true
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       # Debug: Check file structure before build
       - name: Debug - Verify AndroidManifest.xml exists
@@ -128,6 +130,7 @@ jobs:
         with:
           cache-prefix: build
           disk-threshold-gb: 6
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       # Cache container builds
       - name: Cache container builds
@@ -172,6 +175,7 @@ jobs:
         with:
           cache-prefix: integration
           disk-threshold-gb: 6
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Run integration tests using devenv
         shell: bash
