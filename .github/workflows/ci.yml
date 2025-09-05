@@ -44,7 +44,7 @@ jobs:
           echo "✅ All backend CI steps completed successfully"
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage/verifier.out,./coverage/registry.out,./coverage/receipts.out
           flags: backend
