@@ -104,9 +104,12 @@ target/
 *.bak
 *.backup
 
-# Test results
+# Test results  
 test-results/
-*.xml
+# XML test reports only (NOT Android manifests or other essential XML files)
+test-results/**/*.xml
+coverage/**/*.xml
+build/**/*.xml
 
 # JetBrains
 .idea/

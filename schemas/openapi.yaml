@@ -24,6 +24,7 @@ paths:
       summary: Request OAuth2 access token
       description: OAuth2 client credentials flow for obtaining access tokens
       operationId: requestToken
+      security: []
       requestBody:
         required: true
         content:
@@ -81,6 +82,7 @@ paths:
     post:
       summary: Veriff webhook endpoint
       description: Receives verification status updates from Veriff
+      security: []
       operationId: handleVeriffWebhook
       requestBody:
         required: true
@@ -99,6 +101,7 @@ paths:
       summary: Health check endpoint
       description: Returns service health status
       operationId: healthCheck
+      security: []
       responses:
         "200":
           description: Service is healthy
@@ -338,3 +341,5 @@ components:
           description: Additional error details
           additionalProperties: true
       additionalProperties: false
+# Test comment
+# Test pre-commit hooks

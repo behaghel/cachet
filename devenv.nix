@@ -1,15 +1,19 @@
 { pkgs, lib, ... }:
 
+let
+  # Enable Android only when DEVENV_ENABLE_ANDROID is set
+  enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
+in
 {
   # Languages / toolchains
   languages.go.enable = true;
   languages.javascript.enable = true;
   languages.java.enable = true;
-  languages.java.gradle.enable = true;
+  languages.java.gradle.enable = enableAndroid;  # Only needed for Android
   claude.code.enable = true;
 
-  # Android development
-  android = {
+  # Android development (conditional)
+  android = lib.mkIf enableAndroid {
     enable = true;
     platforms.version = [ "34" ];
     systemImageTypes = [ "google_apis_playstore" ];
@@ -21,11 +25,15 @@
 
   # Extra packages available in the shell
   packages = with pkgs; [
+    nodejs
+    nodePackages.npm
     pnpm
     nodePackages.typescript
     nodePackages.prettier
+    yamllint
     git
     golangci-lint
+    gosec
     jq
     openssl
     just
@@ -35,6 +43,7 @@
     oapi-codegen
     openapi-generator-cli
     yamllint
+    redocly
   ];
 
   # Useful env vars (used by docs and examples)
@@ -48,6 +57,80 @@
   scripts."dev:stop".exec = "devenv processes stop";
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
+  scripts."ci:deps".exec = ''
+    echo "📦 Downloading dependencies..."
+    cd services/verifier && go mod download
+    cd ../registry && go mod download  
+    cd ../receipts-log && go mod download
+    cd ../common && go mod download
+    cd ../connector-hub && go mod download
+    cd ../transparency-log && go mod download
+    cd ../vouching-service && go mod download
+    echo "✅ Dependencies downloaded"
+  '';
+  scripts."ci:test".exec = ''
+    echo "🧪 Running tests with coverage..."
+    set -euo pipefail  # Exit on any error
+    
+    mkdir -p coverage
+    echo "Testing verifier..."
+    cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
+    echo "Testing registry..."
+    cd ../registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...
+    echo "Testing receipts-log..."
+    cd ../receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
+    echo "✅ All tests completed successfully with coverage"
+  '';
+  scripts."ci:lint".exec = ''
+    echo "🔍 Running golangci-lint on all services..."
+    set -euo pipefail  # Exit on any error
+    
+    echo "Linting verifier..."
+    cd services/verifier && golangci-lint run
+    echo "Linting registry..."
+    cd ../registry && golangci-lint run
+    echo "Linting receipts-log..."
+    cd ../receipts-log && golangci-lint run
+    echo "Linting connector-hub..."
+    cd ../connector-hub && golangci-lint run
+    echo "Linting transparency-log..."
+    cd ../transparency-log && golangci-lint run
+    echo "Linting vouching-service..."
+    cd ../vouching-service && golangci-lint run
+    echo "✅ All services passed linting successfully"
+  '';
+  scripts."ci:security".exec = ''
+    echo "🔒 Running security scan..."
+    set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
+    
+    # Install gosec if not already available
+    if ! command -v gosec &> /dev/null; then
+      echo "📦 Installing gosec..."
+      go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest || {
+        echo "❌ Failed to install gosec"
+        exit 1
+      }
+    fi
+    
+    # Run security scan on each service with proper Go module context
+    echo "🔍 Scanning services for security issues..."
+    echo "Scanning verifier..."
+    cd services/verifier && gosec -exclude-generated ./...
+    echo "Scanning registry..."
+    cd ../registry && gosec -exclude-generated ./...
+    echo "Scanning receipts-log..."
+    cd ../receipts-log && gosec -exclude-generated ./...
+    echo "Scanning connector-hub..."
+    cd ../connector-hub && gosec -exclude-generated ./...
+    echo "Scanning transparency-log..."
+    cd ../transparency-log && gosec -exclude-generated ./...
+    echo "Scanning vouching-service..."
+    cd ../vouching-service && gosec -exclude-generated ./...
+    echo "Scanning issuance-gateway..."
+    cd ../issuance-gateway && gosec -exclude-generated ./...
+    
+    echo "✅ Security scan completed successfully"
+  '';
   scripts."test:all".exec = ''
     echo "Running tests for all services..."
     cd services/verifier && go test -v ./... && echo "✅ Verifier tests passed"
@@ -85,7 +168,7 @@
   '';
   scripts."android:build".exec = ''
     echo "Building Android app..."
-    cd mobile && gradle :androidApp:assembleDebug
+    cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
     echo "Installing app on emulator..."
@@ -124,6 +207,14 @@
   scripts."schema:validate".exec = ''
     echo "🔍 Validating OpenAPI schema..."
     yamllint schemas/openapi.yaml
+    
+    # Install and use redocly for OpenAPI validation
+    if ! command -v redocly &> /dev/null; then
+        echo "📦 Installing @redocly/cli..."
+        npm install -g @redocly/cli
+    fi
+    
+    redocly lint schemas/openapi.yaml
     echo "✅ Schema validation passed!"
   '';
   scripts."schema:generate".exec = ''
@@ -231,10 +322,126 @@
   processes.receipts.exec = "go run ./services/receipts-log";
   processes.issuance-gateway.exec = "go run ./services/issuance-gateway";
 
-  # Pre-commit hooks - temporarily disabled for initial commit to avoid conflicts
-  # git-hooks.hooks.gofmt.enable = true;
-  # git-hooks.hooks.golangci-lint.enable = true;
-  # git-hooks.hooks.prettier.enable = true;
+  # Container definitions - single source of truth for dev and production
+  containers = {
+    # Verifier service container
+    verifier = {
+      name = "cachet-verifier";
+      startupCommand = pkgs.writeShellScriptBin "start-verifier" ''
+        export PORT=''${PORT:-8081}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/verifier
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Registry service container
+    registry = {
+      name = "cachet-registry";
+      startupCommand = pkgs.writeShellScriptBin "start-registry" ''
+        export PORT=''${PORT:-8082}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/registry
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Receipts service container
+    receipts = {
+      name = "cachet-receipts";
+      startupCommand = pkgs.writeShellScriptBin "start-receipts" ''
+        export PORT=''${PORT:-8083}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/receipts-log
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+
+    # Issuance Gateway container
+    issuance = {
+      name = "cachet-issuance";
+      startupCommand = pkgs.writeShellScriptBin "start-issuance" ''
+        export PORT=''${PORT:-8090}
+        export ENVIRONMENT=''${ENVIRONMENT:-production}
+        cd /workspace
+        exec go run ./services/issuance-gateway
+      '';
+      registry = "";
+      copyToRoot = pkgs.buildEnv {
+        name = "workspace-root";
+        paths = [
+          (pkgs.runCommand "workspace" {} ''
+            mkdir -p $out/workspace
+            cp -r ${./.} $out/workspace/
+            chmod -R u+w $out/workspace
+          '')
+        ];
+      };
+    };
+  };
+
+  # Pre-commit hooks for consistent build cycle
+  git-hooks = {
+    hooks = {
+      # Go formatting and linting
+      gofmt.enable = true;
+      golangci-lint.enable = true;
+      
+      # Schema validation
+      check-yaml.enable = true;
+      
+      # Custom hooks
+      schema-validate = {
+        enable = true;
+        name = "OpenAPI Schema Validation";
+        entry = "redocly lint schemas/openapi.yaml";
+        files = "schemas/.*\\.yaml$";
+        language = "system";
+      };
+      
+      # Go mod tidy for all services (disabled temporarily due to hook conflicts)
+      # go-mod-tidy = {
+      #   enable = true;
+      #   name = "Go mod tidy";
+      #   entry = "bash -c 'for dir in services/*/; do if [ -f \"$dir/go.mod\" ]; then (cd \"$dir\" && go mod tidy); fi; done'";
+      #   files = ".*\\.go$|go\\.(mod|sum)$";
+      #   language = "system";
+      # };
+    };
+  };
 
   enterShell = ''
     echo "✅ Cachet devenv ready."

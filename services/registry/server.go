@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -41,16 +42,29 @@ func (s *Server) setupRoutes() {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Health check requested")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	if _, err := w.Write([]byte("ok")); err != nil {
+		log.Error().Err(err).Msg("Failed to write health check response")
+	}
 }
 
 func (s *Server) handlePolicyManifest(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Policy manifest requested")
 	w.Header().Set("Content-Type", "text/yaml")
-	w.Write([]byte(policyManifest))
+	if _, err := w.Write([]byte(policyManifest)); err != nil {
+		log.Error().Err(err).Msg("Failed to write policy manifest response")
+	}
 }
 
 func (s *Server) Start(addr string) error {
 	log.Info().Str("addr", addr).Msg("Registry server starting")
-	return http.ListenAndServe(addr, s.router)
+
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      s.router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }

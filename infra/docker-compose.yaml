@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  verifier:
+    build: ../services/verifier
+    ports: [ "8081:8080" ]
+  registry:
+    build: ../services/registry
+    ports: [ "8082:8080" ]
+  receipts:
+    build: ../services/receipts-log
+    ports: [ "8083:8080" ]
+  issuance-gateway:
+    build: ../services/issuance-gateway
+    ports: [ "8090:8090" ]

@@ -1,0 +1,167 @@
+name: 'Setup devenv Environment'
+description: 'Sets up devenv with caching and optimizations'
+inputs:
+  cache-prefix:
+    description: 'Cache prefix for this setup (e.g., backend, android, build)'
+    required: true
+  disk-threshold-gb:
+    description: 'Disk space threshold in GB below which cleanup runs'
+    required: false
+    default: '6'
+  enable-go-cache:
+    description: 'Enable Go modules caching'
+    required: false
+    default: 'false'
+  enable-android-cache:
+    description: 'Enable Android/Gradle caching'
+    required: false
+    default: 'false'
+  enable-android-sdk:
+    description: 'Enable Android SDK in devenv (set DEVENV_ENABLE_ANDROID)'
+    required: false
+    default: 'false'
+  cachix-auth-token:
+    description: 'Cachix authentication token'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    # Set Android environment variable if enabled
+    - name: Set Android environment
+      if: inputs.enable-android-sdk == 'true'
+      shell: bash
+      run: echo "DEVENV_ENABLE_ANDROID=1" >> $GITHUB_ENV
+
+    # Check disk space first with regular bash (before devenv setup)
+    - name: Check disk space
+      id: disk-space
+      shell: bash
+      run: |
+        AVAILABLE=$(df / --output=avail | tail -1)
+        THRESHOLD_KB=$((${{ inputs.disk-threshold-gb }} * 1024 * 1024))
+        echo "Available disk space: ${AVAILABLE} KB"
+        echo "Threshold: ${THRESHOLD_KB} KB (${{ inputs.disk-threshold-gb }}GB)"
+        if [ "$AVAILABLE" -lt "$THRESHOLD_KB" ]; then
+          echo "needs_cleanup=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Low disk space detected, will cleanup"
+        else
+          echo "needs_cleanup=false" >> $GITHUB_OUTPUT
+          echo "✅ Sufficient disk space, skipping cleanup"
+        fi
+
+    - name: Free Disk Space (Conditional)
+      if: steps.disk-space.outputs.needs_cleanup == 'true'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # Fast, targeted cleanup
+        tool-cache: false
+        android: false
+        dotnet: true  
+        haskell: false
+        large-packages: false
+        docker-images: false
+        swap-storage: false
+
+
+    # Advanced Nix store caching
+    - name: Cache Nix store
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/nix
+          /nix/var/cache/nix
+          /nix/store
+        key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-nix-
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v26
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+          max-jobs = auto
+          cores = 2
+          keep-outputs = true
+          keep-derivations = true
+          sandbox = relaxed
+          auto-optimise-store = true
+
+    - name: Setup Cachix
+      uses: cachix/cachix-action@v14
+      with:
+        name: devenv
+        authToken: '${{ inputs.cachix-auth-token }}'
+
+    - name: Cache devenv profile
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nix-profile
+          ~/.local/state/nix/profiles
+        key: ${{ runner.os }}-devenv-profile-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-devenv-profile-
+
+    - name: Install devenv
+      shell: bash
+      run: |
+        if ! command -v devenv &> /dev/null; then
+          nix profile install nixpkgs#devenv
+        else
+          echo "devenv already installed, skipping"
+        fi
+
+    # Conditional Go modules caching
+    - name: Cache Go modules
+      if: inputs.enable-go-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+          services/*/go.mod
+          services/*/go.sum
+        key: ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-${{ hashFiles('services/**/go.mod') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ hashFiles('services/**/go.sum') }}-
+          ${{ runner.os }}-go-
+
+    # Conditional Android/Gradle caching
+    - name: Cache Gradle and Android dependencies
+      if: inputs.enable-android-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.android/cache
+          mobile/.gradle
+          mobile/build
+          mobile/androidApp/build
+          mobile/shared/build
+        key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'devenv.nix') }}
+        restore-keys: |
+          ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
+          ${{ runner.os }}-android-
+
+    - name: Cache Android SDK
+      if: inputs.enable-android-cache == 'true'
+      uses: actions/cache@v4  
+      with:
+        path: |
+          ~/.android
+          /nix/store/*android*
+        key: ${{ runner.os }}-android-sdk-${{ hashFiles('devenv.nix') }}
+        restore-keys: |
+          ${{ runner.os }}-android-sdk-
+
+    # Pre-build devenv shell to cache it
+    - name: Build and cache devenv shell
+      shell: bash
+      run: |
+        echo "Building devenv shell for ${{ inputs.cache-prefix }}..."
+        devenv shell --help > /dev/null || true
+        echo "devenv shell cached for ${{ inputs.cache-prefix }}"

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -60,7 +61,9 @@ func (s *Server) setupRoutes() {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Health check requested")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	if _, err := w.Write([]byte("ok")); err != nil {
+		log.Error().Err(err).Msg("Failed to write health check response")
+	}
 }
 
 func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
@@ -103,5 +106,14 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 
 func (s *Server) Start(addr string) error {
 	log.Info().Str("addr", addr).Msg("Server starting")
-	return http.ListenAndServe(addr, s.router)
+
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      s.router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }

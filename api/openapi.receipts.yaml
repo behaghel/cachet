@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: Receipts/Log
+  version: 0.1.0
+paths:
+  /receipts/hash:
+    post:
+      responses:
+        '200': {description: ok}
+  /log/sth:
+    get:
+      responses:
+        '200': {description: ok}
+  /log/proof:
+    get:
+      responses:
+        '200': {description: ok}

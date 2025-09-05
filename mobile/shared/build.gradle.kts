@@ -1,15 +1,15 @@
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
+    id("app.cash.sqldelight") version "2.0.1"
     id("com.android.library")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("app.cash.sqldelight") version "2.0.1"
 }
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
+    applyDefaultHierarchyTemplate()
 
-    android {
+    androidTarget {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "1.8"

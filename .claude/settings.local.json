@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pre-commit:*)",
+      "Bash(devenv shell:*)",
+      "Bash(go test:*)",
+      "Bash(go mod:*)",
+      "Bash(devenv run:*)",
+      "Bash(./gradlew:*)",
+      "Bash(docker compose:*)",
+      "Bash(devenv:*)",
+      "Bash(convert:*)",
+      "Bash(adb:*)",
+      "Bash(go run:*)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)",
+      "Bash(gradle:*)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)",
+      "Bash(curl:*)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)",
+      "Bash(git add:*)",
+      "Bash(git init:*)",
+      "Bash(exit)",
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh workflow:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr view:*)",
+      "WebFetch(domain:devenv.sh)",
+      "WebSearch",
+      "Bash(redocly --version)",
+      "Bash(test:integration)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
