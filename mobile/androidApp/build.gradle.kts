@@ -67,7 +67,7 @@ dependencies {
     
     // DateTime and Serialization (already included in shared module but needed for Android-specific code)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("app.cash.sqldelight:android-driver:2.0.1")
     
     testImplementation("junit:junit:4.13.2")
