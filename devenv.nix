@@ -168,7 +168,7 @@ in
   '';
   scripts."android:build".exec = ''
     echo "Building Android app..."
-    cd mobile && gradle :androidApp:assembleDebug
+    cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
     echo "Installing app on emulator..."
