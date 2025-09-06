@@ -76,6 +76,13 @@ jobs:
           enable-android-sdk: true
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          echo "Setting up dummy secrets for CI..."
+          cp .env.ci .env
+          echo "✅ Dummy secrets configured for SecretSpec compatibility"
+
       # Debug: Check file structure before build
       - name: Debug - Verify AndroidManifest.xml exists
         shell: bash
@@ -151,6 +158,13 @@ jobs:
           disk-threshold-gb: 6
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          echo "Setting up dummy secrets for CI..."
+          cp .env.ci .env
+          echo "✅ Dummy secrets configured for SecretSpec compatibility"
+
       # Cache container builds
       - name: Cache container builds
         uses: actions/cache@v4
@@ -195,6 +209,13 @@ jobs:
           cache-prefix: integration
           disk-threshold-gb: 6
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          echo "Setting up dummy secrets for CI..."
+          cp .env.ci .env
+          echo "✅ Dummy secrets configured for SecretSpec compatibility"
 
       - name: Run integration tests using devenv
         shell: bash
