@@ -32,7 +32,8 @@ val sharedModule = module {
     single<OpenID4VCIClient> { 
         KtorOpenID4VCIClient(
             httpClient = get(),
-            baseUrl = "http://10.0.2.2:8090" // Android emulator localhost
+            // Use actual computer IP for physical devices, 10.0.2.2 for emulator  
+            baseUrl = "http://192.168.1.199:8090" // Local network IP for physical devices
         )
     }
     
