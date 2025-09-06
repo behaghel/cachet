@@ -24,7 +24,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
                 implementation("io.ktor:ktor-client-core:2.3.7")
@@ -47,7 +47,7 @@ kotlin {
             dependencies {
                 implementation("io.ktor:ktor-client-android:2.3.7")
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
             }
         }
         val iosMain by getting {
