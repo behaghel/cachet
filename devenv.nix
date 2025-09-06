@@ -1,12 +1,28 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   # Enable Android only when DEVENV_ENABLE_ANDROID is set
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
+  
+  # Profile detection - CI environment or explicit profile setting
+  isCI = builtins.getEnv "CI" != "";
+  profileEnv = builtins.getEnv "DEVENV_PROFILE";
+  currentProfile = if isCI then "ci" else (if profileEnv != "" then profileEnv else "full");
 in
 {
-  # Languages / toolchains
-  languages.go.enable = true;
+  # Profile configuration
+  options = {
+    profile = lib.mkOption {
+      type = lib.types.enum [ "ci" "local" "full" ];
+      default = currentProfile;
+      description = "Development profile - ci (no secrets), local (with secrets), full (all features)";
+    };
+  };
+
+  config = {
+    
+    # Languages / toolchains
+    languages.go.enable = true;
   languages.javascript.enable = true;
   languages.java.enable = true;
   languages.java.gradle.enable = enableAndroid;  # Only needed for Android
@@ -55,11 +71,14 @@ in
   env.CACHET_RECEIPTS_PORT = "8083";
   env.CACHET_ISSUANCE_PORT = "8090";
 
-  # Secret management for GCP deployment
-  dotenv.enable = true;
+  # Secret management for GCP deployment (profile-based conditional)
+  dotenv.enable = lib.mkIf (currentProfile == "local" || currentProfile == "full") true;
   
   # SecretSpec integration - consistent secrets between local and production
-  secretspec.enable = true;
+  secretspec = lib.mkIf (currentProfile == "local" || currentProfile == "full") {
+    enable = true;
+    provider = "dotenv";
+  };
 
   # Handy scripts
   scripts."dev:services".exec = "devenv up --detach";
@@ -730,7 +749,22 @@ EOF
   };
 
   enterShell = ''
-    echo "✅ Cachet devenv ready with SecretSpec integration."
+    # Detect current profile from environment
+    if [ "$CI" = "true" ]; then
+      PROFILE="ci"
+    elif [ -n "''${DEVENV_PROFILE:-}" ]; then
+      PROFILE="$DEVENV_PROFILE"
+    else
+      PROFILE="full"
+    fi
+    
+    if [ "$PROFILE" = "ci" ]; then
+      echo "✅ Cachet devenv ready (CI profile - secrets disabled)."
+    elif [ "$PROFILE" = "local" ]; then
+      echo "✅ Cachet devenv ready (local profile - with SecretSpec)."
+    else
+      echo "✅ Cachet devenv ready (full profile - all features enabled)."
+    fi
     echo "  Backend:"
     echo "    - Run services:     dev:services (or: devenv up --detach)"
     echo "    - Stop services:    dev:stop (or: devenv processes stop)"
@@ -762,7 +796,14 @@ EOF
     echo "    - 📊 Check status:      gcp:status"
     echo "    - 🧪 Test deployment:  gcp:test-deployment"
     echo "    - 🔑 Authenticate:     gcp:auth (if needed)"
-    echo "  💡 Secrets available locally via secretspec, in cloud via Secret Manager"
+    if [ "$PROFILE" = "ci" ]; then
+      echo "  💡 To enable secrets: devenv --option profile:string local shell"
+      echo "  💡 Or: devenv --option profile:string full shell"
+    else
+      echo "  💡 Secrets available locally via secretspec, in cloud via Secret Manager"
+      echo "  💡 Switch profiles: devenv --option profile:string ci shell (for CI mode)"
+    fi
   '';
+  }; # end config
 }
 
