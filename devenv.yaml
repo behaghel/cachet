@@ -7,3 +7,9 @@ inputs:
       nixpkgs:
         follows: nixpkgs
 allowUnfree: true
+
+# SecretSpec integration with dotenv provider
+secretspec:
+  enable: true
+  provider: dotenv
+  profile: default

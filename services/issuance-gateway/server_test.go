@@ -22,7 +22,7 @@ func TestNewServer(t *testing.T) {
 func TestHealthCheck(t *testing.T) {
 	server := NewServer()
 
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
 	server.router.ServeHTTP(w, req)
@@ -99,7 +99,8 @@ func TestCredentialEndpoint_Success(t *testing.T) {
 	server.router.ServeHTTP(tokenW, tokenHttpReq)
 
 	var tokenResp TokenResponse
-	json.Unmarshal(tokenW.Body.Bytes(), &tokenResp)
+	err := json.Unmarshal(tokenW.Body.Bytes(), &tokenResp)
+	require.NoError(t, err)
 
 	// Now request credential
 	credReq := CredentialRequest{

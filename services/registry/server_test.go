@@ -17,7 +17,7 @@ func TestNewServer(t *testing.T) {
 func TestHealthCheck(t *testing.T) {
 	server := NewServer()
 
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
 	server.router.ServeHTTP(w, req)
