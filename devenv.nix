@@ -171,8 +171,17 @@ in
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
-    echo "Installing app on emulator..."
+    echo "📱 Installing app on connected device..."
+    echo "Connected devices:"
+    adb devices
+    echo ""
     cd mobile && gradle :androidApp:installDebug
+  '';
+  scripts."android:install-phone".exec = ''
+    echo "📱 Installing app specifically on your phone (RFCXB06M7WJ)..."
+    cd mobile && gradle :androidApp:installDebug -P android.injected.testOnly=false
+    echo "🚀 Launching app on phone..."
+    adb -s RFCXB06M7WJ shell am start -n id.cachet.wallet.android/.MainActivity
   '';
   scripts."android:run".exec = ''
     echo "🚀 Starting full development environment..."
