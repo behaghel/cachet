@@ -27,10 +27,10 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
-                implementation("io.ktor:ktor-client-core:2.3.7")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-                implementation("io.ktor:ktor-client-logging:2.3.7")
+                implementation("io.ktor:ktor-client-core:3.2.3")
+                implementation("io.ktor:ktor-client-content-negotiation:3.2.3")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.3")
+                implementation("io.ktor:ktor-client-logging:3.2.3")
                 implementation("app.cash.sqldelight:runtime:2.0.1")
                 implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
                 implementation("io.insert-koin:koin-core:3.5.3")
@@ -45,14 +45,14 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-android:2.3.7")
+                implementation("io.ktor:ktor-client-android:3.2.3")
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
             }
         }
         val iosMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-ios:2.3.7")
+                implementation("io.ktor:ktor-client-ios:3.2.3")
                 implementation("app.cash.sqldelight:native-driver:2.0.1")
             }
         }
