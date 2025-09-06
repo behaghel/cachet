@@ -114,7 +114,8 @@ func (s *Server) setupMiddleware() {
 }
 
 func (s *Server) setupRoutes() {
-	s.router.Get("/healthz", s.handleHealth)
+	// Note: /healthz is reserved by Cloud Run infrastructure - use /health instead
+	s.router.Get("/health", s.handleHealth)
 
 	// OpenID4VCI endpoints
 	s.router.Post("/oauth/token", s.handleOAuthToken)

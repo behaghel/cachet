@@ -1,0 +1,29 @@
+stages:
+  - validate
+  - test
+  - build
+
+# Health Endpoint Check - prevents /healthz from being deployed
+check-healthz:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache bash grep findutils curl
+  script:
+    - chmod +x scripts/check-healthz.sh
+    - ./scripts/check-healthz.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Go tests
+test-go:
+  stage: test  
+  image: golang:1.21
+  script:
+    - cd services/verifier && go test -v ./...
+    - cd ../registry && go test -v ./...
+    - cd ../receipts-log && go test -v ./... 
+    - cd ../issuance-gateway && go test -v ./...
+  needs:
+    - check-healthz

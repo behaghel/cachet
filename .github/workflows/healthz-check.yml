@@ -1,0 +1,44 @@
+name: Health Endpoint Check
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  check-healthz:
+    runs-on: ubuntu-latest
+    name: Check for forbidden /healthz endpoints
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check for /healthz endpoints
+        run: |
+          chmod +x scripts/check-healthz.sh
+          ./scripts/check-healthz.sh
+        
+      - name: Comment on PR if /healthz found
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ **Health Endpoint Check Failed**
+              
+              Found forbidden \`/healthz\` endpoints in your code. 
+              
+              **Why this fails:** Cloud Run infrastructure intercepts \`/healthz\` requests and returns Google 404 pages instead of forwarding them to your application.
+              
+              **How to fix:**
+              1. Replace all \`"/healthz"\` with \`"/health"\` in Go files
+              2. Update any tests that use \`"/healthz"\` to use \`"/health"\`
+              3. Add explanatory comments about why \`/healthz\` doesn't work on Cloud Run
+              
+              Please run \`./scripts/check-healthz.sh\` locally to see the specific files and lines that need to be fixed.`
+            })

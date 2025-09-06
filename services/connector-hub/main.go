@@ -10,7 +10,8 @@ import (
 
 func main() {
 	r := chi.NewRouter()
-	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	// Note: /healthz is reserved by Cloud Run infrastructure - use /health instead
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("ok")); err != nil {
 			log.Error().Err(err).Msg("Failed to write health check response")
 		}

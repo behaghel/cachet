@@ -33,7 +33,19 @@
       "WebFetch(domain:devenv.sh)",
       "WebSearch",
       "Bash(redocly --version)",
-      "Bash(test:integration)"
+      "Bash(test:integration)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon clean\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:assembleDebug\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"echo ANDROID_HOME=$ANDROID_HOME && echo DEVENV_ENABLE_ANDROID=$DEVENV_ENABLE_ANDROID\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"env | grep -i android\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon clean androidApp:assembleDebug\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:processDebugResources\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon dependencies\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- android:build)",
+      "Bash(gpg-connect-agent:*)",
+      "Bash(gcloud:*)",
+      "Bash(timeout:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

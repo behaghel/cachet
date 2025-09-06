@@ -42,6 +42,14 @@ The project uses devenv for dependency management including Android SDK. Key com
 - Receipts: 8083 (CACHET_RECEIPTS_PORT)
 - Issuance Gateway: 8090 (CACHET_ISSUANCE_PORT)
 
+## ⚠️ Health Endpoints - CRITICAL LEARNING
+**🚨 NEVER use `/healthz` for health checks in this project!**
+- Cloud Run infrastructure intercepts `/healthz` and returns Google 404 pages before reaching our apps
+- **Always use `/health` instead** - it works correctly on all platforms
+- Pre-commit hooks and CI/CD prevent `/healthz` from being committed
+- See `docs/HEALTH_ENDPOINTS.md` for detailed explanation and examples
+- **This is a learned architectural constraint that must be maintained**
+
 ## Architecture
 
 ### Service Structure

@@ -53,7 +53,8 @@ func (s *Server) setupMiddleware() {
 }
 
 func (s *Server) setupRoutes() {
-	s.router.Get("/healthz", s.handleHealth)
+	// Note: /healthz is reserved by Cloud Run infrastructure - use /health instead
+	s.router.Get("/health", s.handleHealth) // Alternative health endpoint
 	s.router.Get("/packs", s.handleListPacks)
 	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
 }
