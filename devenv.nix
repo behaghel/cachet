@@ -83,29 +83,34 @@ in
     
     mkdir -p coverage
     echo "Testing verifier..."
-    cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
+    (cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
     echo "Testing registry..."
-    cd ../registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...
+    (cd services/registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
     echo "Testing receipts-log..."
-    cd ../receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
+    (cd services/receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
+    echo "Testing issuance-gateway..."
+    (cd services/issuance-gateway && go test -v -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
     echo "✅ All tests completed successfully with coverage"
   '';
   scripts."ci:lint".exec = ''
     echo "🔍 Running golangci-lint on all services..."
     set -euo pipefail  # Exit on any error
     
+    # Use absolute paths and single commands to avoid cd issues in CI
     echo "Linting verifier..."
-    cd services/verifier && golangci-lint run
+    (cd services/verifier && golangci-lint run)
     echo "Linting registry..."
-    cd ../registry && golangci-lint run
+    (cd services/registry && golangci-lint run)
     echo "Linting receipts-log..."
-    cd ../receipts-log && golangci-lint run
+    (cd services/receipts-log && golangci-lint run)
     echo "Linting connector-hub..."
-    cd ../connector-hub && golangci-lint run
-    echo "Linting transparency-log..."
-    cd ../transparency-log && golangci-lint run
+    (cd services/connector-hub && golangci-lint run)
+    echo "Linting transparency-log..."  
+    (cd services/transparency-log && golangci-lint run)
     echo "Linting vouching-service..."
-    cd ../vouching-service && golangci-lint run
+    (cd services/vouching-service && golangci-lint run)
+    echo "Linting issuance-gateway..."
+    (cd services/issuance-gateway && golangci-lint run)
     echo "✅ All services passed linting successfully"
   '';
   scripts."ci:security".exec = ''
