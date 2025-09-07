@@ -147,7 +147,7 @@ func TestCredentialEndpoint_Success(t *testing.T) {
 	server.router.ServeHTTP(tokenW, tokenHttpReq)
 
 	var tokenResp TokenResponse
-	err := json.Unmarshal(tokenW.Body.Bytes(), &tokenResp)
+	err = json.Unmarshal(tokenW.Body.Bytes(), &tokenResp)
 	require.NoError(t, err)
 
 	// Now request credential
