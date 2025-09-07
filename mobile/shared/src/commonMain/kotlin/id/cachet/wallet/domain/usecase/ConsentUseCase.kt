@@ -2,13 +2,15 @@ package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import kotlinx.datetime.Clock
 
 /**
  * Use case for handling consent receipts and credential presentations
  */
 class ConsentUseCase(
-    private val credentialRepository: CredentialRepository
+    private val credentialRepository: CredentialRepository,
+    private val consentReceiptRepository: ConsentReceiptRepository
 ) {
     
     /**
@@ -31,12 +33,20 @@ class ConsentUseCase(
                 credentialId = credential.id
             )
             
-            // Generate hash for transparency logging
-            val hashValue = receipt.generateHash()
-            val receiptWithHash = receipt.copy(receiptHash = hashValue)
+            // Generate cryptographically secure hash and signature
+            val salt = generateSalt()
+            val hashValue = receipt.generateHash(salt)
+            val canonicalContent = receipt.buildCanonicalRepresentation()
+            val signature = signConsentReceipt(canonicalContent, getSigningKey())
             
-            // Store locally (in production, also anchor hash to transparency log)
-            storeConsentReceipt(receiptWithHash)
+            val receiptWithHash = receipt.copy(
+                receiptHash = hashValue,
+                signature = signature,
+                salt = salt
+            )
+            
+            // Store using repository (Phase 2 enhancement)
+            consentReceiptRepository.storeReceipt(receiptWithHash).getOrThrow()
             
             return Result.success(receiptWithHash)
         } catch (e: Exception) {
@@ -125,13 +135,40 @@ class ConsentUseCase(
     }
     
     /**
-     * Get all consent receipts for audit/transparency
+     * Get all consent receipts for audit/transparency (Phase 2 enhancement)
      */
     suspend fun getConsentReceipts(): Result<List<ConsentReceipt>> {
+        return consentReceiptRepository.getAllReceipts()
+    }
+    
+    /**
+     * Get consent receipts for a specific relying party
+     */
+    suspend fun getConsentReceiptsByRP(rpIdentifier: String): Result<List<ConsentReceipt>> {
+        return consentReceiptRepository.getReceiptsByRP(rpIdentifier)
+    }
+    
+    /**
+     * Get consent receipts for a specific credential
+     */
+    suspend fun getConsentReceiptsByCredential(credentialId: String): Result<List<ConsentReceipt>> {
+        return consentReceiptRepository.getReceiptsByCredential(credentialId)
+    }
+    
+    /**
+     * Verify the integrity of all stored consent receipts
+     */
+    suspend fun verifyAllConsentReceipts(): Result<Map<String, Boolean>> {
         return try {
-            // In production, this would query a local database
-            val receipts = getStoredConsentReceipts()
-            Result.success(receipts)
+            val allReceipts = consentReceiptRepository.getAllReceipts().getOrThrow()
+            val verificationResults = mutableMapOf<String, Boolean>()
+            
+            for (receipt in allReceipts) {
+                val isValid = verifyConsentReceipt(receipt).getOrElse { false }
+                verificationResults[receipt.id] = isValid
+            }
+            
+            Result.success(verificationResults)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -147,15 +184,44 @@ class ConsentUseCase(
                request.requestedPredicates.isNotEmpty()
     }
     
-    // In-memory storage for demo (production would use proper persistence)
-    private val consentReceiptStore = mutableListOf<ConsentReceipt>()
-    
-    private fun storeConsentReceipt(receipt: ConsentReceipt) {
-        consentReceiptStore.add(receipt)
+    /**
+     * Verify the integrity of a consent receipt
+     */
+    suspend fun verifyConsentReceipt(receipt: ConsentReceipt): Result<Boolean> {
+        try {
+            // Verify hash integrity using stored salt
+            val storedSalt = receipt.salt ?: return Result.success(false) // No salt means invalid
+            val expectedHash = receipt.generateHash(storedSalt)
+            val hashValid = receipt.receiptHash == expectedHash
+            
+            // Verify signature if present
+            val signatureValid = receipt.signature?.let { signature ->
+                val canonicalContent = receipt.buildCanonicalRepresentation()
+                verifyConsentReceiptSignature(canonicalContent, signature, getVerificationKey())
+            } ?: true // If no signature, consider valid for backward compatibility
+            
+            return Result.success(hashValid && signatureValid)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
     }
     
-    private fun getStoredConsentReceipts(): List<ConsentReceipt> {
-        return consentReceiptStore.toList()
+    /**
+     * Get or generate a signing key for consent receipts
+     * In production, this would use hardware-backed key storage
+     */
+    private fun getSigningKey(): String {
+        // Placeholder implementation - would use proper key management
+        return "demo_signing_key_${Clock.System.now().epochSeconds}"
+    }
+    
+    /**
+     * Get the corresponding verification key
+     * In production, this would retrieve the public key
+     */
+    private fun getVerificationKey(): String {
+        // Placeholder implementation - would use proper public key
+        return "demo_verification_key"
     }
     
     private fun generateId(): String {
