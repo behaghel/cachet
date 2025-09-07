@@ -2,6 +2,7 @@ package id.cachet.wallet.shared.di
 
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
+import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
 import id.cachet.wallet.network.OpenID4VCIClient
 import io.ktor.client.*
@@ -43,5 +44,11 @@ val sharedModule = module {
             credentialRepository = get(),
             openID4VCIClient = get()
         ) 
+    }
+    
+    single {
+        ConsentUseCase(
+            credentialRepository = get()
+        )
     }
 }

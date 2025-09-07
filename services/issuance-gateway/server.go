@@ -46,15 +46,23 @@ type VeriffSession struct {
 	SessionID string `json:"session_id"`
 	Status    string `json:"status"`
 	Person    struct {
-		FirstName   string `json:"firstName"`
-		LastName    string `json:"lastName"`
-		DateOfBirth string `json:"dateOfBirth"`
+		FirstName   string  `json:"firstName"`
+		LastName    string  `json:"lastName"`
+		DateOfBirth string  `json:"dateOfBirth"`
+		Confidence  float64 `json:"confidence,omitempty"` // Quality metric
 	} `json:"person"`
 	Document struct {
-		Number  string `json:"number"`
-		Type    string `json:"type"`
-		Country string `json:"country"`
+		Number       string  `json:"number"`
+		Type         string  `json:"type"`
+		Country      string  `json:"country"`
+		Authenticity float64 `json:"authenticity,omitempty"` // Quality metric
 	} `json:"document"`
+	Verification struct {
+		LivenessScore     float64 `json:"liveness_score,omitempty"`
+		OverallConfidence float64 `json:"overall_confidence,omitempty"`
+		RiskScore         float64 `json:"risk_score,omitempty"`
+		Timestamp         string  `json:"timestamp,omitempty"`
+	} `json:"verification,omitempty"`
 }
 
 // Verifiable Credential structures (simplified SD-JWT VC)
@@ -73,6 +81,22 @@ type CredentialStatus struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
+
+// Quality validation structures
+type ValidationResult struct {
+	IsValid      bool    `json:"is_valid"`
+	Reason       string  `json:"reason,omitempty"`
+	QualityLevel string  `json:"quality_level"`
+	Confidence   float64 `json:"confidence"`
+}
+
+// Verification level enumeration
+const (
+	VerificationLevelBasic    = "basic"
+	VerificationLevelStandard = "standard"
+	VerificationLevelPremium  = "premium"
+	VerificationLevelGold     = "gold"
+)
 
 type Server struct {
 	router           *chi.Mux
@@ -123,6 +147,82 @@ func (s *Server) setupRoutes() {
 
 	// Veriff webhook
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
+}
+
+// validateVeriffSession performs quality validation on Veriff session data
+func validateVeriffSession(session VeriffSession) ValidationResult {
+	// Default to basic validation
+	if session.Status != "approved" {
+		return ValidationResult{
+			IsValid:      false,
+			Reason:       "Veriff session not approved",
+			QualityLevel: "none",
+			Confidence:   0.0,
+		}
+	}
+
+	// Calculate overall confidence and quality level
+	confidence := session.Verification.OverallConfidence
+	if confidence == 0.0 && session.Person.Confidence > 0 {
+		// Fallback to person confidence if overall not available
+		confidence = session.Person.Confidence
+	}
+	if confidence == 0.0 {
+		// Default confidence for approved sessions without metrics
+		confidence = 0.85
+	}
+
+	// Quality level thresholds
+	var qualityLevel string
+	switch {
+	case confidence >= 0.95 && session.Verification.LivenessScore >= 0.90 && session.Document.Authenticity >= 0.95:
+		qualityLevel = VerificationLevelGold
+	case confidence >= 0.90 && session.Verification.LivenessScore >= 0.85:
+		qualityLevel = VerificationLevelPremium
+	case confidence >= 0.80:
+		qualityLevel = VerificationLevelStandard
+	default:
+		qualityLevel = VerificationLevelBasic
+	}
+
+	// Additional validation checks
+	if session.Verification.RiskScore > 0.3 { // High risk
+		return ValidationResult{
+			IsValid:      false,
+			Reason:       "High risk score detected",
+			QualityLevel: qualityLevel,
+			Confidence:   confidence,
+		}
+	}
+
+	if session.Verification.LivenessScore > 0 && session.Verification.LivenessScore < 0.7 {
+		return ValidationResult{
+			IsValid:      false,
+			Reason:       "Liveness check insufficient",
+			QualityLevel: qualityLevel,
+			Confidence:   confidence,
+		}
+	}
+
+	return ValidationResult{
+		IsValid:      true,
+		QualityLevel: qualityLevel,
+		Confidence:   confidence,
+	}
+}
+
+// calculateAge calculates age from date of birth string (YYYY-MM-DD format)
+func calculateAge(dobStr string) int {
+	dob, err := time.Parse("2006-01-02", dobStr)
+	if err != nil {
+		return 0
+	}
+	now := time.Now()
+	age := now.Year() - dob.Year()
+	if now.YearDay() < dob.YearDay() {
+		age--
+	}
+	return age
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -237,22 +337,81 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	now := time.Now()
 	credentialID := fmt.Sprintf("urn:uuid:%s", uuid.New().String())
 
-	// For demo purposes, create a foundational identity credential
+	// Find the most recent verified session (in production, this would use session ID from token)
+	var veriffSession *VeriffSession
+	var sessionFound bool
+	for _, session := range s.verifiedSessions {
+		if session.Status == "approved" {
+			veriffSession = &session
+			sessionFound = true
+			break
+		}
+	}
+
+	if !sessionFound {
+		log.Error().Msg("No verified Veriff session found for credential issuance")
+		http.Error(w, "No verified identity session found", http.StatusBadRequest)
+		return
+	}
+
+	// Validate session quality before issuance
+	validation := validateVeriffSession(*veriffSession)
+	if !validation.IsValid {
+		log.Error().
+			Str("reason", validation.Reason).
+			Str("session_id", veriffSession.SessionID).
+			Msg("Veriff session failed quality validation")
+		http.Error(w, fmt.Sprintf("Session validation failed: %s", validation.Reason), http.StatusBadRequest)
+		return
+	}
+
+	// Calculate expiration (90 days from now for identity credentials)
+	expirationDate := now.Add(90 * 24 * time.Hour)
+
+	// Enhanced credential with quality metrics and selective disclosure support
 	vc := VerifiableCredential{
 		Context: []string{
 			"https://www.w3.org/2018/credentials/v1",
 			"https://cachet.id/contexts/identity/v1",
 		},
-		ID:           credentialID,
-		Type:         req.Types,
-		Issuer:       "did:web:cachet.id",
-		IssuanceDate: now.Format(time.RFC3339),
+		ID:             credentialID,
+		Type:           req.Types,
+		Issuer:         "did:web:cachet.id",
+		IssuanceDate:   now.Format(time.RFC3339),
+		ExpirationDate: expirationDate.Format(time.RFC3339),
 		CredentialSubject: map[string]interface{}{
 			"id": "did:example:holder", // This would come from the authenticated session
-			// In real implementation, this would contain selective disclosure claims
-			"verified":            true,
-			"verification_method": "veriff",
-			"verification_level":  "identity_document_liveness",
+
+			// Personal data (selective disclosure ready)
+			"personalData": map[string]interface{}{
+				"age":          calculateAge(veriffSession.Person.DateOfBirth),
+				"nationality":  veriffSession.Document.Country,
+				"documentType": veriffSession.Document.Type,
+			},
+
+			// Verification evidence
+			"verificationLevel":  validation.QualityLevel,
+			"verified":           true,
+			"verificationMethod": "veriff",
+
+			// Quality metrics (for transparency, not selective disclosure)
+			"verificationMetrics": map[string]interface{}{
+				"overallConfidence":    validation.Confidence,
+				"livenessScore":        veriffSession.Verification.LivenessScore,
+				"documentAuthenticity": veriffSession.Document.Authenticity,
+				"riskScore":            veriffSession.Verification.RiskScore,
+				"sessionTimestamp":     veriffSession.Verification.Timestamp,
+			},
+
+			// Evidence for audit trail
+			"evidence": []map[string]interface{}{
+				{
+					"type":      "VeriffVerification",
+					"sessionId": veriffSession.SessionID,
+					"verifier":  "did:veriff:production",
+					"status":    veriffSession.Status,
+				},
+			},
 		},
 		CredentialStatus: &CredentialStatus{
 			ID:   fmt.Sprintf("https://cachet.id/status/1#%s", uuid.New().String()),
@@ -291,15 +450,29 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		Msg("Veriff webhook received")
 
 	if session.Status == "approved" {
-		// Store successful verification
-		s.verifiedSessions[session.SessionID] = session
+		// Validate session quality before storing
+		validation := validateVeriffSession(session)
 
-		log.Info().
-			Str("session_id", session.SessionID).
-			Str("first_name", session.Person.FirstName).
-			Str("doc_type", session.Document.Type).
-			Str("country", session.Document.Country).
-			Msg("Veriff session approved and stored")
+		if validation.IsValid {
+			// Store successful verification with validation results
+			s.verifiedSessions[session.SessionID] = session
+
+			log.Info().
+				Str("session_id", session.SessionID).
+				Str("first_name", session.Person.FirstName).
+				Str("doc_type", session.Document.Type).
+				Str("country", session.Document.Country).
+				Str("quality_level", validation.QualityLevel).
+				Float64("confidence", validation.Confidence).
+				Msg("Veriff session approved, validated, and stored")
+		} else {
+			log.Warn().
+				Str("session_id", session.SessionID).
+				Str("reason", validation.Reason).
+				Str("quality_level", validation.QualityLevel).
+				Float64("confidence", validation.Confidence).
+				Msg("Veriff session approved but failed quality validation - not stored")
+		}
 
 		w.WriteHeader(http.StatusOK)
 	} else {
