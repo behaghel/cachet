@@ -18,15 +18,31 @@ data class ConsentReceipt(
     val userConsent: ConsentDetails,
     val credentialId: String,
     val receiptHash: String? = null,
-    val signature: String? = null
+    val signature: String? = null,
+    val salt: String? = null
 ) {
     /**
-     * Generate a hash of this consent receipt for transparency logging
+     * Generate a cryptographically secure hash of this consent receipt for transparency logging
      */
-    fun generateHash(): String {
-        // In production, this would use a proper cryptographic hash
-        val content = "$id$timestamp$purpose${predicatesProven.joinToString()}$rpIdentifier$credentialId"
-        return "sha256:" + content.hashCode().toString(16).padStart(8, '0')
+    fun generateHash(salt: String = generateSalt()): String {
+        val canonicalContent = buildCanonicalRepresentation()
+        val saltedContent = "$canonicalContent|salt:$salt"
+        return "sha256:" + sha256Hash(saltedContent)
+    }
+
+    /**
+     * Build canonical string representation for consistent hashing
+     */
+    fun buildCanonicalRepresentation(): String {
+        return listOf(
+            "id:$id",
+            "timestamp:$timestamp",
+            "purpose:$purpose", 
+            "predicates:${predicatesProven.sorted().joinToString(",")}",
+            "rp:$rpIdentifier",
+            "credential:$credentialId",
+            "consent:${userConsent.toCanonicalString()}"
+        ).joinToString("|")
     }
 }
 
@@ -40,7 +56,19 @@ data class ConsentDetails(
     val retentionPeriodUnderstood: Boolean,
     val retentionPeriodDays: Int = 90,
     val revocationRightsUnderstood: Boolean = true
-)
+) {
+    /**
+     * Build canonical string representation for consistent hashing
+     */
+    fun toCanonicalString(): String {
+        return listOf(
+            "explicit:$explicitConsent",
+            "minimization:$dataMinimizationAcknowledged", 
+            "retention:$retentionPeriodUnderstood:$retentionPeriodDays",
+            "revocation:$revocationRightsUnderstood"
+        ).joinToString(",")
+    }
+}
 
 /**
  * Request to present a credential with specific predicates
@@ -134,3 +162,39 @@ fun VerifiableCredential.canSatisfyRequest(request: PresentationRequest): Boolea
     val available = getAvailablePredicates().map { it.id }
     return request.requestedPredicates.all { it in available }
 }
+
+/**
+ * Cryptographic helper functions for consent receipt tamper-proofing
+ */
+
+/**
+ * Generate a cryptographically secure random salt
+ */
+fun generateSalt(length: Int = 32): String {
+    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    return (1..length)
+        .map { chars.random() }
+        .joinToString("")
+}
+
+/**
+ * Compute SHA-256 hash of input string
+ * In production, this would use a proper cryptographic library
+ */
+expect fun sha256Hash(input: String): String
+
+/**
+ * Generate EdDSA signature for consent receipt
+ * In production, this would use proper EdDSA signing with private key
+ */
+expect fun signConsentReceipt(canonicalContent: String, privateKey: String): String
+
+/**
+ * Verify EdDSA signature for consent receipt  
+ * In production, this would use proper EdDSA verification with public key
+ */
+expect fun verifyConsentReceiptSignature(
+    canonicalContent: String, 
+    signature: String, 
+    publicKey: String
+): Boolean

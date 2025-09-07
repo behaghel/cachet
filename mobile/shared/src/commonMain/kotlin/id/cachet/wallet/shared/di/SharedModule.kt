@@ -1,6 +1,8 @@
 package id.cachet.wallet.shared.di
 
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.repository.ConsentReceiptRepository
+import id.cachet.wallet.domain.repository.InMemoryConsentReceiptRepository
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
@@ -38,6 +40,9 @@ val sharedModule = module {
         )
     }
     
+    // Repositories
+    single<ConsentReceiptRepository> { InMemoryConsentReceiptRepository() }
+    
     // Use cases
     single { 
         IssuanceUseCase(
@@ -48,7 +53,8 @@ val sharedModule = module {
     
     single {
         ConsentUseCase(
-            credentialRepository = get()
+            credentialRepository = get(),
+            consentReceiptRepository = get()
         )
     }
 }

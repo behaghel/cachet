@@ -45,7 +45,9 @@
       "Bash(gpg-connect-agent:*)",
       "Bash(gcloud:*)",
       "Bash(timeout:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:build\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:compileCommonMainKotlinMetadata\")"
     ],
     "deny": [],
     "ask": []
