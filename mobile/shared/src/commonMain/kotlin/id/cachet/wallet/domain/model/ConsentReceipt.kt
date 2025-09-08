@@ -19,7 +19,9 @@ data class ConsentReceipt(
     val credentialId: String,
     val receiptHash: String? = null,
     val signature: String? = null,
-    val salt: String? = null
+    val salt: String? = null,
+    // Phase 2B: Transparency log integration
+    val transparencyLogEntry: TransparencyLogEntry? = null
 ) {
     /**
      * Generate a cryptographically secure hash of this consent receipt for transparency logging
@@ -102,6 +104,43 @@ data class AvailablePredicate(
     val description: String,
     val canProve: Boolean,
     val requiresConsent: Boolean = true
+)
+
+/**
+ * Transparency log entry data for a consent receipt
+ * Phase 2B enhancement
+ */
+@Serializable
+data class TransparencyLogEntry(
+    val logId: String,
+    val logIndex: Long,
+    val sct: SignedCertificateTimestamp? = null,
+    val inclusionProof: InclusionProof? = null,
+    val anchoredAt: Instant? = null,
+    val verifiedAt: Instant? = null,
+    val isVerified: Boolean = false
+)
+
+/**
+ * Signed Certificate Timestamp from transparency log
+ */
+@Serializable  
+data class SignedCertificateTimestamp(
+    val version: Int = 1,
+    val logId: String,
+    val timestamp: Instant,
+    val signature: String
+)
+
+/**
+ * Merkle inclusion proof for transparency log verification
+ */
+@Serializable
+data class InclusionProof(
+    val leafIndex: Long,
+    val treeSize: Long,
+    val auditPath: List<String>,
+    val rootHash: String
 )
 
 /**

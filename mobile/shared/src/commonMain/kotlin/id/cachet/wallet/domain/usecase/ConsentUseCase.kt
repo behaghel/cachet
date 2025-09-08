@@ -3,6 +3,7 @@ package id.cachet.wallet.domain.usecase
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.ConsentReceiptRepository
+import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import kotlinx.datetime.Clock
 
 /**
@@ -10,7 +11,8 @@ import kotlinx.datetime.Clock
  */
 class ConsentUseCase(
     private val credentialRepository: CredentialRepository,
-    private val consentReceiptRepository: ConsentReceiptRepository
+    private val consentReceiptRepository: ConsentReceiptRepository,
+    private val transparencyLogRepository: TransparencyLogRepository
 ) {
     
     /**
@@ -45,10 +47,13 @@ class ConsentUseCase(
                 salt = salt
             )
             
-            // Store using repository (Phase 2 enhancement)
-            consentReceiptRepository.storeReceipt(receiptWithHash).getOrThrow()
+            // Phase 2B: Anchor hash to transparency log
+            val receiptWithTransparencyLog = anchorToTransparencyLog(receiptWithHash).getOrElse { receiptWithHash }
             
-            return Result.success(receiptWithHash)
+            // Store using repository (Phase 2 enhancement)
+            consentReceiptRepository.storeReceipt(receiptWithTransparencyLog).getOrThrow()
+            
+            return Result.success(receiptWithTransparencyLog)
         } catch (e: Exception) {
             return Result.failure(e)
         }
@@ -222,6 +227,141 @@ class ConsentUseCase(
     private fun getVerificationKey(): String {
         // Placeholder implementation - would use proper public key
         return "demo_verification_key"
+    }
+    
+    /**
+     * Anchor a consent receipt hash to the transparency log
+     * Phase 2B enhancement
+     */
+    private suspend fun anchorToTransparencyLog(receipt: ConsentReceipt): Result<ConsentReceipt> {
+        return try {
+            val saltHash = receipt.salt?.let { sha256Hash(it) } ?: return Result.success(receipt)
+            val receiptHash = receipt.receiptHash ?: return Result.success(receipt)
+            
+            val request = id.cachet.wallet.domain.model.AddEntryRequest(
+                receiptHash = receiptHash,
+                saltHash = saltHash,
+                policyId = "consent-receipt-v1",
+                jurisdiction = extractJurisdiction(receipt.rpIdentifier)
+            )
+            
+            val response = transparencyLogRepository.submitReceiptHash(request).getOrElse { 
+                return Result.success(receipt) // Continue without transparency log if it fails
+            }
+            
+            val transparencyEntry = TransparencyLogEntry(
+                logId = response.sct.logId,
+                logIndex = -1, // Will be filled when inclusion proof is retrieved
+                sct = response.sct,
+                anchoredAt = Clock.System.now(),
+                isVerified = false
+            )
+            
+            val receiptWithLog = receipt.copy(transparencyLogEntry = transparencyEntry)
+            Result.success(receiptWithLog)
+            
+        } catch (e: Exception) {
+            // Graceful degradation - continue without transparency log
+            Result.success(receipt)
+        }
+    }
+    
+    /**
+     * Verify transparency log inclusion for a consent receipt
+     * Phase 2B enhancement
+     */
+    suspend fun verifyTransparencyLogInclusion(receipt: ConsentReceipt): Result<Boolean> {
+        val logEntry = receipt.transparencyLogEntry ?: return Result.success(false)
+        val receiptHash = receipt.receiptHash ?: return Result.success(false)
+        
+        return try {
+            // Get current STH to determine tree size for proof
+            val sth = transparencyLogRepository.getCurrentSTH().getOrThrow()
+            
+            // For this demo, we'll simulate finding the leaf index
+            // In production, you'd need to search the log or track the index
+            val leafIndex = logEntry.logIndex.takeIf { it >= 0 } ?: 0L
+            
+            // Get inclusion proof
+            val proof = transparencyLogRepository.getInclusionProof(leafIndex, sth.treeSize).getOrThrow()
+            
+            // Verify the proof locally
+            val isValid = transparencyLogRepository.verifyInclusionProof(receiptHash, proof)
+            
+            if (isValid) {
+                // Update the receipt with verification info
+                val updatedEntry = logEntry.copy(
+                    logIndex = proof.leafIndex,
+                    inclusionProof = proof,
+                    verifiedAt = Clock.System.now(),
+                    isVerified = true
+                )
+                val updatedReceipt = receipt.copy(transparencyLogEntry = updatedEntry)
+                consentReceiptRepository.storeReceipt(updatedReceipt)
+            }
+            
+            Result.success(isValid)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Monitor transparency log health and consistency
+     * Phase 2B enhancement
+     */
+    suspend fun performTransparencyLogAudit(): Result<String> {
+        return try {
+            val currentSTH = transparencyLogRepository.getCurrentSTH().getOrThrow()
+            val auditReport = StringBuilder()
+            
+            auditReport.appendLine("=== Transparency Log Audit Report ===")
+            auditReport.appendLine("Log ID: ${currentSTH.logId}")
+            auditReport.appendLine("Tree Size: ${currentSTH.treeSize}")
+            auditReport.appendLine("Root Hash: ${currentSTH.rootHash}")
+            auditReport.appendLine("Timestamp: ${currentSTH.timestamp}")
+            
+            // Sample some recent entries for inclusion verification
+            if (currentSTH.treeSize > 0) {
+                val sampleSize = minOf(5, currentSTH.treeSize)
+                val startIndex = maxOf(0, currentSTH.treeSize - sampleSize)
+                val entries = transparencyLogRepository.getEntries(startIndex, currentSTH.treeSize - 1).getOrThrow()
+                
+                auditReport.appendLine("\n=== Inclusion Verification Sample ===")
+                var verified = 0
+                var failed = 0
+                
+                for ((index, entry) in entries.withIndex()) {
+                    try {
+                        val proof = transparencyLogRepository.getInclusionProof(startIndex + index, currentSTH.treeSize).getOrThrow()
+                        val isValid = transparencyLogRepository.verifyInclusionProof(entry.receiptHash, proof)
+                        if (isValid) verified++ else failed++
+                        auditReport.appendLine("Entry ${startIndex + index}: ${if (isValid) "✓" else "✗"}")
+                    } catch (e: Exception) {
+                        failed++
+                        auditReport.appendLine("Entry ${startIndex + index}: ✗ (${e.message})")
+                    }
+                }
+                
+                auditReport.appendLine("\nVerification Results: $verified verified, $failed failed")
+                auditReport.appendLine("Success Rate: ${(verified.toFloat() / (verified + failed) * 100).toInt()}%")
+            }
+            
+            Result.success(auditReport.toString())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    private fun extractJurisdiction(rpIdentifier: String): String? {
+        // Simple jurisdiction extraction from RP identifier
+        return when {
+            rpIdentifier.endsWith(".es") -> "ES"
+            rpIdentifier.endsWith(".fr") -> "FR"
+            rpIdentifier.endsWith(".ee") -> "EE"
+            rpIdentifier.contains("madrid") -> "ES"
+            else -> null
+        }
     }
     
     private fun generateId(): String {
