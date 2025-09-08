@@ -8,7 +8,7 @@ That’s Cachet: portable trust, human rights intact.
 
 ## High‑level architecture (overview)
 
-- Holder edge (Cachet Wallet, iOS/Android) — hardware‑backed keys, passkeys sign‑in, credential vault, proof planner, explainability UI, consent receipts. All PII lives here.
+- Holder edge (Cachet Wallet, iOS/Android) — hardware‑backed keys, passkeys sign‑in, credential vault, proof planner, explainability UI, consent receipts. **Dual mode**: credential holder (receiving/presenting) AND relying party (requesting verification via QR/deeplink generation). All PII lives here.
 - Verifier — deterministic policy engine that validates presentations against signed Pack definitions (no ML gating). Returns a Badge and human‑readable “why”.
 - Issuance Gateway — converts Veriff outcomes and partner attestations (justice ministries, platforms) into verifiable credentials.
 - Registries — signed, versioned catalogs for Packs/Policies and Issuers/Schemas/Revocation endpoints.
@@ -38,8 +38,8 @@ That’s Cachet: portable trust, human rights intact.
 - Predicate — a property proven, not the raw attribute (e.g., age ≥ 18, fulfilment ≥ 95%).
 - Badge — contextual outcome, time‑boxed (e.g., Childcare‑Ready (ES, 90d)). No global scores.
 - Issuer — entity that attests claims (e.g., Veriff for ID+liveness; justice ministry for records).
-- Holder — person being assessed, controlling what to disclose.
-- Relying Party (RP) — assessor requesting a Pack (parent, buyer, marketplace).
+- Holder — person being assessed, controlling what to disclose. **Can also act as RP** when requesting verification from others via mobile app.
+- Relying Party (RP) — assessor requesting a Pack (parent, buyer, marketplace, **or another Cachet user** via mobile-to-mobile verification).
 - Presentation — bundle of proofs (SD‑JWT/BBS+/ZK) satisfying Pack predicates.
 - Consent Receipt — signed record of purpose and predicates proven; hash anchored to the transparency log.
 - Policy Manifest — signed “constitution” that defines guardrails, crypto suites, fairness rules.
@@ -69,7 +69,7 @@ That’s Cachet: portable trust, human rights intact.
 
 ## Key flows (happy paths)
 
-### Request Pack & Present
+### Request Pack & Present (Standard RP → Holder)
 
 1. RP initiates Request Pack (e.g., Childcare‑Readiness (ES)) →
    QR/deeplink.
@@ -78,6 +78,22 @@ That’s Cachet: portable trust, human rights intact.
    returns Badge + explainability.
 4. Wallet issues Consent Receipt; hash anchored to transparency log;
    RP stores minimal copy.
+
+### Mobile-to-Mobile Verification (Holder → Holder)
+
+1. **User A** (requesting verification) opens Cachet app → "Request Verification" 
+2. Selects Trust Pack (e.g., "Age Verification", "Safe Seller")
+3. App generates **QR code/deeplink** with verification request
+4. **User B** scans QR/opens link → wallet shows consent screen
+5. User B approves → presents credentials to prove Pack predicates
+6. **User A receives push notification** with Badge result + explainability
+7. Both users get Consent Receipts; hashes anchored to transparency log
+
+**Use cases**: 
+- Parent verifying caregiver credentials peer-to-peer
+- Marketplace buyer verifying seller trust score  
+- Event organizer checking age verification
+- Community member validating background clearance
 
 ### Issuance (foundational VC)
 
