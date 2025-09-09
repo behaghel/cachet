@@ -1006,7 +1006,8 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		Str("status", session.Status).
 		Msg("Veriff webhook received")
 
-	if session.Status == "approved" {
+	switch session.Status {
+	case "approved":
 		// Enhanced validation for gold quality credentials
 		enhancedValidation := validateVeriffSessionEnhanced(session)
 
@@ -1041,7 +1042,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("ok")); err != nil {
 			log.Error().Err(err).Msg("Failed to write webhook response")
 		}
-	} else if session.Status == "declined" || session.Status == "expired" || session.Status == "abandoned" {
+	case "declined", "expired", "abandoned":
 		log.Info().
 			Str("session_id", session.SessionID).
 			Str("status", session.Status).
@@ -1051,7 +1052,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("acknowledged")); err != nil {
 			log.Error().Err(err).Msg("Failed to write webhook response")
 		}
-	} else {
+	default:
 		// Unknown status
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("ok")); err != nil {
