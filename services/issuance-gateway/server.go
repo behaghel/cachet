@@ -1036,16 +1036,27 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 				Str("quality_level", enhancedValidation.QualityLevel).
 				Msg("Verification session failed enhanced validation")
 		}
+
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("ok")); err != nil {
+			log.Error().Err(err).Msg("Failed to write webhook response")
+		}
 	} else if session.Status == "declined" || session.Status == "expired" || session.Status == "abandoned" {
 		log.Info().
 			Str("session_id", session.SessionID).
 			Str("status", session.Status).
 			Msg("Verification session not approved")
-	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte("ok")); err != nil {
-		log.Error().Err(err).Msg("Failed to write webhook response")
+		w.WriteHeader(http.StatusAccepted) // Acknowledged but not processed
+		if _, err := w.Write([]byte("acknowledged")); err != nil {
+			log.Error().Err(err).Msg("Failed to write webhook response")
+		}
+	} else {
+		// Unknown status
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("ok")); err != nil {
+			log.Error().Err(err).Msg("Failed to write webhook response")
+		}
 	}
 }
 
