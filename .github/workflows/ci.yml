@@ -287,6 +287,7 @@ jobs:
           devenv shell -- secretspec run --provider env --profile ci -- bash -c '
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
+            gcloud config set project cachet-staging
             gcloud auth configure-docker
             rm -f /tmp/gcp-sa-key.json
           '
@@ -307,67 +308,3 @@ jobs:
           echo "✅ Deployment completed successfully"
           devenv shell -- gcp:status
 
-  # Nuclear option - standalone deploy job that doesn't depend on others
-  deploy-standalone:
-    name: Deploy to GCP (Standalone)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup devenv environment
-        uses: ./.github/actions/setup-devenv
-        with:
-          cache-prefix: deploy
-          disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
-
-      - name: Setup production secrets with SecretSpec
-        shell: bash
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
-        run: |
-          echo "Setting up production secrets via SecretSpec environment provider..."
-          cp .env.ci .env
-          
-          echo "=== DEBUG: Environment Variables ==="
-          echo "GCP_SA_KEY length: ${#GCP_SA_KEY}"
-          echo "CACHIX_AUTH_TOKEN length: ${#CACHIX_AUTH_TOKEN}"
-          echo "CACHIX_AUTH_TOKEN: ${CACHIX_AUTH_TOKEN:-'(empty)'}"
-          echo "=== END DEBUG ==="
-          
-          echo "✅ Secrets configured for SecretSpec consistency"
-
-      - name: Authenticate to Google Cloud via SecretSpec
-        shell: bash
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
-        run: |
-          # Use SecretSpec env provider with environment variables explicitly passed
-          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
-          devenv shell -- secretspec run --provider env --profile ci -- bash -c '
-            echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
-            gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
-            gcloud auth configure-docker
-            rm -f /tmp/gcp-sa-key.json
-          '
-
-      - name: Deploy issuance gateway to Cloud Run via SecretSpec
-        shell: bash
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
-        run: |
-          # Deploy with SecretSpec using explicitly passed environment variables
-          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
-          devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
-
-      - name: Update deployment status
-        shell: bash
-        run: |
-          echo "✅ Deployment completed successfully"
-          devenv shell -- gcp:status

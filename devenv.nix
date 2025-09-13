@@ -633,6 +633,11 @@ EOF
     set -euo pipefail
     
     PROJECT_ID=$(gcloud config get-value project)
+    if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then
+      echo "❌ GCP project ID not set. Please run 'gcloud config set project YOUR_PROJECT_ID'"
+      exit 1
+    fi
+    echo "📋 Using GCP project: $PROJECT_ID"
     SERVICE_NAME="cachet-issuance-gateway"
     
     # Ensure service account has secret access (idempotent)
