@@ -183,11 +183,50 @@ in
   '';
   scripts."android:build".exec = ''
     echo "Building Android app..."
+    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
+      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:build"
+      exit 1
+    fi
+    if [ ! -f mobile/gradlew ]; then
+      echo "❌ Error: gradlew not found in mobile directory"
+      pwd
+      exit 1
+    fi
+    echo "✅ Java found: $(java -version 2>&1 | head -n1)"
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
-    echo "Installing app on emulator..."
-    cd mobile && gradle :androidApp:installDebug
+    echo "Installing app on device/emulator..."
+    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
+      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:install"
+      exit 1
+    fi
+    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
+  '';
+  scripts."android:uninstall".exec = ''
+    echo "Uninstalling app from device/emulator..."
+    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
+      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:uninstall"
+      exit 1
+    fi
+    # Try using gradle uninstallDebug task first
+    if cd mobile && ./gradlew --no-daemon :androidApp:uninstallDebug 2>/dev/null; then
+      echo "✅ App uninstalled via Gradle"
+    else
+      # Fallback to adb uninstall if gradle task doesn't work
+      echo "Gradle uninstall failed, trying adb..."
+      PACKAGE_ID=$(grep 'applicationId' mobile/androidApp/build.gradle.kts | sed 's/.*applicationId = "//' | sed 's/".*//')
+      if [ -n "$PACKAGE_ID" ]; then
+        adb uninstall "$PACKAGE_ID"
+        echo "✅ App uninstalled via adb: $PACKAGE_ID"
+      else
+        echo "❌ Could not determine package ID from build.gradle.kts"
+        exit 1
+      fi
+    fi
   '';
   scripts."android:run".exec = ''
     echo "🚀 Starting full development environment..."
@@ -195,7 +234,7 @@ in
     devenv up --detach
     sleep 3
     echo "2. Building and installing Android app..."
-    cd mobile && gradle :androidApp:installDebug
+    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
     echo "3. Launching app..."
     adb shell am start -n id.cachet.wallet.android/.MainActivity
     echo "✅ Done! Backend running, app installed and launched."
@@ -218,6 +257,65 @@ in
     gradle :androidApp:testDebugUnitTest
     echo "✅ Unit tests completed!"
     echo "📊 Test results available in mobile/*/build/reports/tests/"
+  '';
+  
+  scripts."android:logs".exec = ''
+    echo "📱 Streaming Android device/emulator logs..."
+    echo "📍 Use Ctrl+C to stop log streaming"
+    echo "🔍 Filtering for Cachet wallet app logs..."
+    echo ""
+    
+    # Check if ADB is available
+    if ! command -v adb &> /dev/null; then
+      echo "❌ Error: adb not found. Make sure Android SDK is installed."
+      exit 1
+    fi
+    
+    # Get connected devices and select the first one
+    DEVICES=$(adb devices | grep -E '\tdevice$' | cut -f1)
+    if [ -z "$DEVICES" ]; then
+      echo "❌ No Android device/emulator detected."
+      echo "   Make sure your device is connected or emulator is running."
+      adb devices
+      exit 1
+    fi
+    
+    # Get the first device
+    FIRST_DEVICE=$(echo "$DEVICES" | head -n1)
+    echo "🔗 Connected devices:"
+    adb devices
+    echo ""
+    echo "📱 Using device: $FIRST_DEVICE"
+    echo ""
+    
+    # Clear old logs and start streaming from the selected device
+    adb -s "$FIRST_DEVICE" logcat -c  # Clear existing logs
+    
+    # Stream logs with better filtering for mobile apps
+    echo "🔍 Starting log stream (filtered for Cachet app)..."
+    echo "   Monitoring: App crashes, network errors, Veriff integration, OkHttp requests"
+    echo ""
+    
+    adb -s "$FIRST_DEVICE" logcat \
+      -s "AndroidRuntime:E" \
+      -s "System.err:*" \
+      -s "CachetWallet:*" \
+      -s "VeriffIntegration:*" \
+      -s "OkHttp:*" \
+      -s "NetworkSecurityConfig:*" \
+      -s "id.cachet.wallet:*" \
+      -s "*:E" \
+      -s "*:W" \
+    | while read line; do
+      # Highlight important patterns
+      if echo "$line" | grep -qiE "(crash|exception|error|failed|veriff|cachet)"; then
+        echo "🔴 $line"
+      elif echo "$line" | grep -qiE "(warn|warning)"; then
+        echo "🟡 $line" 
+      else
+        echo "ℹ️  $line"
+      fi
+    done
   '';
   scripts."schema:validate".exec = ''
     echo "🔍 Validating OpenAPI schema..."
@@ -530,6 +628,54 @@ EOF
     echo "   Cloud (via Secret Manager): Same secrets automatically injected"
   '';
   
+  scripts."gcp:deploy:issuance-gateway".exec = ''
+    echo "🚀 Deploying Issuance Gateway to Cloud Run with Veriff integration..."
+    set -euo pipefail
+    
+    PROJECT_ID=$(gcloud config get-value project)
+    SERVICE_NAME="cachet-issuance-gateway"
+    
+    # Ensure service account has secret access (idempotent)
+    echo "🔐 Ensuring service account has Secret Manager access..."
+    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+      --member="serviceAccount:$SERVICE_ACCOUNT" \
+      --role="roles/secretmanager.secretAccessor" \
+      --quiet || echo "IAM binding already exists"
+    
+    # Build and push container using devenv container definition
+    echo "📦 Building container with devenv..."
+    devenv container build issuance
+    
+    # Tag for GCR
+    docker tag cachet-issuance:latest gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+    docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+    
+    # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
+    echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
+    gcloud run deploy $SERVICE_NAME \
+      --image gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
+      --platform managed \
+      --region us-central1 \
+      --allow-unauthenticated \
+      --port 8080 \
+      --set-env-vars ENVIRONMENT=production \
+      --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
+      --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
+    
+    # Get the deployed service URL for webhook configuration
+    SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=us-central1 --format='value(status.url)')
+    
+    echo "✅ Issuance Gateway deployed successfully!"
+    echo "🔗 Service URL: $SERVICE_URL"
+    echo "🪝 Veriff Webhook URL: $SERVICE_URL/webhooks/veriff"
+    echo ""
+    echo "⚠️  Next steps:"
+    echo "   1. Configure Veriff integration to use webhook URL: $SERVICE_URL/webhooks/veriff"
+    echo "   2. Update mobile app to point to: $SERVICE_URL"
+    echo "   3. Test the complete flow"
+  '';
+  
   scripts."gcp:status".exec = ''
     echo "📊 Checking GCP deployment status..."
     set -euo pipefail
@@ -743,9 +889,11 @@ EOF
     echo "    - Setup emulator:   android:emulator"
     echo "    - Build app:        android:build"
     echo "    - Install app:      android:install"
+    echo "    - Uninstall app:    android:uninstall"
     echo "    - Full dev setup:   android:run"
     echo "    - Run UI tests:     android:test"
     echo "    - Run unit tests:   android:test-unit"
+    echo "    - Stream app logs:  android:logs"
     echo "  Schema Management:"
     echo "    - Validate schema:  schema:validate"
     echo "    - Generate models:  schema:generate"
