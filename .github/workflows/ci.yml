@@ -37,16 +37,16 @@ jobs:
           set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
           
           echo "📦 Step 1: Installing dependencies..."
-          devenv shell -- secretspec run --provider dotenv -- ci:deps
+          devenv shell -- ci:deps
           
           echo "🧪 Step 2: Running tests..."
-          devenv shell -- secretspec run --provider dotenv -- ci:test
+          devenv shell -- ci:test
           
           echo "🔍 Step 3: Running linter..."
-          devenv shell -- secretspec run --provider dotenv -- ci:lint
+          devenv shell -- ci:lint
           
           echo "🔒 Step 4: Running security scan..."
-          devenv shell -- secretspec run --provider dotenv -- ci:security
+          devenv shell -- ci:security
           
           echo "✅ All backend CI steps completed successfully"
 
