@@ -649,12 +649,9 @@ EOF
       --quiet || echo "IAM binding already exists"
     
     # Build and push container using devenv container definition
-    echo "📦 Building container with devenv..."
-    devenv container build issuance
-    
-    # Tag for GCR
-    docker tag cachet-issuance:latest gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
-    docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+    echo "📦 Building and pushing container with devenv..."
+    # Use devenv container copy to push directly to GCR
+    devenv container --registry docker://gcr.io/$PROJECT_ID copy issuance --copy-args="--dest-tag $SERVICE_NAME:latest"
     
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
