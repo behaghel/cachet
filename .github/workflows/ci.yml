@@ -278,8 +278,11 @@ jobs:
 
       - name: Authenticate to Google Cloud via SecretSpec
         shell: bash
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Use SecretSpec CI profile to manage GCP authentication consistently
+          # Use SecretSpec env provider with environment variables set in execution context
           devenv shell -- secretspec run --provider env --profile ci -- bash -c '
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
@@ -333,8 +336,11 @@ jobs:
 
       - name: Authenticate to Google Cloud via SecretSpec
         shell: bash
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Use SecretSpec CI profile to manage GCP authentication consistently
+          # Use SecretSpec env provider with environment variables set in execution context
           devenv shell -- secretspec run --provider env --profile ci -- bash -c '
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
