@@ -50,6 +50,15 @@ The project uses devenv for dependency management including Android SDK. Key com
 - See `docs/HEALTH_ENDPOINTS.md` for detailed explanation and examples
 - **This is a learned architectural constraint that must be maintained**
 
+## 🔐 Secret Management - CRITICAL ARCHITECTURE
+**🚨 ALL secrets in this project MUST be managed through SecretSpec for consistency!**
+- **Local Development**: Use `secretspec run --provider dotenv` with `.env.local` (backed by `pass`)
+- **CI/CD**: Use `secretspec run --provider env --profile ci` with GitHub Actions secrets
+- **Production**: GCP Secret Manager injected via Cloud Run `--set-secrets`
+- **Configuration**: All secrets declared in `secretspec.toml` with profiles
+- See `docs/SECRETS_MANAGEMENT.md` for complete setup and examples
+- **NEVER mix GitHub Actions native secrets with SecretSpec patterns**
+
 ## Architecture
 
 ### Service Structure
@@ -111,6 +120,34 @@ Cachet is a microservices-based trust provider with three core services:
 - Receipt samples: `docs/RECEIPTS/`
 - Policy manifest: `docs/POLICY_MANIFEST.yaml`
 - Architecture docs: `docs/ARCHITECTURE.md`, `docs/TRANSPARENCY_LOG_DESIGN.md`
+
+## Development Best Practices - CRITICAL LEARNINGS
+
+### Integration Development Rules
+
+**🚨 LEARNED FROM PHASE A INTEGRATION NIGHTMARE - DO NOT REPEAT**
+
+When adding new features to the mobile app:
+
+1. **Understand before building** - Always explore existing models/patterns first
+2. **Start minimal** - Get the simplest possible version working, then iterate
+3. **Validate early and often** - Compile after every small change, not at the end
+4. **Respect existing architecture** - Extend existing classes, don't create parallel hierarchies
+5. **Plan integration points** - How does new code connect to existing systems?
+6. **🚨 BUILD USER-FACING VALUE FIRST** - Backend changes mean nothing if users can't see/use them
+
+### Development Process
+
+1. **Define the integration contract** - How does it connect to existing mobile architecture?
+2. **Start with stub implementations** - Get the interfaces right first  
+3. **Build incrementally** - One small working piece at a time
+4. **Test as we go** - Compilation + basic functionality, not just at the end
+
+**Example of what NOT to do**: Creating `QualityProfile`, `EnhancedPredicate`, and complex privacy vaults before ensuring they integrate with existing `VerifiableCredential` and `AvailablePredicate` classes.
+
+**Example of what TO do**: Extend existing models incrementally, validate compilation frequently, build complexity gradually after core integration works.
+
+**🚨 PHASE A LEARNING**: Building enhanced backend Veriff integration without connecting it to user-visible verification flow. Result: Users see no difference despite significant backend work. **Always ensure new capabilities are exposed in the UI before considering a feature "done".**
 
 ## Pre-commit Hooks
 
