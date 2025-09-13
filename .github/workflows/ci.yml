@@ -22,7 +22,7 @@ jobs:
           cache-prefix: backend
           disk-threshold-gb: 6
           enable-go-cache: true
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup CI secrets
         shell: bash
@@ -74,7 +74,7 @@ jobs:
           disk-threshold-gb: 8
           enable-android-cache: true
           enable-android-sdk: true
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup CI secrets
         shell: bash
@@ -156,7 +156,7 @@ jobs:
         with:
           cache-prefix: build
           disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup CI secrets
         shell: bash
@@ -208,7 +208,7 @@ jobs:
         with:
           cache-prefix: integration
           disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup CI secrets
         shell: bash
@@ -257,16 +257,23 @@ jobs:
         with:
           cache-prefix: deploy
           disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup production secrets with SecretSpec
         shell: bash
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
           echo "Setting up production secrets via SecretSpec environment provider..."
           cp .env.ci .env
+          
+          echo "=== DEBUG: Environment Variables ==="
+          echo "GCP_SA_KEY length: ${#GCP_SA_KEY}"
+          echo "CACHIX_AUTH_TOKEN length: ${#CACHIX_AUTH_TOKEN}"
+          echo "CACHIX_AUTH_TOKEN: ${CACHIX_AUTH_TOKEN:-'(empty)'}"
+          echo "=== END DEBUG ==="
+          
           echo "✅ Secrets configured for SecretSpec consistency"
 
       - name: Authenticate to Google Cloud via SecretSpec
@@ -305,16 +312,23 @@ jobs:
         with:
           cache-prefix: deploy
           disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
 
       - name: Setup production secrets with SecretSpec
         shell: bash
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
           echo "Setting up production secrets via SecretSpec environment provider..."
           cp .env.ci .env
+          
+          echo "=== DEBUG: Environment Variables ==="
+          echo "GCP_SA_KEY length: ${#GCP_SA_KEY}"
+          echo "CACHIX_AUTH_TOKEN length: ${#CACHIX_AUTH_TOKEN}"
+          echo "CACHIX_AUTH_TOKEN: ${CACHIX_AUTH_TOKEN:-'(empty)'}"
+          echo "=== END DEBUG ==="
+          
           echo "✅ Secrets configured for SecretSpec consistency"
 
       - name: Authenticate to Google Cloud via SecretSpec
