@@ -282,7 +282,8 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Use SecretSpec env provider with environment variables set in execution context
+          # Use SecretSpec env provider with environment variables explicitly passed
+          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
           devenv shell -- secretspec run --provider env --profile ci -- bash -c '
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
@@ -292,7 +293,13 @@ jobs:
 
       - name: Deploy issuance gateway to Cloud Run via SecretSpec
         shell: bash
-        run: devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
+        run: |
+          # Deploy with SecretSpec using explicitly passed environment variables
+          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
+          devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
 
       - name: Update deployment status
         shell: bash
@@ -340,7 +347,8 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Use SecretSpec env provider with environment variables set in execution context
+          # Use SecretSpec env provider with environment variables explicitly passed
+          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
           devenv shell -- secretspec run --provider env --profile ci -- bash -c '
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
@@ -350,7 +358,13 @@ jobs:
 
       - name: Deploy issuance gateway to Cloud Run via SecretSpec
         shell: bash
-        run: devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
+        run: |
+          # Deploy with SecretSpec using explicitly passed environment variables
+          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
+          devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
 
       - name: Update deployment status
         shell: bash
