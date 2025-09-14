@@ -59,7 +59,8 @@
       "Bash(echo:*)",
       "Bash(env)",
       "WebFetch(domain:devdocs.veriff.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(PORT=8090 timeout 3s devenv shell -- go run ./services/issuance-gateway)"
     ],
     "deny": [],
     "ask": []

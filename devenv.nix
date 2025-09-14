@@ -819,23 +819,26 @@ EOF
     # Issuance Gateway container
     issuance = {
       name = "cachet-issuance-gateway";
-      startupCommand = pkgs.writeShellScriptBin "start-issuance" ''
+      startupCommand = pkgs.writeShellScript "start-issuance" ''
+        #!/bin/bash
+        set -euo pipefail
         export PORT=''${PORT:-8090}
         export ENVIRONMENT=''${ENVIRONMENT:-production}
-        cd /workspace
+        echo "Starting issuance gateway on port $PORT"
+        echo "Available directories:"
+        ls -la /
+        cd /workspace || { echo "Workspace not found, using root"; cd /; }
+        echo "Current directory: $(pwd)"
+        echo "Contents:"
+        ls -la
         exec go run ./services/issuance-gateway
       '';
       registry = "";
-      copyToRoot = pkgs.buildEnv {
-        name = "workspace-root";
-        paths = [
-          (pkgs.runCommand "workspace" {} ''
-            mkdir -p $out/workspace
-            cp -r ${./.} $out/workspace/
-            chmod -R u+w $out/workspace
-          '')
-        ];
-      };
+      copyToRoot = pkgs.runCommand "workspace" {} ''
+        mkdir -p $out/workspace
+        cp -r ${./.} $out/workspace/
+        chmod -R u+w $out/workspace
+      '';
     };
   };
 
