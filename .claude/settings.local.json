@@ -47,7 +47,19 @@
       "Bash(timeout:*)",
       "Bash(git checkout:*)",
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:build\")",
-      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:compileCommonMainKotlinMetadata\")"
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:compileCommonMainKotlinMetadata\")",
+      "Bash(go:*)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:compileDebugKotlinAndroid\")",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- android:install)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"adb -s RFCXB06M7WJ uninstall id.cachet.wallet.android\")",
+      "WebFetch(domain:devdocs.veriff.com)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- android:uninstall)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"echo ''Testing android:uninstall script exists...''; android:uninstall --help 2>/dev/null || echo ''Script exists but no help option''\")",
+      "Bash(pkill:*)",
+      "Bash(echo:*)",
+      "Bash(env)",
+      "WebFetch(domain:devdocs.veriff.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []
