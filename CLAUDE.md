@@ -353,6 +353,105 @@ find . -name ".gradle" -type d
 3. **Regular audits**: Monthly check for binary file contamination
 4. **Team education**: Everyone knows what NOT to commit
 
+## 🔄 Git Workflow Hygiene - CRITICAL LEARNING
+
+### Commit Early and Often - NEVER Accumulate Changes
+
+**🚨 LEARNED FROM MESSY GIT STATE - ENFORCE DISCIPLINED COMMITS**
+
+#### The Problem: Accumulated Changes
+- Multiple functional areas mixed in one commit
+- Hard to review, understand, and potentially revert changes
+- Difficult to track which changes are related
+- Makes debugging and rollbacks nearly impossible
+
+#### The Solution: Logical Incremental Commits
+
+**ALWAYS commit in meaningful, focused increments:**
+
+1. **Functional Grouping**: Each commit should represent ONE logical change
+   ```bash
+   # Good: Focused commits
+   git commit -m "feat: add Veriff SDK integration to mobile"
+   git commit -m "feat: enhance backend with privacy vault"
+   git commit -m "docs: add CI optimization plan"
+   ```
+
+2. **Atomic Changes**: Each commit should be self-contained
+   - Build should pass after each commit
+   - Features should work independently
+   - No broken intermediate states
+
+3. **Clear Commit Messages**: Follow conventional commit format
+   ```
+   <type>(<scope>): <description>
+   
+   <body explaining what and why>
+   
+   🤖 Generated with [Claude Code](https://claude.ai/code)
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+
+#### Commit Frequency Guidelines
+
+**Commit when you:**
+- ✅ Complete a feature or fix
+- ✅ Add a new file or module
+- ✅ Fix a bug or resolve an issue
+- ✅ Update documentation
+- ✅ Refactor code while maintaining functionality
+- ✅ Add tests for new functionality
+
+**DON'T wait until you have:**
+- ❌ Multiple unrelated changes
+- ❌ Files across different functional domains
+- ❌ Both features AND fixes in the same batch
+- ❌ "Everything working" (commit working increments)
+
+#### Recovery from Messy State
+
+**When you find accumulated changes:**
+
+1. **Stop adding more changes**
+2. **Group by logical function**: `git add` files by related functionality
+3. **Commit in increments**: Start with most independent changes first
+4. **Write clear messages**: Explain what each commit accomplishes
+5. **Test between commits**: Ensure each commit doesn't break the build
+
+#### Example Cleanup Process
+```bash
+# Instead of: git add -A && git commit -m "misc fixes"
+# Do this:
+git add mobile/androidApp/ mobile/shared/
+git commit -m "feat: implement Veriff SDK integration in mobile app"
+
+git add services/issuance-gateway/server.go
+git commit -m "feat: enhance backend with advanced Veriff quality tiers"
+
+git add docs/CI_OPTIMIZATION_PLAN.md
+git commit -m "docs: add CI/CD optimization strategy"
+
+git add .env.local.example
+git commit -m "config: add Veriff environment configuration example"
+```
+
+### Git Hygiene Checklist
+
+**Before every commit:**
+- [ ] **Single responsibility**: Does this commit do one thing well?
+- [ ] **Build passes**: Will the project build after this commit?
+- [ ] **Clear message**: Is it obvious what this commit changes?
+- [ ] **No unrelated files**: Are all staged files related to this change?
+- [ ] **Complete change**: Is this a logical stopping point?
+
+### Why This Matters
+
+- **Code review**: Easier to review focused changes
+- **Debugging**: Bisect and identify when issues were introduced
+- **Rollbacks**: Revert specific features without affecting others
+- **Team collaboration**: Other developers can understand your changes
+- **Release management**: Cherry-pick specific features or fixes
+
 ## Pre-commit Hooks
 
 The project has pre-commit hooks managed by devenv for:
