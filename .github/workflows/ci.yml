@@ -288,7 +288,7 @@ jobs:
             echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
             gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
             gcloud config set project cachet-staging
-            gcloud auth configure-docker
+            gcloud auth configure-docker gcr.io --quiet
             rm -f /tmp/gcp-sa-key.json
           '
 
