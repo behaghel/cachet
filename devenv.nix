@@ -663,7 +663,7 @@ EOF
       --platform managed \
       --region us-central1 \
       --allow-unauthenticated \
-      --port 8080 \
+      --port 8090 \
       --set-env-vars ENVIRONMENT=production \
       --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
       --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
@@ -818,7 +818,7 @@ EOF
 
     # Issuance Gateway container
     issuance = {
-      name = "cachet-issuance";
+      name = "cachet-issuance-gateway";
       startupCommand = pkgs.writeShellScriptBin "start-issuance" ''
         export PORT=''${PORT:-8090}
         export ENVIRONMENT=''${ENVIRONMENT:-production}
