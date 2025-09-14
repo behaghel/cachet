@@ -588,7 +588,8 @@ EOF
     
     # Ensure service account has secret access (idempotent)
     echo "🔐 Ensuring service account has Secret Manager access..."
-    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
+    PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+    SERVICE_ACCOUNT="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
     
     # Grant Secret Manager access (these commands are idempotent)
     gcloud secrets add-iam-policy-binding database-url \
@@ -642,16 +643,24 @@ EOF
     
     # Ensure service account has secret access (idempotent)
     echo "🔐 Ensuring service account has Secret Manager access..."
-    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
+    PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+    SERVICE_ACCOUNT="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
     gcloud projects add-iam-policy-binding $PROJECT_ID \
       --member="serviceAccount:$SERVICE_ACCOUNT" \
       --role="roles/secretmanager.secretAccessor" \
       --quiet || echo "IAM binding already exists"
     
     # Build and push container using devenv container definition
-    echo "📦 Building and pushing container with devenv..."
-    # Use devenv container copy to push directly to GCR
-    devenv container --registry docker://gcr.io/$PROJECT_ID/$SERVICE_NAME:latest copy issuance
+    echo "📦 Building container with devenv..."
+    CONTAINER_IMAGE=$(devenv container build issuance)
+    echo "🔄 Loading container into Docker..."
+    docker load < $CONTAINER_IMAGE
+    
+    # Tag and push to GCR using standard Docker workflow
+    echo "🏷️ Tagging container for GCR..."
+    docker tag cachet-issuance:latest gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+    echo "📤 Pushing to GCR..."
+    docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
     
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
