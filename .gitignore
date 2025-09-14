@@ -51,17 +51,78 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Android
-mobile/*/build/
+# Android - Comprehensive build artifact exclusion
+# Gradle wrapper and daemon files
+mobile/.gradle/
 mobile/*/.gradle/
-mobile/*/local.properties
-mobile/*/.cxx/
-mobile/*/*.iml
-mobile/*/captures/
-mobile/*/.externalNativeBuild/
+**/gradle-wrapper.jar
+**/gradle-wrapper.properties.backup
 
-# Generated content (these should be committed after generation)
-# generated/
+# Android build directories  
+mobile/build/
+mobile/*/build/
+mobile/*/*/build/
+
+# Local configuration files
+mobile/local.properties
+mobile/*/local.properties
+mobile/*/*/local.properties
+
+# Generated files
+mobile/.cxx/
+mobile/*/.cxx/
+mobile/*/*/.cxx/
+mobile/**/*.iml
+mobile/*/captures/
+mobile/*/*/captures/
+mobile/*/.externalNativeBuild/
+mobile/*/*/.externalNativeBuild/
+
+# Android Studio generated files
+mobile/.idea/
+mobile/*/.idea/
+mobile/.navigation/
+mobile/*/.navigation/
+
+# APK and bundle files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Signing files
+mobile/app/release/
+mobile/*/release/
+*.jks
+*.keystore
+
+# Proguard
+mobile/proguard/
+mobile/*/proguard/
+mobile/*/*/proguard/
+
+# Android profiling
+*.hprof
+
+# Lint
+mobile/lint-results*.xml
+mobile/*/lint-results*.xml
+
+# Android Cache
+mobile/.android/
+mobile/*/.android/
+
+# Generated content - NEVER commit generated files
+generated/
+**/generated/
+**/.openapi-generator/
+**/.openapi-generator-ignore
+
+# Code generation artifacts
+*.generated.*
+*_generated.*
+**/*_pb.*
+**/*.pb.go
 
 # DevEnv
 .devenv/
@@ -134,10 +195,24 @@ secrets.json
 # Dependency directories
 vendor/
 
-# Archives
+# Archives and compressed files
 *.tar.gz
+*.tar.bz2
+*.tar.xz
 *.zip
 *.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# Binary files that should never be tracked
+*.bin
+*.dat
+*.dump
+*.cache
+*.db-wal
+*.db-shm
 
 # macOS
 .DS_Store

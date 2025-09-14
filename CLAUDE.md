@@ -149,6 +149,210 @@ When adding new features to the mobile app:
 
 **🚨 PHASE A LEARNING**: Building enhanced backend Veriff integration without connecting it to user-visible verification flow. Result: Users see no difference despite significant backend work. **Always ensure new capabilities are exposed in the UI before considering a feature "done".**
 
+## 🚀 CI/CD & Deployment - CRITICAL LEARNINGS
+
+### DevEnv Container Deployment
+
+**🚨 LEARNED FROM COMPLEX CI/CD DEBUGGING - KEY PATTERNS**
+
+#### Container Registry Configuration
+- **Registry URL Format**: Use base registry URL only: `docker://gcr.io/$PROJECT_ID/`
+- **Let devenv handle**: Container names and tags automatically appended
+- **Wrong**: `docker://gcr.io/$PROJECT_ID/$SERVICE_NAME:latest` (causes concatenation errors)
+- **Right**: `docker://gcr.io/$PROJECT_ID/` + `devenv container copy servicename`
+
+#### Container Naming Convention
+- **Container definition name** MUST match **Cloud Run service name**
+- **Example**: If `SERVICE_NAME="cachet-issuance-gateway"`, container definition must be:
+  ```nix
+  issuance = {
+    name = "cachet-issuance-gateway";  # NOT "cachet-issuance"
+    ...
+  }
+  ```
+
+#### Port Configuration Alignment
+- **Container startup command** and **Cloud Run deployment** ports MUST match
+- **Container**: `export PORT=${PORT:-8090}`
+- **Deployment**: `--port 8090`
+- **Mismatch causes**: "Container failed to start and listen on the port" errors
+
+#### DevEnv Container Commands
+```bash
+# Correct usage patterns:
+devenv container --registry docker://gcr.io/$PROJECT_ID/ copy servicename
+devenv container build servicename  # For local testing
+devenv container list               # See available containers
+```
+
+### CI/CD Debugging Strategy
+
+**🚨 CRITICAL: Use local testing to accelerate feedback loops**
+
+1. **Test deployment locally first**: `devenv shell -- gcp:deploy:service-name`
+2. **Validate each component**: Registry auth, container build, container push, service deployment
+3. **Fix issues locally**: Much faster than waiting for 30+ minute CI cycles
+4. **Common local fixes**: Authentication (`gcloud auth configure-docker gcr.io`), project settings
+5. **Push verified fixes**: Only push to CI after local validation succeeds
+
+### Container Format Compatibility
+
+- **DevEnv containers** use OCI format natively
+- **Docker load** expects tar format → causes "archive/tar: invalid tar header" errors
+- **Solution**: Use `devenv container copy` directly to registry, avoid intermediate docker load
+- **Authentication**: Configure registry-specific auth: `gcloud auth configure-docker gcr.io --quiet`
+
+### CI/CD Pipeline Architecture Insights
+
+- **Pipeline duration**: ~30+ minutes for full validation (see `docs/CI_OPTIMIZATION_PLAN.md`)
+- **Critical path**: Backend → Containers → Integration Tests → Deployment
+- **Deployment triggers**: Only after all prerequisite jobs succeed
+- **Secret management**: Consistent SecretSpec patterns across CI/CD and production
+
+### Deployment Validation Checklist
+
+✅ **Before pushing to CI:**
+1. Container builds locally (`devenv container build servicename`)
+2. Container pushes to registry (`devenv container copy servicename`)
+3. Registry authentication configured
+4. Container name matches service name
+5. Port configuration aligned
+6. Environment variables and secrets properly configured
+
+✅ **CI/CD Health Indicators:**
+1. ✓ Android App builds successfully
+2. ✓ Backend (Go Services) passes tests
+3. ✓ Build devenv Containers completes
+4. ✓ Integration Tests pass
+5. ✓ Deploy to GCP progresses through authentication
+6. ✓ Container revision created and starts serving traffic
+
+### Production Deployment
+
+- **Cloud Run**: Managed container platform with auto-scaling
+- **Registry**: Google Container Registry (gcr.io) for container images
+- **Secrets**: Cloud Run `--set-secrets` integration with GCP Secret Manager
+- **Networking**: HTTPS endpoints required for Veriff webhook integration
+- **Monitoring**: Use GCP Console logs for troubleshooting container startup issues
+
+## 🚨 Version Control Hygiene - CRITICAL LEARNING
+
+### Binary File Exclusion - NEVER COMMIT THESE
+
+**🚨 LEARNED FROM MASSIVE GITIGNORE CLEANUP - ENFORCE STRICT PATTERNS**
+
+#### Gradle Build Artifacts
+```gitignore
+# Gradle daemon and cache files
+mobile/.gradle/
+mobile/*/.gradle/
+**/build/
+*.lock
+*.bin
+*.cache
+*.dat
+*.dump
+```
+
+#### Generated Code - ALWAYS EXCLUDED
+```gitignore
+# Generated content - NEVER commit
+generated/
+**/generated/
+**/.openapi-generator/
+*.generated.*
+*_generated.*
+**/*_pb.*
+**/*.pb.go
+```
+
+#### Android Build Artifacts
+```gitignore
+# Android binary files
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+*.class
+*.so
+*.dll
+```
+
+### Repository Cleanup Process
+
+**When you find binary files in git history:**
+
+1. **Immediate cleanup**: `git rm -r --cached path/to/binaries/`
+2. **Fix .gitignore**: Add comprehensive patterns to prevent recurrence
+3. **Verify exclusion**: `git status` should show binary directories as untracked
+4. **Commit cleanup**: Document what was removed and why
+
+### Critical Gitignore Patterns
+
+```gitignore
+# Build systems
+**/.gradle/
+**/build/
+**/target/
+**/dist/
+**/node_modules/
+
+# Generated content
+generated/
+**/generated/
+*.generated.*
+
+# Binary files
+*.bin
+*.dat
+*.cache
+*.dump
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+```
+
+### Git Repository Health Check
+
+**Regular maintenance commands:**
+```bash
+# Find binary files in git
+git ls-files | grep -E '\.(bin|lock|cache|dat)$'
+
+# Check for large files
+git ls-files | xargs ls -la | sort -k5 -rn | head -10
+
+# Find generated directories
+find . -name "generated" -type d
+find . -name ".gradle" -type d
+```
+
+### Why This Matters
+
+- **Repository size**: Binary files bloat git history permanently
+- **Build reproducibility**: Generated files create inconsistent builds
+- **Developer experience**: Slower clones, larger checkouts
+- **CI/CD efficiency**: More data to transfer and cache
+- **Merge conflicts**: Binary files create unsolvable conflicts
+
+### Prevention Strategy
+
+1. **Proactive .gitignore**: Add patterns before first commit
+2. **Pre-commit hooks**: Validate no binary files are committed
+3. **Regular audits**: Monthly check for binary file contamination
+4. **Team education**: Everyone knows what NOT to commit
+
 ## Pre-commit Hooks
 
 The project has pre-commit hooks managed by devenv for:
