@@ -5,11 +5,28 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// setupTestEnv configures environment for testing
+func setupTestEnv(t *testing.T) func() {
+	// Set webhook secret to test value to bypass signature verification
+	originalSecret := os.Getenv("VERIFF_WEBHOOK_SECRET")
+	os.Setenv("VERIFF_WEBHOOK_SECRET", "dummy-veriff-webhook-secret-for-ci")
+
+	// Return cleanup function
+	return func() {
+		if originalSecret == "" {
+			os.Unsetenv("VERIFF_WEBHOOK_SECRET")
+		} else {
+			os.Setenv("VERIFF_WEBHOOK_SECRET", originalSecret)
+		}
+	}
+}
 
 // Types are now defined in server.go
 
@@ -181,6 +198,9 @@ func TestOAuth2TokenEndpoint_InvalidGrantType(t *testing.T) {
 }
 
 func TestCredentialEndpoint_Success(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
 	server := NewServer()
 
 	// First set up a Veriff session via webhook
@@ -257,6 +277,9 @@ func TestCredentialEndpoint_NoAuth(t *testing.T) {
 }
 
 func TestVeriffWebhook_Success(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
 	server := NewServer()
 
 	veriffSession := createTestVeriffSession("test-session-123", "approved")
@@ -281,6 +304,9 @@ func TestVeriffWebhook_Success(t *testing.T) {
 }
 
 func TestVeriffWebhook_InvalidStatus(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
 	server := NewServer()
 
 	veriffSession := createTestVeriffSession("test-session-123", "declined")
