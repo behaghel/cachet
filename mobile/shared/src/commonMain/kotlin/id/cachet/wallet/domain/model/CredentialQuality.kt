@@ -18,7 +18,8 @@ enum class VerificationLevel(val displayName: String, val emoji: String) {
     BASIC("Basic Verification", "✅"),
     STANDARD("Standard Verification", "🔵"),
     PREMIUM("Premium Verification", "🟡"),
-    GOLD("Gold Verification", "🏆");
+    GOLD("Gold Verification", "🏆"),
+    PLATINUM("Platinum Verification", "💎");
     
     companion object {
         fun fromString(value: String?): VerificationLevel {
@@ -27,6 +28,7 @@ enum class VerificationLevel(val displayName: String, val emoji: String) {
                 "standard" -> STANDARD
                 "premium" -> PREMIUM
                 "gold" -> GOLD
+                "platinum" -> PLATINUM
                 else -> BASIC
             }
         }
