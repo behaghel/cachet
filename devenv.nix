@@ -653,7 +653,8 @@ EOF
     # Build and push container using devenv container definition
     echo "📦 Building and pushing container with devenv..."
     # Use devenv container copy with proper registry configuration
-    devenv container --registry docker://gcr.io/$PROJECT_ID/$SERVICE_NAME:latest copy issuance
+    # Registry URL should be just the base, container name/tag handled automatically
+    devenv container --registry docker://gcr.io/$PROJECT_ID/ copy issuance
     
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
