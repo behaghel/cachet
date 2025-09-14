@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui
 
+import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +8,7 @@ import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
 
 class WalletViewModel(
     private val issuanceUseCase: IssuanceUseCase
@@ -18,6 +20,13 @@ class WalletViewModel(
     
     private val _uiState = MutableStateFlow<WalletUiState>(WalletUiState.Loading)
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
+    
+    private val veriffIntegration = VeriffIntegration()
+    private var currentActivityRef: WeakReference<Activity>? = null
+    
+    fun setActivity(activity: Activity) {
+        currentActivityRef = WeakReference(activity)
+    }
     
     init {
         loadCredentials()
@@ -51,13 +60,42 @@ class WalletViewModel(
             Log.d(TAG, "Starting Veriff verification...")
             _uiState.value = WalletUiState.VerificationInProgress
             
-            // Simulate Veriff flow completion and credential issuance
-            // In real implementation, this would be triggered by Veriff callback
-            simulateCredentialIssuance()
+            val activity = currentActivityRef?.get()
+            if (activity == null) {
+                Log.e(TAG, "No activity reference available for Veriff SDK")
+                _uiState.value = WalletUiState.Error("Cannot start verification: Activity not available")
+                return@launch
+            }
+            
+            // Launch real Veriff SDK
+            veriffIntegration.startVerification(activity) { result ->
+                viewModelScope.launch {
+                    handleVeriffResult(result)
+                }
+            }
         }
     }
     
-    private fun simulateCredentialIssuance() {
+    private fun handleVeriffResult(result: VeriffIntegration.VerificationResult) {
+        when (result) {
+            is VeriffIntegration.VerificationResult.Success -> {
+                Log.d(TAG, "Veriff verification successful, requesting credential...")
+                // Proceed with credential issuance
+                requestCredentialAfterVerification()
+            }
+            is VeriffIntegration.VerificationResult.Error -> {
+                Log.e(TAG, "Veriff verification failed: ${result.message}")
+                _uiState.value = WalletUiState.Error("Verification failed: ${result.message}")
+            }
+            is VeriffIntegration.VerificationResult.Canceled -> {
+                Log.d(TAG, "Veriff verification canceled by user")
+                // Return to previous state
+                loadCredentials()
+            }
+        }
+    }
+    
+    private fun requestCredentialAfterVerification() {
         viewModelScope.launch {
             try {
                 Log.d(TAG, "Starting credential issuance simulation...")

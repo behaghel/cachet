@@ -1,6 +1,17 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+repositories {
+    google()
+    mavenCentral()
+    // Veriff SDK repository
+    maven { 
+        url = uri("https://cdn.veriff.me/android/")
+        isAllowInsecureProtocol = false
+    }
 }
 
 android {
@@ -9,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "id.cachet.wallet.android"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -64,6 +75,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("io.insert-koin:koin-android:3.5.3")
     implementation("io.insert-koin:koin-androidx-compose:3.5.3")
+    
+    // Veriff SDK for identity verification
+    implementation("com.veriff:veriff-library:7.9.1")
+    
+    // HTTP client for Veriff API calls
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // DateTime and Serialization (already included in shared module but needed for Android-specific code)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
