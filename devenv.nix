@@ -50,6 +50,8 @@ in
     terraform
     # SecretSpec binary
     secretspec
+    # Local development tunnel for webhook testing
+    ngrok
   ];
 
   # Useful env vars (used by docs and examples)
@@ -742,6 +744,88 @@ EOF
     echo "   • Service deployed and functional"
   '';
 
+  # Webhook development scripts using ngrok
+  scripts."webhook:setup".exec = ''
+    echo "🔧 Setting up ngrok for webhook development..."
+    echo ""
+    echo "ngrok requires a free account to create tunnels."
+    echo ""
+    echo "📋 Steps to set up ngrok:"
+    echo "   1. Sign up: https://dashboard.ngrok.com/signup"
+    echo "   2. Get your authtoken: https://dashboard.ngrok.com/get-started/your-authtoken"
+    echo "   3. Run: ngrok config add-authtoken YOUR_TOKEN"
+    echo "   4. Test: webhook:tunnel"
+    echo ""
+    echo "⚡ Alternatively, run this one-liner after getting your token:"
+    echo "   ngrok config add-authtoken YOUR_TOKEN_HERE"
+    echo ""
+    echo "✅ Once set up, use 'webhook:tunnel' or 'webhook:dev' for testing"
+  '';
+  
+  scripts."webhook:tunnel".exec = ''
+    echo "🌐 Starting ngrok tunnel for webhook development..."
+    echo ""
+    echo "This will expose your local issuance gateway (port 8090) to the internet"
+    echo "so Veriff can send webhooks to test the complete flow."
+    echo ""
+    echo "💡 Usage:"
+    echo "   1. Keep this running in one terminal"
+    echo "   2. Copy the HTTPS URL (e.g., https://abc123.ngrok.io)"
+    echo "   3. Update mobile app to use this URL"
+    echo "   4. Test complete Veriff webhook flow"
+    echo ""
+    echo "Press Ctrl+C to stop the tunnel..."
+    echo ""
+    
+    # Check if ngrok is authenticated
+    if ! ngrok config check > /dev/null 2>&1; then
+      echo "❌ ngrok not configured. Run 'webhook:setup' first."
+      exit 1
+    fi
+    
+    ngrok http 8090 --log stdout
+  '';
+  
+  scripts."webhook:dev".exec = ''
+    echo "🚀 Starting complete webhook development environment..."
+    echo ""
+    
+    # Check if ngrok is authenticated
+    if ! ngrok config check > /dev/null 2>&1; then
+      echo "❌ ngrok not configured. Run 'webhook:setup' first."
+      exit 1
+    fi
+    
+    echo "This will start:"
+    echo "  1. Local issuance gateway (port 8090)"
+    echo "  2. ngrok tunnel for webhook reception"
+    echo ""
+    echo "📋 Setup steps:"
+    echo "  1. Wait for both services to start"
+    echo "  2. Note the ngrok HTTPS URL"
+    echo "  3. Update mobile app backend URL"
+    echo "  4. Test complete end-to-end Veriff flow"
+    echo ""
+    
+    # Start issuance gateway in background
+    echo "Starting issuance gateway..."
+    cd services/issuance-gateway
+    PORT=8090 go run . &
+    GATEWAY_PID=$!
+    
+    # Wait for it to start
+    echo "Waiting for gateway to start..."
+    sleep 3
+    
+    # Start ngrok tunnel
+    echo "Starting ngrok tunnel..."
+    echo ""
+    ngrok http 8090 --log stdout
+    
+    # Cleanup on exit
+    trap "kill $GATEWAY_PID 2>/dev/null" EXIT
+  '';
+
   # Run services with: `devenv up verifier registry receipts issuance-gateway`
   processes.verifier.exec = "go run ./services/verifier";
   processes.registry.exec = "go run ./services/registry";
@@ -825,20 +909,23 @@ EOF
         export PORT=''${PORT:-8090}
         export ENVIRONMENT=''${ENVIRONMENT:-production}
         echo "Starting issuance gateway on port $PORT"
-        echo "Available directories:"
-        ls -la /
-        cd /workspace || { echo "Workspace not found, using root"; cd /; }
-        echo "Current directory: $(pwd)"
-        echo "Contents:"
-        ls -la
-        exec go run ./services/issuance-gateway
+        cd /app
+        # Build the binary first, then run it
+        go build -o issuance-gateway ./services/issuance-gateway
+        exec ./issuance-gateway
       '';
       registry = "";
-      copyToRoot = pkgs.runCommand "workspace" {} ''
-        mkdir -p $out/workspace
-        cp -r ${./.} $out/workspace/
-        chmod -R u+w $out/workspace
-      '';
+      copyToRoot = pkgs.buildEnv {
+        name = "container-root";
+        paths = [
+          (pkgs.runCommand "app-source" {} ''
+            mkdir -p $out/app
+            cp -r ${./.}/* $out/app/ || true
+            cp -r ${./.}/.[^.]* $out/app/ || true
+            chmod -R +w $out/app || true
+          '')
+        ];
+      };
     };
   };
 

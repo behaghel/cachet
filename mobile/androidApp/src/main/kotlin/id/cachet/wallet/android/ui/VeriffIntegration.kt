@@ -19,7 +19,7 @@ import java.io.IOException
  * Integration with Veriff SDK for identity verification
  */
 class VeriffIntegration(
-    private val backendBaseUrl: String = "https://cachet-issuance-gateway-144370899453.us-central1.run.app",
+    private val backendBaseUrl: String = "http://10.0.2.2:8090",
     private val httpClient: OkHttpClient = OkHttpClient()
 ) {
     
