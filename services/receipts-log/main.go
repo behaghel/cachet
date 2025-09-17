@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/cachet-id/cachet/services/common/config"
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,6 +17,18 @@ type submit struct {
 }
 
 func main() {
+	cfg := config.MustLoad()
+
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = cfg.Environment
+	}
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	if env == "development" || env == "local" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
 	r := chi.NewRouter()
 	// Note: /healthz is reserved by Cloud Run infrastructure - use /health instead
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -49,11 +63,11 @@ func main() {
 			log.Error().Err(err).Msg("Failed to encode response")
 		}
 	})
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8083"
-	}
-	log.Info().Str("port", port).Msg("Starting receipts-log")
+	port := config.ResolvePort("PORT", cfg.Services.ReceiptsLog.Port)
+	log.Info().
+		Str("env", env).
+		Str("port", port).
+		Msg("Starting receipts-log")
 
 	server := &http.Server{
 		Addr:         ":" + port,

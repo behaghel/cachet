@@ -1,0 +1,125 @@
+{
+  "defaultEnvironment": "local",
+  "environments": {
+    "local": {
+      "services": {
+        "verifier": {
+          "host": "0.0.0.0",
+          "port": 8081,
+          "publicUrl": "http://localhost:8081"
+        },
+        "registry": {
+          "host": "0.0.0.0",
+          "port": 8082,
+          "publicUrl": "http://localhost:8082"
+        },
+        "receiptsLog": {
+          "host": "0.0.0.0",
+          "port": 8083,
+          "publicUrl": "http://localhost:8083"
+        },
+        "issuanceGateway": {
+          "host": "0.0.0.0",
+          "port": 8090,
+          "publicUrl": "http://localhost:8090",
+          "emulatorUrl": "http://10.0.2.2:8090"
+        },
+        "connectorHub": {
+          "host": "0.0.0.0",
+          "port": 8091,
+          "publicUrl": "http://localhost:8091"
+        },
+        "transparencyLog": {
+          "host": "0.0.0.0",
+          "port": 8092,
+          "publicUrl": "http://localhost:8092"
+        },
+        "vouchingService": {
+          "host": "0.0.0.0",
+          "port": 8093,
+          "publicUrl": "http://localhost:8093"
+        }
+      }
+    },
+    "staging": {
+      "services": {
+        "verifier": {
+          "host": "0.0.0.0",
+          "port": 8081,
+          "publicUrl": "https://staging-verifier.cachet.dev"
+        },
+        "registry": {
+          "host": "0.0.0.0",
+          "port": 8082,
+          "publicUrl": "https://staging-registry.cachet.dev"
+        },
+        "receiptsLog": {
+          "host": "0.0.0.0",
+          "port": 8083,
+          "publicUrl": "https://staging-receipts.cachet.dev"
+        },
+        "issuanceGateway": {
+          "host": "0.0.0.0",
+          "port": 8090,
+          "publicUrl": "https://staging-issuance.cachet.dev",
+          "emulatorUrl": "https://staging-issuance.cachet.dev"
+        },
+        "connectorHub": {
+          "host": "0.0.0.0",
+          "port": 8091,
+          "publicUrl": "https://staging-connector.cachet.dev"
+        },
+        "transparencyLog": {
+          "host": "0.0.0.0",
+          "port": 8092,
+          "publicUrl": "https://staging-transparency.cachet.dev"
+        },
+        "vouchingService": {
+          "host": "0.0.0.0",
+          "port": 8093,
+          "publicUrl": "https://staging-vouch.cachet.dev"
+        }
+      }
+    },
+    "production": {
+      "services": {
+        "verifier": {
+          "host": "0.0.0.0",
+          "port": 8081,
+          "publicUrl": "https://verifier.cachet.id"
+        },
+        "registry": {
+          "host": "0.0.0.0",
+          "port": 8082,
+          "publicUrl": "https://registry.cachet.id"
+        },
+        "receiptsLog": {
+          "host": "0.0.0.0",
+          "port": 8083,
+          "publicUrl": "https://receipts.cachet.id"
+        },
+        "issuanceGateway": {
+          "host": "0.0.0.0",
+          "port": 8090,
+          "publicUrl": "https://issuance.cachet.id",
+          "emulatorUrl": "https://issuance.cachet.id"
+        },
+        "connectorHub": {
+          "host": "0.0.0.0",
+          "port": 8091,
+          "publicUrl": "https://connector.cachet.id"
+        },
+        "transparencyLog": {
+          "host": "0.0.0.0",
+          "port": 8092,
+          "publicUrl": "https://transparency.cachet.id"
+        },
+        "vouchingService": {
+          "host": "0.0.0.0",
+          "port": 8093,
+          "publicUrl": "https://vouch.cachet.id"
+        }
+      }
+    }
+  }
+}

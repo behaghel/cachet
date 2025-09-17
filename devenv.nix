@@ -59,6 +59,8 @@ in
   env.CACHET_REGISTRY_PORT = "8082";
   env.CACHET_RECEIPTS_PORT = "8083";
   env.CACHET_ISSUANCE_PORT = "8090";
+  env.CACHET_ENV = "local";
+  env.CACHET_CONFIG_PATH = "${./config/app-config.json}";
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -1008,4 +1010,3 @@ EOF
     echo "  💡 Secrets managed via SecretSpec - local (.env) + production (Secret Manager)"
   '';
 }
-
