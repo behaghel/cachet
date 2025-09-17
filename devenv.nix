@@ -54,19 +54,14 @@ in
     ngrok
   ];
 
-  # Useful env vars (used by docs and examples)
-  env.CACHET_VERIFIER_PORT = "8081";
-  env.CACHET_REGISTRY_PORT = "8082";
-  env.CACHET_RECEIPTS_PORT = "8083";
-  env.CACHET_ISSUANCE_PORT = "8090";
-  env.CACHET_ENV = "local";
-  env.CACHET_CONFIG_PATH = "${./config/app-config.json}";
-
   # Environment variables via dotenv for local development
   dotenv.enable = true;
+  dotenv.filename = [".env.local" ".env"];
 
   # Handy scripts
-  scripts."dev:services".exec = "devenv up --detach";
+  scripts."dev:services".exec = ''
+    secretspec run --provider dotenv://.env.local --profile default -- devenv up --detach
+  '';
   scripts."dev:stop".exec = "devenv processes stop";
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
