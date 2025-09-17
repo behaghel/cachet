@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+services/issuance-gateway/issuance-gateway
 
 # Go specific
 *.test

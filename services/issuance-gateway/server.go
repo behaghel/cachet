@@ -1065,17 +1065,44 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Verify webhook signature
-	signature := r.Header.Get("X-Auth-Client")
+	// Debug: Log all headers received from Veriff
+	log.Debug().Msg("=== VERIFF WEBHOOK DEBUG ===")
+	for name, values := range r.Header {
+		for _, value := range values {
+			log.Debug().Str("header", name).Str("value", value).Msg("Received header")
+		}
+	}
+	log.Debug().Str("body", string(body)).Msg("Received payload")
+	log.Debug().Msg("=== END WEBHOOK DEBUG ===")
+
+	// Check for signature in multiple possible headers based on Veriff docs
+	signature := r.Header.Get("X-HMAC-SIGNATURE") // Primary based on docs
 	if signature == "" {
-		signature = r.Header.Get("X-Veriff-Signature") // Fallback header name
+		signature = r.Header.Get("X-Veriff-Signature") // Fallback 1
+	}
+	if signature == "" {
+		signature = r.Header.Get("X-AUTH-CLIENT-SIGNATURE") // Fallback 2 used in some environments
+	}
+
+	if signature == "" {
+		log.Warn().Msg("Missing Veriff signature header")
+		http.Error(w, "Missing signature", http.StatusUnauthorized)
+		return
 	}
 
 	webhookSecret := os.Getenv("VERIFF_WEBHOOK_SECRET")
+	if webhookSecret == "" {
+		log.Error().Msg("VERIFF_WEBHOOK_SECRET not configured; rejecting webhook")
+		http.Error(w, "Webhook secret not configured", http.StatusInternalServerError)
+		return
+	}
+
+	log.Debug().
+		Str("signature_header", signature).
+		Msg("Veriff webhook signature received")
+
 	if !verifyWebhookSignature(body, signature, webhookSecret) {
-		log.Warn().
-			Str("signature", signature).
-			Msg("Veriff webhook signature verification failed")
+		log.Warn().Msg("Veriff webhook signature verification failed")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -1373,26 +1400,28 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 
 // verifyWebhookSignature validates the Veriff webhook signature
 func verifyWebhookSignature(payload []byte, signature, secret string) bool {
-	if secret == "" || secret == "dummy-veriff-webhook-secret-for-ci" {
-		// Allow unsigned webhooks in development/CI
-		log.Warn().Msg("Webhook signature verification disabled (no secret configured)")
-		return true
-	}
-
-	// Veriff sends signature in format "sha256=<hash>"
-	if !strings.HasPrefix(signature, "sha256=") {
+	if secret == "" || signature == "" {
 		return false
 	}
 
-	expectedSig := signature[7:] // Remove "sha256=" prefix
-
-	// Calculate expected signature
+	// Calculate expected signature using HMAC-SHA256
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write(payload)
 	calculatedSig := hex.EncodeToString(mac.Sum(nil))
 
-	// Constant-time comparison to prevent timing attacks
-	return hmac.Equal([]byte(expectedSig), []byte(calculatedSig))
+	expectedSig := signature
+	if strings.HasPrefix(strings.ToLower(signature), "sha256=") {
+		expectedSig = signature[len("sha256="):]
+	}
+
+	if len(expectedSig) != len(calculatedSig) {
+		log.Debug().Msg("Webhook signature length mismatch")
+		return false
+	}
+
+	isValid := hmac.Equal([]byte(strings.ToLower(expectedSig)), []byte(strings.ToLower(calculatedSig)))
+	log.Debug().Bool("signature_valid", isValid).Msg("Signature verification result")
+	return isValid
 }
 
 // preprocessSensitiveData prepares sensitive data for encryption in privacy vault

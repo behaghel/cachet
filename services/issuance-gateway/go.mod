@@ -3,6 +3,7 @@ module github.com/cachet-id/cachet/services/issuance-gateway
 go 1.22
 
 require (
+	github.com/cachet-id/cachet/services/common v0.0.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
@@ -18,3 +19,5 @@ require (
 	golang.org/x/sys v0.12.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/cachet-id/cachet/services/common => ../common

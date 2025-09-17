@@ -2,10 +2,14 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,19 +17,29 @@ import (
 )
 
 // setupTestEnv configures environment for testing
+const testWebhookSecret = "test-veriff-webhook-secret"
+
 func setupTestEnv(t *testing.T) func() {
-	// Set webhook secret to test value to bypass signature verification
+	// Set webhook secret to deterministic value for signature validation
 	originalSecret := os.Getenv("VERIFF_WEBHOOK_SECRET")
-	os.Setenv("VERIFF_WEBHOOK_SECRET", "dummy-veriff-webhook-secret-for-ci")
+	if err := os.Setenv("VERIFF_WEBHOOK_SECRET", testWebhookSecret); err != nil {
+		t.Fatalf("failed to set VERIFF_WEBHOOK_SECRET: %v", err)
+	}
 
 	// Return cleanup function
 	return func() {
 		if originalSecret == "" {
-			os.Unsetenv("VERIFF_WEBHOOK_SECRET")
+			_ = os.Unsetenv("VERIFF_WEBHOOK_SECRET")
 		} else {
-			os.Setenv("VERIFF_WEBHOOK_SECRET", originalSecret)
+			_ = os.Setenv("VERIFF_WEBHOOK_SECRET", originalSecret)
 		}
 	}
+}
+
+func signWebhookPayload(payload []byte) string {
+	mac := hmac.New(sha256.New, []byte(testWebhookSecret))
+	mac.Write(payload)
+	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }
 
 // Types are now defined in server.go
@@ -211,6 +225,7 @@ func TestCredentialEndpoint_Success(t *testing.T) {
 	require.NoError(t, err)
 	veriffReq := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(veriffBody))
 	veriffReq.Header.Set("Content-Type", "application/json")
+	veriffReq.Header.Set("X-HMAC-SIGNATURE", signWebhookPayload(veriffBody))
 	veriffW := httptest.NewRecorder()
 	server.router.ServeHTTP(veriffW, veriffReq)
 	require.Equal(t, http.StatusOK, veriffW.Code)
@@ -296,6 +311,7 @@ func TestVeriffWebhook_Success(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-HMAC-SIGNATURE", signWebhookPayload(body))
 	w := httptest.NewRecorder()
 
 	server.router.ServeHTTP(w, req)
@@ -330,9 +346,53 @@ func TestVeriffWebhook_InvalidStatus(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-HMAC-SIGNATURE", signWebhookPayload(body))
 	w := httptest.NewRecorder()
 
 	server.router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusAccepted, w.Code) // Acknowledged but not processed
+}
+
+func TestVeriffWebhook_MissingSignature(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	server := NewServer()
+	body := []byte(`{"session_id":"test-session","status":"approved"}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestVeriffWebhook_InvalidSignature(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	server := NewServer()
+	body := []byte(`{"session_id":"test-session","status":"approved"}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-HMAC-SIGNATURE", "sha256=deadbeef")
+	w := httptest.NewRecorder()
+
+	server.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestVerifyWebhookSignature(t *testing.T) {
+	payload := []byte(`{"status":"approved"}`)
+	signature := signWebhookPayload(payload)
+
+	assert.True(t, verifyWebhookSignature(payload, signature, testWebhookSecret))
+	assert.True(t, verifyWebhookSignature(payload, strings.ToUpper(signature), testWebhookSecret))
+	assert.False(t, verifyWebhookSignature(payload, signature, "wrong"))
+	assert.False(t, verifyWebhookSignature(payload, "", testWebhookSecret))
 }
