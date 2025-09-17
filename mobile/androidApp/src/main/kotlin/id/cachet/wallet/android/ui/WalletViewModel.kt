@@ -11,7 +11,8 @@ import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 class WalletViewModel(
-    private val issuanceUseCase: IssuanceUseCase
+    private val issuanceUseCase: IssuanceUseCase,
+    private val verificationLauncher: VerificationLauncher
 ) : ViewModel() {
     
     companion object {
@@ -21,7 +22,6 @@ class WalletViewModel(
     private val _uiState = MutableStateFlow<WalletUiState>(WalletUiState.Loading)
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
     
-    private val veriffIntegration = VeriffIntegration()
     private var currentActivityRef: WeakReference<Activity>? = null
     
     fun setActivity(activity: Activity) {
@@ -68,7 +68,7 @@ class WalletViewModel(
             }
             
             // Launch real Veriff SDK
-            veriffIntegration.startVerification(activity) { result ->
+            verificationLauncher.startVerification(activity) { result ->
                 viewModelScope.launch {
                     handleVeriffResult(result)
                 }
@@ -76,18 +76,18 @@ class WalletViewModel(
         }
     }
     
-    private fun handleVeriffResult(result: VeriffIntegration.VerificationResult) {
+    private fun handleVeriffResult(result: VerificationResult) {
         when (result) {
-            is VeriffIntegration.VerificationResult.Success -> {
+            is VerificationResult.Success -> {
                 Log.d(TAG, "Veriff verification successful, requesting credential...")
                 // Proceed with credential issuance
                 requestCredentialAfterVerification()
             }
-            is VeriffIntegration.VerificationResult.Error -> {
+            is VerificationResult.Error -> {
                 Log.e(TAG, "Veriff verification failed: ${result.message}")
                 _uiState.value = WalletUiState.Error("Verification failed: ${result.message}")
             }
-            is VeriffIntegration.VerificationResult.Canceled -> {
+            is VerificationResult.Canceled -> {
                 Log.d(TAG, "Veriff verification canceled by user")
                 // Return to previous state
                 loadCredentials()

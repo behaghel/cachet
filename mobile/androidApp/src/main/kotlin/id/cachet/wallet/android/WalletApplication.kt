@@ -13,8 +13,15 @@ class WalletApplication : Application() {
         super.onCreate()
         
         startKoin {
+            allowOverride(true)
             androidLogger()
             androidContext(this@WalletApplication)
+            properties(
+                mapOf(
+                    "issuanceBaseUrl" to BuildConfig.ISSUANCE_BASE_URL,
+                    "cachetEnv" to BuildConfig.CACHET_ENV
+                )
+            )
             modules(sharedModule, androidModule)
         }
     }

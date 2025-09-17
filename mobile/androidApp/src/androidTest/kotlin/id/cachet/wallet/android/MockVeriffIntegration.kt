@@ -1,9 +1,11 @@
 package id.cachet.wallet.android
 
+import id.cachet.wallet.android.ui.VerificationLauncher
+import id.cachet.wallet.android.ui.VerificationResult
 import id.cachet.wallet.domain.model.*
+import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
-import id.cachet.wallet.network.CredentialResponse
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonElement
@@ -13,7 +15,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * Mock implementation that simulates the full Veriff verification flow
  * including OAuth2 token exchange and credential issuance.
  */
-class MockVeriffIntegration : OpenID4VCIClient {
+class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
     
     var simulateSuccess = true
     var simulateNetworkDelay = true
@@ -84,6 +86,23 @@ class MockVeriffIntegration : OpenID4VCIClient {
                 )
             }
         }
+    }
+
+    override suspend fun startVerification(
+        activity: android.app.Activity,
+        onResult: (VerificationResult) -> Unit
+    ) {
+        if (simulateNetworkDelay) {
+            delay(500)
+        }
+
+        val now = Clock.System.now().epochSeconds
+        onResult(
+            VerificationResult.Success(
+                sessionToken = "mock-session-token-$now",
+                sessionId = "mock-session-id-$now"
+            )
+        )
     }
     
     private fun createMockVerifiedCredential(): VerifiableCredential {

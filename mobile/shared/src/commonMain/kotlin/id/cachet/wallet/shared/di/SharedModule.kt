@@ -34,11 +34,12 @@ val sharedModule = module {
     }
     
     // Network clients
-    single<OpenID4VCIClient> { 
+    single<OpenID4VCIClient> {
+        val issuanceBaseUrl = getProperty<String>("issuanceBaseUrl")
+            ?: error("issuanceBaseUrl property not provided to Koin")
         KtorOpenID4VCIClient(
             httpClient = get(),
-            // Use actual computer IP for physical devices, 10.0.2.2 for emulator  
-            baseUrl = "http://192.168.1.199:8090" // Local network IP for physical devices
+            baseUrl = issuanceBaseUrl
         )
     }
     

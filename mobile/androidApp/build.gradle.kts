@@ -1,8 +1,30 @@
+import groovy.json.JsonSlurper
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
+
+val configPathFromEnv = System.getenv("CACHET_CONFIG_PATH")
+val appConfigFile = if (configPathFromEnv != null && configPathFromEnv.isNotBlank()) {
+    file(configPathFromEnv)
+} else {
+    rootProject.file("../config/app-config.json")
+}
+val appConfig = JsonSlurper().parse(appConfigFile) as Map<*, *>
+val defaultEnvironment = (appConfig["defaultEnvironment"] as String?) ?: "local"
+val cachetEnv: String = (project.findProperty("cachetEnv") as String?) ?: defaultEnvironment
+val environments = appConfig["environments"] as? Map<*, *>
+    ?: throw GradleException("config/app-config.json missing environments block")
+val environmentBlock = environments[cachetEnv] as? Map<*, *>
+    ?: throw GradleException("Environment '$cachetEnv' not defined in config/app-config.json")
+val servicesConfig = environmentBlock["services"] as? Map<*, *>
+    ?: throw GradleException("Environment '$cachetEnv' missing services configuration")
+val issuanceGatewayConfig = servicesConfig["issuanceGateway"] as? Map<*, *>
+    ?: throw GradleException("Environment '$cachetEnv' missing issuanceGateway configuration")
+val issuanceBaseUrl = (issuanceGatewayConfig["emulatorUrl"] ?: issuanceGatewayConfig["publicUrl"]) as? String
+    ?: throw GradleException("issuanceGateway configuration for '$cachetEnv' missing emulatorUrl/publicUrl")
 
 repositories {
     google()
@@ -29,6 +51,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "CACHET_ENV", "\"$cachetEnv\"")
+        buildConfigField("String", "ISSUANCE_BASE_URL", "\"$issuanceBaseUrl\"")
     }
 
     buildTypes {
@@ -49,6 +74,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10"

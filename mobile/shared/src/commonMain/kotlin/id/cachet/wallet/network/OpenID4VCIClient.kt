@@ -51,7 +51,7 @@ class OpenID4VCIException(message: String, cause: Throwable? = null) : Exception
 
 class KtorOpenID4VCIClient(
     private val httpClient: HttpClient,
-    private val baseUrl: String = "http://localhost:8090"
+    private val baseUrl: String
 ) : OpenID4VCIClient {
     
     private val json = Json {
@@ -66,10 +66,6 @@ class KtorOpenID4VCIClient(
                 clientId = clientId,
                 scope = scope
             )
-            
-            val jsonString = json.encodeToString(TokenRequest.serializer(), request)
-            println("DEBUG: Sending token request: grant_type=${request.grantType}, client_id=${request.clientId}, scope=${request.scope}")
-            println("DEBUG: JSON payload: $jsonString")
             
             val response: HttpResponse = httpClient.post("$baseUrl/oauth/token") {
                 contentType(ContentType.Application.Json)

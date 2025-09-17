@@ -4,6 +4,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import id.cachet.wallet.android.BuildConfig
+import id.cachet.wallet.android.ui.VerificationLauncher
 import id.cachet.wallet.android.ui.WalletApp
 import id.cachet.wallet.android.ui.theme.CachetWalletTheme
 import id.cachet.wallet.domain.repository.CredentialRepository
@@ -48,6 +50,12 @@ class WalletVerificationFlowTest {
         // Start Koin with test modules
         startKoin {
             androidContext(InstrumentationRegistry.getInstrumentation().targetContext)
+            properties(
+                mapOf(
+                    "issuanceBaseUrl" to BuildConfig.ISSUANCE_BASE_URL,
+                    "cachetEnv" to BuildConfig.CACHET_ENV
+                )
+            )
             modules(testModule)
         }
     }
@@ -55,8 +63,9 @@ class WalletVerificationFlowTest {
     private val testModule = module {
         single<CredentialRepository> { mockCredentialRepository }
         single<OpenID4VCIClient> { mockVeriffIntegration }
+        single<VerificationLauncher> { mockVeriffIntegration }
         single<IssuanceUseCase> { mockIssuanceUseCase }
-        factory { WalletViewModel(get()) }
+        factory { WalletViewModel(get(), get()) }
     }
 
     @Test

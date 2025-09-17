@@ -1,10 +1,9 @@
 package id.cachet.wallet.android.ui
 
 import android.app.Activity
-import android.content.Intent
 import android.util.Log
 import com.veriff.Sdk
-import id.cachet.wallet.network.OpenID4VCIClient
+import id.cachet.wallet.android.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -19,9 +18,9 @@ import java.io.IOException
  * Integration with Veriff SDK for identity verification
  */
 class VeriffIntegration(
-    private val backendBaseUrl: String = "http://10.0.2.2:8090",
+    private val backendBaseUrl: String = BuildConfig.ISSUANCE_BASE_URL,
     private val httpClient: OkHttpClient = OkHttpClient()
-) {
+) : VerificationLauncher {
     
     companion object {
         private const val TAG = "VeriffIntegration"
@@ -45,7 +44,7 @@ class VeriffIntegration(
      * @param activity The activity to launch the Veriff SDK from
      * @param onResult Callback called when verification completes or fails
      */
-    suspend fun startVerification(
+    override suspend fun startVerification(
         activity: Activity, 
         onResult: (VerificationResult) -> Unit
     ) {
@@ -110,16 +109,5 @@ class VeriffIntegration(
                 Json.decodeFromString<CreateSessionResponse>(responseBody)
             }
         }
-    }
-    
-    sealed class VerificationResult {
-        data class Success(
-            val sessionToken: String,
-            val sessionId: String
-        ) : VerificationResult()
-        
-        data class Error(val message: String) : VerificationResult()
-        
-        object Canceled : VerificationResult()
     }
 }
