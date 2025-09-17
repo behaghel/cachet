@@ -23,7 +23,8 @@ class IssuanceUseCaseTest {
     fun testSuccessfulIssuance() = runTest {
         val result = issuanceUseCase.requestCredential(
             clientId = "test-wallet",
-            credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = "session-success"
         )
         
         assertTrue(result.isSuccess)
@@ -45,7 +46,8 @@ class IssuanceUseCaseTest {
         
         val result = useCase.requestCredential(
             clientId = "test-wallet",
-            credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = "session-token-fail"
         )
         
         assertTrue(result.isFailure)
@@ -61,7 +63,8 @@ class IssuanceUseCaseTest {
         
         val result = useCase.requestCredential(
             clientId = "test-wallet",
-            credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = "session-credential-fail"
         )
         
         assertTrue(result.isFailure)
@@ -75,7 +78,8 @@ class IssuanceUseCaseTest {
         val result = issuanceUseCase.requestCredential(
             clientId = "test-wallet",
             credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
-            format = "ldp_vc"
+            format = "ldp_vc",
+            sessionId = "session-ldp"
         )
         
         assertTrue(result.isSuccess)
@@ -87,7 +91,8 @@ class IssuanceUseCaseTest {
     fun testMultipleCredentialTypes() = runTest {
         val result = issuanceUseCase.requestCredential(
             clientId = "test-wallet",
-            credentialTypes = listOf("VerifiableCredential", "IdentityCredential", "ProofOfAge")
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential", "ProofOfAge"),
+            sessionId = "session-multi"
         )
         
         assertTrue(result.isSuccess)
@@ -148,12 +153,13 @@ private class MockOpenID4VCIClient : OpenID4VCIClient {
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
-        types: List<String>
+        types: List<String>,
+        sessionId: String
     ): CredentialResponse {
         if (!validTokens.contains(accessToken)) {
             throw Exception("Invalid access token")
         }
-        
+
         val mockCredential = VerifiableCredential(
             id = "urn:uuid:mock-credential-${System.currentTimeMillis()}",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
@@ -163,7 +169,8 @@ private class MockOpenID4VCIClient : OpenID4VCIClient {
             credentialSubject = mapOf(
                 "id" to "did:example:holder",
                 "verified" to true,
-                "verification_method" to "veriff"
+                "verification_method" to "veriff",
+                "sessionId" to sessionId
             )
         )
         
@@ -195,21 +202,25 @@ private class FailingOpenID4VCIClient(
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
-        types: List<String>
+        types: List<String>,
+        sessionId: String
     ): CredentialResponse {
         if (failAtCredential) {
             throw Exception("Credential request failed")
         }
-        
+
         val mockCredential = VerifiableCredential(
             id = "urn:uuid:mock-credential",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
             issuer = "did:web:cachet.id",
             issuanceDate = Clock.System.now(),
-            credentialSubject = mapOf("id" to "did:example:holder")
+            credentialSubject = mapOf(
+                "id" to "did:example:holder",
+                "sessionId" to sessionId
+            )
         )
-        
+
         return CredentialResponse(credential = mockCredential, format = format)
     }
 }

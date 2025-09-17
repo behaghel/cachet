@@ -14,8 +14,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/cachet-id/cachet/services/common/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/golang-jwt/jwt/v5"
@@ -38,9 +40,10 @@ type TokenResponse struct {
 }
 
 type CredentialRequest struct {
-	Format string                 `json:"format"`
-	Types  []string               `json:"types"`
-	Proof  map[string]interface{} `json:"proof,omitempty"`
+	Format    string                 `json:"format"`
+	Types     []string               `json:"types"`
+	SessionID string                 `json:"sessionId"`
+	Proof     map[string]interface{} `json:"proof,omitempty"`
 }
 
 type CredentialResponse struct {
@@ -344,8 +347,11 @@ const (
 type Server struct {
 	router           *chi.Mux
 	signingKey       *rsa.PrivateKey
-	accessTokens     map[string]TokenInfo     // In-memory token store (production should use Redis)
+	accessTokens     map[string]TokenInfo // In-memory token store (production should use Redis)
+	accessTokensMu   sync.RWMutex
 	verifiedSessions map[string]VeriffSession // Store for verified Veriff sessions
+	sessionMu        sync.RWMutex
+	config           *config.Config
 }
 
 type TokenInfo struct {
@@ -361,11 +367,14 @@ func NewServer() *Server {
 		log.Fatal().Err(err).Msg("Failed to generate RSA key")
 	}
 
+	cfg := config.MustLoad()
+
 	s := &Server{
 		router:           chi.NewRouter(),
 		signingKey:       signingKey,
 		accessTokens:     make(map[string]TokenInfo),
 		verifiedSessions: make(map[string]VeriffSession),
+		config:           cfg,
 	}
 
 	s.setupMiddleware()
@@ -890,11 +899,13 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store token info
+	s.accessTokensMu.Lock()
 	s.accessTokens[tokenID] = TokenInfo{
 		ClientID:  req.ClientID,
 		Scope:     req.Scope,
 		ExpiresAt: expiresAt,
 	}
+	s.accessTokensMu.Unlock()
 
 	resp := TokenResponse{
 		AccessToken: accessToken,
@@ -956,25 +967,29 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	now := time.Now()
 	credentialID := fmt.Sprintf("urn:uuid:%s", uuid.New().String())
 
-	// Find the most recent verified session (in production, this would use session ID from token)
-	var veriffSession *VeriffSession
-	var sessionFound bool
-	for _, session := range s.verifiedSessions {
-		if session.Status == "approved" {
-			veriffSession = &session
-			sessionFound = true
-			break
-		}
+	if req.SessionID == "" {
+		http.Error(w, "Missing sessionId", http.StatusBadRequest)
+		return
 	}
 
-	if !sessionFound {
-		log.Error().Msg("No verified Veriff session found for credential issuance")
+	s.sessionMu.RLock()
+	session, ok := s.verifiedSessions[req.SessionID]
+	s.sessionMu.RUnlock()
+	if !ok {
+		log.Error().Str("session_id", req.SessionID).Msg("Veriff session not found")
 		http.Error(w, "No verified identity session found", http.StatusBadRequest)
 		return
 	}
 
+	if session.Status != "approved" {
+		http.Error(w, "Identity session not approved", http.StatusBadRequest)
+		return
+	}
+
+	veriffSession := session
+
 	// Validate session quality before issuance
-	validation := validateVeriffSession(*veriffSession)
+	validation := validateVeriffSession(veriffSession)
 	if !validation.IsValid {
 		log.Error().
 			Str("reason", validation.Reason).
@@ -1046,6 +1061,10 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	log.Info().
 		Str("credential_id", credentialID).
 		Msg("Credential issued successfully")
+
+	s.sessionMu.Lock()
+	delete(s.verifiedSessions, req.SessionID)
+	s.sessionMu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -1134,7 +1153,9 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 
 		if enhancedValidation.IsValid {
 			// Store successful verification with enhanced validation results
+			s.sessionMu.Lock()
 			s.verifiedSessions[session.SessionID] = session
+			s.sessionMu.Unlock()
 
 			// Pre-process sensitive data for privacy vault
 			s.preprocessSensitiveData(session, enhancedValidation)
@@ -1320,7 +1341,9 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Store the mock approved session for credential issuance
+	s.sessionMu.Lock()
 	s.verifiedSessions[sessionID] = mockSession
+	s.sessionMu.Unlock()
 
 	log.Info().
 		Str("client_id", req.ClientID).
@@ -1336,13 +1359,20 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 
 // createRealVeriffSession calls the real Veriff API to create a verification session
 func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey, baseURL string) (*CreateVeriffSessionResponse, error) {
-	// Prepare request to Veriff API
+	callbackURL := os.Getenv("VERIFF_WEBHOOK_EXTERNAL_URL")
+	if callbackURL == "" {
+		callbackURL = fmt.Sprintf("%s/webhooks/veriff", strings.TrimRight(s.config.Services.IssuanceGateway.PublicURL, "/"))
+	}
+
 	veriffReq := map[string]interface{}{
 		"verification": map[string]interface{}{
-			"callback": fmt.Sprintf("%s/webhooks/veriff", os.Getenv("VERIFF_WEBHOOK_BASE_URL")),
+			"callback": callbackURL,
 			"person": map[string]interface{}{
-				"firstName": "User", // In real implementation, get from request
+				"firstName": "User",
 				"lastName":  "Test",
+			},
+			"metadata": map[string]interface{}{
+				"clientId": req.ClientID,
 			},
 		},
 	}

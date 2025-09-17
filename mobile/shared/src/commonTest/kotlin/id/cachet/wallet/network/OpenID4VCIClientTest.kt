@@ -36,7 +36,8 @@ class OpenID4VCIClientTest {
         val credentialResponse = mockClient.requestCredential(
             accessToken = tokenResponse.accessToken,
             format = "jwt_vc",
-            types = listOf("VerifiableCredential", "IdentityCredential")
+            types = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = "session-123"
         )
         
         assertEquals("jwt_vc", credentialResponse.format)
@@ -54,7 +55,8 @@ class OpenID4VCIClientTest {
             mockClient.requestCredential(
                 accessToken = "invalid-token",
                 format = "jwt_vc",
-                types = listOf("VerifiableCredential")
+                types = listOf("VerifiableCredential"),
+                sessionId = "session-123"
             )
             assert(false) { "Should have thrown exception" }
         } catch (e: OpenID4VCIException) {
@@ -69,7 +71,8 @@ class OpenID4VCIClientTest {
         val credentialResponse = mockClient.requestCredential(
             accessToken = tokenResponse.accessToken,
             format = "ldp_vc",
-            types = listOf("VerifiableCredential", "IdentityCredential")
+            types = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = "session-456"
         )
         
         assertEquals("ldp_vc", credentialResponse.format)
@@ -96,12 +99,13 @@ class MockOpenID4VCIClient : OpenID4VCIClient {
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
-        types: List<String>
+        types: List<String>,
+        sessionId: String
     ): CredentialResponse {
         if (!validTokens.contains(accessToken)) {
             throw OpenID4VCIException("Invalid access token")
         }
-        
+
         val mockCredential = VerifiableCredential(
             id = "urn:uuid:mock-credential-${System.currentTimeMillis()}",
             context = listOf("https://www.w3.org/2018/credentials/v1"),

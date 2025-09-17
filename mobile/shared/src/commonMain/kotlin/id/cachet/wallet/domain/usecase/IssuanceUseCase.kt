@@ -20,7 +20,8 @@ class IssuanceUseCase(
     suspend fun requestCredential(
         clientId: String,
         credentialTypes: List<String>,
-        format: String = "jwt_vc"
+        format: String = "jwt_vc",
+        sessionId: String
     ): Result<StoredCredential> {
         return try {
             // Step 1: Request OAuth2 token
@@ -33,7 +34,8 @@ class IssuanceUseCase(
             val credentialResponse = openID4VCIClient.requestCredential(
                 accessToken = tokenResponse.accessToken,
                 format = format,
-                types = credentialTypes
+                types = credentialTypes,
+                sessionId = sessionId
             )
             
             // Step 3: Create stored credential with local ID

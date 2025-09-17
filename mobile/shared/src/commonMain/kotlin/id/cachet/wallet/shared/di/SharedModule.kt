@@ -35,7 +35,7 @@ val sharedModule = module {
     
     // Network clients
     single<OpenID4VCIClient> {
-        val issuanceBaseUrl = getProperty<String>("issuanceBaseUrl")
+        val issuanceBaseUrl: String = getProperty("issuanceBaseUrl")
             ?: error("issuanceBaseUrl property not provided to Koin")
         KtorOpenID4VCIClient(
             httpClient = get(),

@@ -249,8 +249,9 @@ func TestCredentialEndpoint_Success(t *testing.T) {
 
 	// Now request credential
 	credReq := CredentialRequest{
-		Format: "jwt_vc",
-		Types:  []string{"VerifiableCredential", "IdentityCredential"},
+		Format:    "jwt_vc",
+		Types:     []string{"VerifiableCredential", "IdentityCredential"},
+		SessionID: "test-session-456",
 	}
 
 	credBody, err := json.Marshal(credReq)
@@ -277,8 +278,9 @@ func TestCredentialEndpoint_NoAuth(t *testing.T) {
 	server := NewServer()
 
 	credReq := CredentialRequest{
-		Format: "jwt_vc",
-		Types:  []string{"VerifiableCredential", "IdentityCredential"},
+		Format:    "jwt_vc",
+		Types:     []string{"VerifiableCredential", "IdentityCredential"},
+		SessionID: "test-session",
 	}
 
 	credBody, _ := json.Marshal(credReq)
@@ -289,6 +291,41 @@ func TestCredentialEndpoint_NoAuth(t *testing.T) {
 	server.router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestCredentialEndpoint_MissingSessionID(t *testing.T) {
+	server := NewServer()
+
+	tokenReq := TokenRequest{
+		GrantType: "client_credentials",
+		ClientID:  "test-wallet",
+		Scope:     "credential_issuance",
+	}
+
+	tokenBody, _ := json.Marshal(tokenReq)
+	tokenHttpReq := httptest.NewRequest(http.MethodPost, "/oauth/token", bytes.NewReader(tokenBody))
+	tokenHttpReq.Header.Set("Content-Type", "application/json")
+	tokenRecorder := httptest.NewRecorder()
+	server.router.ServeHTTP(tokenRecorder, tokenHttpReq)
+
+	var tokenResp TokenResponse
+	require.NoError(t, json.Unmarshal(tokenRecorder.Body.Bytes(), &tokenResp))
+
+	credReq := CredentialRequest{
+		Format:    "jwt_vc",
+		Types:     []string{"VerifiableCredential"},
+		SessionID: "",
+	}
+
+	body, _ := json.Marshal(credReq)
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+tokenResp.AccessToken)
+	resp := httptest.NewRecorder()
+
+	server.router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusBadRequest, resp.Code)
 }
 
 func TestVeriffWebhook_Success(t *testing.T) {

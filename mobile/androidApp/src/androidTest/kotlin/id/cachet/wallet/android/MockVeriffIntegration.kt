@@ -60,12 +60,13 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
-        types: List<String>
+        types: List<String>,
+        sessionId: String
     ): CredentialResponse {
         if (simulateNetworkDelay) {
             delay(2000) // Simulate longer processing time for credential issuance
         }
-        
+
         when (scenario) {
             VerificationScenario.INVALID_TOKEN -> {
                 throw Exception("Invalid or expired access token")
@@ -78,8 +79,8 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
             }
             else -> {
                 // Create mock credential based on successful Veriff verification
-                val credential = createMockVerifiedCredential()
-                
+                val credential = createMockVerifiedCredential(sessionId)
+
                 return CredentialResponse(
                     credential = credential,
                     format = format
@@ -105,9 +106,9 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
         )
     }
     
-    private fun createMockVerifiedCredential(): VerifiableCredential {
+    private fun createMockVerifiedCredential(sessionId: String): VerifiableCredential {
         val now = Clock.System.now()
-        
+
         // Use custom data if provided, otherwise use default mock data
         val credentialSubject = customCredentialData ?: mapOf(
             "id" to JsonPrimitive("did:example:user123456"),
@@ -118,7 +119,7 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
             "documentNumber" to JsonPrimitive("P123456789"),
             "verificationLevel" to JsonPrimitive("full"),
             "verifiedAt" to JsonPrimitive(now.toString()),
-            "veriffSessionId" to JsonPrimitive("veriff-session-${System.currentTimeMillis()}"),
+            "veriffSessionId" to JsonPrimitive(sessionId),
             "biometricsVerified" to JsonPrimitive(true),
             "documentVerified" to JsonPrimitive(true),
             "faceMatch" to JsonPrimitive(true),

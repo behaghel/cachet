@@ -65,8 +65,9 @@ func TestSchemaCompatibility(t *testing.T) {
 
 		// Test CredentialRequest schema compliance
 		credentialRequest := map[string]interface{}{
-			"format": "jwt_vc",
-			"types":  []string{"VerifiableCredential", "IdentityCredential"},
+			"format":    "jwt_vc",
+			"types":     []string{"VerifiableCredential", "IdentityCredential"},
+			"sessionId": "test-session",
 		}
 
 		reqBody, err := json.Marshal(credentialRequest)

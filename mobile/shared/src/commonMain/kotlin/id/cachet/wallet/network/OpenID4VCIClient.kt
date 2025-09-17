@@ -12,7 +12,12 @@ import kotlinx.serialization.json.Json
 
 interface OpenID4VCIClient {
     suspend fun requestToken(clientId: String, scope: String): TokenResponse
-    suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
+    suspend fun requestCredential(
+        accessToken: String,
+        format: String,
+        types: List<String>,
+        sessionId: String
+    ): CredentialResponse
 }
 
 @Serializable
@@ -38,6 +43,7 @@ data class TokenResponse(
 data class CredentialRequest(
     val format: String,
     val types: List<String>,
+    @SerialName("sessionId") val sessionId: String,
     val proof: Map<String, String>? = null
 )
 
@@ -86,12 +92,14 @@ class KtorOpenID4VCIClient(
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
-        types: List<String>
+        types: List<String>,
+        sessionId: String
     ): CredentialResponse {
         try {
             val request = CredentialRequest(
                 format = format,
-                types = types
+                types = types,
+                sessionId = sessionId
             )
             
             val response: HttpResponse = httpClient.post("$baseUrl/credential") {

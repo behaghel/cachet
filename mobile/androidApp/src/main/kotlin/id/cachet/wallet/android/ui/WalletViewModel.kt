@@ -23,6 +23,7 @@ class WalletViewModel(
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
     
     private var currentActivityRef: WeakReference<Activity>? = null
+    private var pendingSessionId: String? = null
     
     fun setActivity(activity: Activity) {
         currentActivityRef = WeakReference(activity)
@@ -80,7 +81,7 @@ class WalletViewModel(
         when (result) {
             is VerificationResult.Success -> {
                 Log.d(TAG, "Veriff verification successful, requesting credential...")
-                // Proceed with credential issuance
+                pendingSessionId = result.sessionId
                 requestCredentialAfterVerification()
             }
             is VerificationResult.Error -> {
@@ -103,11 +104,19 @@ class WalletViewModel(
                 kotlinx.coroutines.delay(3000)
                 
                 Log.d(TAG, "Requesting credential from backend...")
+                val sessionId = pendingSessionId
+                if (sessionId == null) {
+                    Log.e(TAG, "Session ID missing when requesting credential")
+                    _uiState.value = WalletUiState.Error("Verification session not available")
+                    return@launch
+                }
                 issuanceUseCase.requestCredential(
                     clientId = "cachet-android-wallet",
-                    credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
+                    credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+                    sessionId = sessionId
                 ).onSuccess { credential ->
                     Log.d(TAG, "Credential issued successfully: ${credential.localId}")
+                    pendingSessionId = null
                     // Reload credentials to show the new one
                     loadCredentials()
                 }.onFailure { exception ->
