@@ -210,10 +210,9 @@ fun VerifiableCredential.canSatisfyRequest(request: PresentationRequest): Boolea
  * Generate a cryptographically secure random salt
  */
 fun generateSalt(length: Int = 32): String {
-    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    return (1..length)
-        .map { chars.random() }
-        .joinToString("")
+    require(length > 0) { "Salt length must be positive" }
+    val bytes = secureRandomBytes(length)
+    return bytes.toHex()
 }
 
 /**
@@ -221,6 +220,8 @@ fun generateSalt(length: Int = 32): String {
  * In production, this would use a proper cryptographic library
  */
 expect fun sha256Hash(input: String): String
+
+expect fun secureRandomBytes(length: Int): ByteArray
 
 /**
  * Generate EdDSA signature for consent receipt
@@ -237,3 +238,7 @@ expect fun verifyConsentReceiptSignature(
     signature: String, 
     publicKey: String
 ): Boolean
+
+private fun ByteArray.toHex(): String = joinToString(separator = "") { byte ->
+    ((byte.toInt() and 0xFF).toString(16)).padStart(2, '0')
+}

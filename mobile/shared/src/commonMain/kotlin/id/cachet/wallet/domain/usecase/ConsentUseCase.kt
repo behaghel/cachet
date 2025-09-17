@@ -6,6 +6,8 @@ import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import kotlinx.datetime.Clock
 
+private const val LOCAL_CONSENT_SIGNING_KEY = "cachet-local-dev-signing-key"
+
 /**
  * Use case for handling consent receipts and credential presentations
  */
@@ -39,8 +41,9 @@ class ConsentUseCase(
             val salt = generateSalt()
             val hashValue = receipt.generateHash(salt)
             val canonicalContent = receipt.buildCanonicalRepresentation()
-            val signature = signConsentReceipt(canonicalContent, getSigningKey())
-            
+            val signature = runCatching { signConsentReceipt(canonicalContent, getSigningKey()) }
+                .getOrNull()
+
             val receiptWithHash = receipt.copy(
                 receiptHash = hashValue,
                 signature = signature,
@@ -183,31 +186,29 @@ class ConsentUseCase(
      * Validate a presentation request before showing consent UI
      */
     fun validatePresentationRequest(request: PresentationRequest): Boolean {
-        return request.rpIdentifier.isNotBlank() && 
-               request.purpose.isNotBlank() && 
-               request.purpose.length >= 10 &&
-               request.requestedPredicates.isNotEmpty()
+        return request.rpIdentifier.isNotBlank() &&
+            request.purpose.isNotBlank() &&
+            request.purpose.length >= 10 &&
+            request.requestedPredicates.isNotEmpty()
     }
     
     /**
      * Verify the integrity of a consent receipt
      */
     suspend fun verifyConsentReceipt(receipt: ConsentReceipt): Result<Boolean> {
-        try {
-            // Verify hash integrity using stored salt
-            val storedSalt = receipt.salt ?: return Result.success(false) // No salt means invalid
+        return try {
+            val storedSalt = receipt.salt ?: return Result.success(false)
             val expectedHash = receipt.generateHash(storedSalt)
             val hashValid = receipt.receiptHash == expectedHash
-            
-            // Verify signature if present
+
             val signatureValid = receipt.signature?.let { signature ->
                 val canonicalContent = receipt.buildCanonicalRepresentation()
                 verifyConsentReceiptSignature(canonicalContent, signature, getVerificationKey())
-            } ?: true // If no signature, consider valid for backward compatibility
-            
-            return Result.success(hashValid && signatureValid)
+            } ?: true
+
+            Result.success(hashValid && signatureValid)
         } catch (e: Exception) {
-            return Result.failure(e)
+            Result.failure(e)
         }
     }
     
@@ -216,8 +217,7 @@ class ConsentUseCase(
      * In production, this would use hardware-backed key storage
      */
     private fun getSigningKey(): String {
-        // Placeholder implementation - would use proper key management
-        return "demo_signing_key_${Clock.System.now().epochSeconds}"
+        return LOCAL_CONSENT_SIGNING_KEY
     }
     
     /**
@@ -225,8 +225,7 @@ class ConsentUseCase(
      * In production, this would retrieve the public key
      */
     private fun getVerificationKey(): String {
-        // Placeholder implementation - would use proper public key
-        return "demo_verification_key"
+        return LOCAL_CONSENT_SIGNING_KEY
     }
     
     /**
