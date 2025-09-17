@@ -58,10 +58,11 @@ in
   dotenv.enable = true;
   dotenv.filename = [".env.local" ".env"];
 
+  env.SECRETSPEC_PROVIDER = "dotenv://.env.local";
+  env.SECRETSPEC_PROFILE = "default";
+
   # Handy scripts
-  scripts."dev:services".exec = ''
-    secretspec run --provider dotenv://.env.local --profile default -- devenv up --detach
-  '';
+  scripts."dev:services".exec = "devenv up --detach";
   scripts."dev:stop".exec = "devenv processes stop";
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
