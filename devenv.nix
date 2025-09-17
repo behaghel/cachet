@@ -56,7 +56,7 @@ in
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
-  dotenv.filename = [".env.local" ".env"];
+  dotenv.filename = [".env" ".env.local"];
 
   env.SECRETSPEC_PROVIDER = "dotenv://.env.local";
   env.SECRETSPEC_PROFILE = "default";
