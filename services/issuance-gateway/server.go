@@ -1480,6 +1480,12 @@ func (s *Server) resolveVeriffCallbackURL() (string, error) {
 		raw = parsed.String()
 	}
 
+	if parsed.Path == "" || parsed.Path == "/" {
+		parsed.Path = "/webhooks/veriff"
+		parsed.RawPath = ""
+		raw = parsed.String()
+	}
+
 	return raw, nil
 }
 

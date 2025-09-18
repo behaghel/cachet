@@ -498,3 +498,19 @@ func TestResolveVeriffCallbackURL_ErrorsForInsecureExternalURL(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "https")
 }
+
+func TestResolveVeriffCallbackURL_AppendsDefaultPathWhenMissing(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "https://issuer.example.com"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "https://c3d47af68db6.ngrok-free.app")
+
+	callbackURL, err := s.resolveVeriffCallbackURL()
+	require.NoError(t, err)
+	assert.Equal(t, "https://c3d47af68db6.ngrok-free.app/webhooks/veriff", callbackURL)
+}
