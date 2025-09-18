@@ -95,7 +95,6 @@ in
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
   scripts."ci:deps".exec = ''
-    export GO111MODULE=on
     echo "📦 Downloading dependencies..."
     cd services/verifier && go mod download
     cd ../registry && go mod download  
@@ -107,7 +106,6 @@ in
     echo "✅ Dependencies downloaded"
   '';
   scripts."ci:test".exec = ''
-    export GO111MODULE=on
     echo "🧪 Running tests with coverage..."
     set -euo pipefail  # Exit on any error
 
@@ -123,7 +121,6 @@ in
     echo "✅ All tests completed successfully with coverage"
   '';
   scripts."ci:lint".exec = ''
-    export GO111MODULE=on
     echo "🔍 Running golangci-lint on all services..."
     set -euo pipefail  # Exit on any error
 
@@ -145,7 +142,6 @@ in
     echo "✅ All services passed linting successfully"
   '';
   scripts."ci:security".exec = ''
-    export GO111MODULE=on
     echo "🔒 Running security scan..."
     set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
 
