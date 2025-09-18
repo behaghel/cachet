@@ -1,9 +1,9 @@
-module github.com/cachet-id/cachet/services/registry
+module github.com/behaghel/cachet/services/registry
 
 go 1.22
 
 require (
-	github.com/cachet-id/cachet/services/common v0.0.0
+	github.com/behaghel/cachet/services/common v0.0.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
@@ -18,4 +18,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/cachet-id/cachet/services/common => ../common
+replace github.com/behaghel/cachet/services/common => ../common

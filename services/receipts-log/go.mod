@@ -1,9 +1,9 @@
-module github.com/cachet-id/cachet/services/receipts-log
+module github.com/behaghel/cachet/services/receipts-log
 
 go 1.22
 
 require (
-	github.com/cachet-id/cachet/services/common v0.0.0
+	github.com/behaghel/cachet/services/common v0.0.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/rs/zerolog v1.34.0
 )
@@ -14,4 +14,4 @@ require (
 	golang.org/x/sys v0.12.0 // indirect
 )
 
-replace github.com/cachet-id/cachet/services/common => ../common
+replace github.com/behaghel/cachet/services/common => ../common

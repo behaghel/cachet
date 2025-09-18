@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cachet-id/cachet/services/common/config"
+	"github.com/behaghel/cachet/services/common/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/golang-jwt/jwt/v5"

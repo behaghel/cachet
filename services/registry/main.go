@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/cachet-id/cachet/services/common/config"
+	"github.com/behaghel/cachet/services/common/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
