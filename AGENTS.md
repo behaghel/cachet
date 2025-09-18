@@ -1,13 +1,17 @@
 # AGENTS.md — Operating Guide for Automation
 
-This repository is wired for deterministic builds and tightly managed tooling. Any agent automation must preserve those guarantees by following the practices below.
+This repository is wired for deterministic builds and tightly managed tooling. Any agent automation must preserve those guarantees by following the practices below. The canonical module/repository path is `github.com/behaghel/cachet`; do not reference legacy `github.com/cachet-id/cachet` paths.
 
 ## 1. Always Work Inside `devenv`
-- **All commands run through `devenv shell -- …`** so the same nix-managed toolchain is used locally, in CI, and in production builds.
+- **All commands run through `devenv shell -- …`** so the same nix-managed toolchain is used locally, in CI, and in production builds. Simple read-only commands (e.g., `cat`, `git status`) may run directly when reproducibility isn't impacted.
 - To open an interactive shell: `devenv shell`
 - Backend helpers:
-  - `devenv shell -- dev:services` — start core services (verifier, registry, receipts, issuance)
+  - `devenv shell -- dev:up` — start core services (verifier, registry, receipts, issuance)
   - `devenv shell -- dev:stop` — stop running services
+  - `devenv shell -- dev:logs` — tail background service logs
+  - `devenv shell -- dev:tui` — attach to the Process Compose TUI for managed services
+  - Always start background services with `dev:up`; never launch the interactive TUI in shared sessions.
+  - Service scripts automatically clean stale `.devenv/processes.pid`; use them to restart instead of calling `devenv up` directly.
   - `devenv shell -- fmt:go` / `lint:go` / `test:all` / `test:integration`
 - Android helpers:
   - `devenv shell -- android:emulator`, `android:build`, `android:test`, etc.
@@ -29,10 +33,11 @@ This repository is wired for deterministic builds and tightly managed tooling. A
 
 ## 4. Secret and Configuration Management
 - Secrets are defined centrally in `secretspec.toml` and accessed via SecretSpec.
-  - Local: `devenv shell -- secretspec run --provider dotenv -- <command>`
+  - Local: `devenv shell -- secretspec run -- <command>` (provider defaults to `dotenv://.env`)
   - CI: `devenv shell -- secretspec run --provider env --profile ci -- <command>`
   - Production: GCP Secret Manager via Cloud Run `--set-secrets`
 - Never mix raw environment secrets or ad-hoc `.env` files. If a new secret is required, add it to `secretspec.toml` and the relevant profile.
+- Never print secret values in logs; log only boolean presence or redacted identifiers.
 
 ## 5. Code & Git Hygiene Expectations
 - Keep commits small, atomic, and conventionally labeled (`type(scope): message`). Each commit should build and test cleanly.
@@ -50,8 +55,10 @@ This repository is wired for deterministic builds and tightly managed tooling. A
 ## 7. Quick Reference Commands
 | Task | Command |
 | --- | --- |
-| Start services | `devenv shell -- dev:services` |
+| Start services | `devenv shell -- dev:up` |
 | Stop services | `devenv shell -- dev:stop` |
+| Tail logs | `devenv shell -- dev:logs` |
+| Attach TUI | `devenv shell -- dev:tui` |
 | Go tests (all) | `devenv shell -- test:all` |
 | Go lint | `devenv shell -- lint:go` |
 | Android build | `devenv shell -- android:build` |

@@ -34,7 +34,7 @@ port := config.ResolvePort("PORT", cfg.Services.Verifier.Port)
 - `ResolvePort` still honours per-process `PORT` overrides when necessary.
 
 `devenv` exports `CACHET_CONFIG_PATH` and `CACHET_ENV=local` so commands such as
-`devenv shell -- dev:services` automatically pick up the shared configuration.
+`devenv shell -- dev:up` automatically pick up the shared configuration.
 
 ## Mobile Build Integration
 

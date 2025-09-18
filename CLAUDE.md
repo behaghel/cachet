@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Quick Start
 
-- `devenv shell -- dev:services` or `devenv up --detach` - Start all backend services
+- `devenv shell -- dev:up` - Start all backend services (wraps `devenv up --detach`)
 - `devenv shell` - Enter development environment with all tools
 - `devenv processes stop` - Stop running services
 
@@ -18,7 +18,9 @@ The project uses devenv for dependency management including Android SDK. Key com
 
 **Backend:**
 
-- `devenv shell -- dev:services` - Start services via devenv processes (recommended)
+- `devenv shell -- dev:up` - Start services via devenv processes (recommended)
+- `devenv shell -- dev:logs` - Tail background service logs
+- `devenv shell -- dev:tui` - Attach to Process Compose without launching a new stack
 - `devenv shell -- dev:stop` - Stop all services
 - `devenv shell -- fmt:go` - Format Go code
 - `devenv shell -- lint:go` - Lint Go code with golangci-lint
@@ -52,7 +54,7 @@ The project uses devenv for dependency management including Android SDK. Key com
 
 ## 🔐 Secret Management - CRITICAL ARCHITECTURE
 **🚨 ALL secrets in this project MUST be managed through SecretSpec for consistency!**
-- **Local Development**: Use `secretspec run --provider dotenv` with `.env.local` (backed by `pass`)
+- **Local Development**: Use `secretspec run` (provider defaults to `dotenv://.env` backed by `pass`)
 - **CI/CD**: Use `secretspec run --provider env --profile ci` with GitHub Actions secrets
 - **Production**: GCP Secret Manager injected via Cloud Run `--set-secrets`
 - **Configuration**: All secrets declared in `secretspec.toml` with profiles
@@ -431,7 +433,7 @@ git commit -m "feat: enhance backend with advanced Veriff quality tiers"
 git add docs/CI_OPTIMIZATION_PLAN.md
 git commit -m "docs: add CI/CD optimization strategy"
 
-git add .env.local.example
+git add .env.example
 git commit -m "config: add Veriff environment configuration example"
 ```
 

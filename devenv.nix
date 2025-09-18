@@ -5,12 +5,12 @@ let
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
 in
 {
-    
-    # Languages / toolchains
-    languages.go.enable = true;
+
+  # Languages / toolchains
+  languages.go.enable = true;
   languages.javascript.enable = true;
   languages.java.enable = true;
-  languages.java.gradle.enable = enableAndroid;  # Only needed for Android
+  languages.java.gradle.enable = enableAndroid; # Only needed for Android
   claude.code.enable = true;
 
   # Android development (conditional)
@@ -18,7 +18,10 @@ in
     enable = true;
     platforms.version = [ "34" ];
     systemImageTypes = [ "google_apis_playstore" ];
-    abis = [ "arm64-v8a" "x86_64" ];
+    abis = [
+      "arm64-v8a"
+      "x86_64"
+    ];
     emulator.enable = true;
     ndk.enable = true;
     systemImages.enable = true;
@@ -56,14 +59,39 @@ in
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
-  dotenv.filename = [".env" ".env.local"];
+  dotenv.filename = [ ".env" ];
 
-  env.SECRETSPEC_PROVIDER = "dotenv://.env.local";
+  env.SECRETSPEC_PROVIDER = "dotenv://.env";
   env.SECRETSPEC_PROFILE = "default";
 
   # Handy scripts
-  scripts."dev:services".exec = "devenv up --detach";
-  scripts."dev:stop".exec = "devenv processes stop";
+  scripts."dev:up".exec = ''
+    # Start managed processes with secrets injected from SecretSpec
+    unset CACHET_CONFIG_PATH
+    devenv processes down >/dev/null 2>&1 || true
+    rm -f .devenv/processes.pid
+    secretspec run -- devenv up --detach
+  '';
+  scripts."dev:stop".exec = ''
+    devenv processes down >/dev/null 2>&1 || true
+    rm -f .devenv/processes.pid
+  '';
+  scripts."dev:logs".exec = ''
+    LOG_FILE=.devenv/processes.log
+    if [ ! -f "$LOG_FILE" ]; then
+      echo "Processes log not found. Start services with dev:up first." >&2
+      exit 1
+    fi
+    exec tail -f "$LOG_FILE"
+  '';
+  scripts."dev:tui".exec = ''
+    SOCKET=$(readlink -f .devenv/run/pc.sock 2>/dev/null || true)
+    if [ -z "$SOCKET" ] || [ ! -S "$SOCKET" ]; then
+      echo "Process Compose socket not found. Start services with dev:up first." >&2
+      exit 1
+    fi
+    exec process-compose attach --unix-socket "$SOCKET"
+  '';
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
   scripts."ci:deps".exec = ''
@@ -80,7 +108,7 @@ in
   scripts."ci:test".exec = ''
     echo "🧪 Running tests with coverage..."
     set -euo pipefail  # Exit on any error
-    
+
     mkdir -p coverage
     echo "Testing verifier..."
     (cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
@@ -95,7 +123,7 @@ in
   scripts."ci:lint".exec = ''
     echo "🔍 Running golangci-lint on all services..."
     set -euo pipefail  # Exit on any error
-    
+
     # Use absolute paths and single commands to avoid cd issues in CI
     echo "Linting verifier..."
     (cd services/verifier && golangci-lint run)
@@ -116,7 +144,7 @@ in
   scripts."ci:security".exec = ''
     echo "🔒 Running security scan..."
     set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
-    
+
     # Install gosec if not already available
     if ! command -v gosec &> /dev/null; then
       echo "📦 Installing gosec..."
@@ -125,7 +153,7 @@ in
         exit 1
       }
     fi
-    
+
     # Run security scan on each service with proper Go module context
     echo "🔍 Scanning services for security issues..."
     echo "Scanning verifier..."
@@ -142,7 +170,7 @@ in
     cd ../vouching-service && gosec -exclude-generated ./...
     echo "Scanning issuance-gateway..."
     cd ../issuance-gateway && gosec -exclude-generated ./...
-    
+
     echo "✅ Security scan completed successfully"
   '';
   scripts."test:all".exec = ''
@@ -258,19 +286,19 @@ in
     echo "✅ Unit tests completed!"
     echo "📊 Test results available in mobile/*/build/reports/tests/"
   '';
-  
+
   scripts."android:logs".exec = ''
     echo "📱 Streaming Android device/emulator logs..."
     echo "📍 Use Ctrl+C to stop log streaming"
     echo "🔍 Filtering for Cachet wallet app logs..."
     echo ""
-    
+
     # Check if ADB is available
     if ! command -v adb &> /dev/null; then
       echo "❌ Error: adb not found. Make sure Android SDK is installed."
       exit 1
     fi
-    
+
     # Get connected devices and select the first one
     DEVICES=$(adb devices | grep -E '\tdevice$' | cut -f1)
     if [ -z "$DEVICES" ]; then
@@ -279,7 +307,7 @@ in
       adb devices
       exit 1
     fi
-    
+
     # Get the first device
     FIRST_DEVICE=$(echo "$DEVICES" | head -n1)
     echo "🔗 Connected devices:"
@@ -287,15 +315,15 @@ in
     echo ""
     echo "📱 Using device: $FIRST_DEVICE"
     echo ""
-    
+
     # Clear old logs and start streaming from the selected device
     adb -s "$FIRST_DEVICE" logcat -c  # Clear existing logs
-    
+
     # Stream logs with better filtering for mobile apps
     echo "🔍 Starting log stream (filtered for Cachet app)..."
     echo "   Monitoring: App crashes, network errors, Veriff integration, OkHttp requests"
     echo ""
-    
+
     adb -s "$FIRST_DEVICE" logcat \
       -s "AndroidRuntime:E" \
       -s "System.err:*" \
@@ -320,23 +348,23 @@ in
   scripts."schema:validate".exec = ''
     echo "🔍 Validating OpenAPI schema..."
     yamllint schemas/openapi.yaml
-    
+
     # Install and use redocly for OpenAPI validation
     if ! command -v redocly &> /dev/null; then
         echo "📦 Installing @redocly/cli..."
         npm install -g @redocly/cli
     fi
-    
+
     redocly lint schemas/openapi.yaml
     echo "✅ Schema validation passed!"
   '';
   scripts."schema:generate".exec = ''
     echo "🔧 Generating code from OpenAPI schema..."
-    
+
     echo "1. Generating Go models..."
     mkdir -p generated/go
     oapi-codegen -generate types -package models schemas/openapi.yaml > generated/go/models.go
-    
+
     echo "2. Generating Kotlin models..."
     mkdir -p generated/kotlin
     openapi-generator-cli generate \
@@ -344,7 +372,7 @@ in
       -g kotlin \
       -o generated/kotlin \
       --additional-properties=packageName=id.cachet.wallet.generated,serializationLibrary=kotlinx_serialization
-    
+
     echo "✅ Code generation completed!"
     echo "📁 Generated files:"
     echo "   - Go: generated/go/models.go"
@@ -352,79 +380,79 @@ in
   '';
   scripts."schema:test".exec = ''
     echo "🧪 Running schema compatibility tests..."
-    
+
     echo "1. Validating schema..."
     yamllint schemas/openapi.yaml
-    
+
     echo "2. Generating temporary models..."
     rm -rf /tmp/cachet-schema-test
     mkdir -p /tmp/cachet-schema-test/go /tmp/cachet-schema-test/kotlin
-    
+
     oapi-codegen -generate types -package models schemas/openapi.yaml > /tmp/cachet-schema-test/go/models.go
     openapi-generator-cli generate \
       -i schemas/openapi.yaml \
       -g kotlin \
       -o /tmp/cachet-schema-test/kotlin \
       --additional-properties=packageName=id.cachet.wallet.generated,serializationLibrary=kotlinx_serialization
-    
+
     echo "3. Testing Go compilation..."
     cd /tmp/cachet-schema-test/go && go mod init test && go mod tidy && go build .
-    
+
     echo "✅ Schema compatibility tests passed!"
   '';
   scripts."schema:sync".exec = ''
     echo "🔄 Synchronizing schemas across codebase..."
-    
+
     echo "1. Running validation..."
     yamllint schemas/openapi.yaml
-    
+
     echo "2. Generating fresh models..."
     schema:generate
-    
+
     echo "3. Running compatibility tests..."
     schema:test
-    
+
     echo "4. Updating mobile project..."
     # Copy generated Kotlin models to mobile project
     cp -r generated/kotlin/src/main/kotlin/* mobile/shared/src/commonMain/kotlin/ 2>/dev/null || true
-    
+
     echo "5. Running tests..."
     test:all
-    
+
     echo "✅ Schema synchronization completed!"
   '';
   scripts."test:schema-integration".exec = ''
     echo "🧪 Running schema integration tests..."
-    
+
     echo "1. Testing Go schema compatibility..."
     cd tests/schema-integration && go test -v .
-    
+
     echo "2. Testing Kotlin schema compatibility..."
     cd mobile && gradle :shared:test --tests "*SchemaCompatibilityTest*"
-    
+
     echo "✅ Schema integration tests completed!"
   '';
   scripts."ci:full".exec = ''
     echo "🚀 Running full CI pipeline locally..."
-    
+
     echo "📋 Step 1: Schema validation and generation..."
     schema:validate
     schema:generate
-    
+
     echo "🧪 Step 2: Backend tests..."
     test:all
     test:integration
-    
+
     echo "📱 Step 3: Mobile tests..."
     android:test-unit
-    
+
     echo "🔄 Step 4: Schema compatibility tests..."
     test:schema-integration
-    
+
     echo "🔍 Step 5: Quality checks..."
     fmt:go
     lint:go
-    
+
     echo "✅ Full CI pipeline completed successfully!"
     echo "🎉 Ready to create pull request!"
   '';
@@ -435,22 +463,22 @@ in
     gcloud auth login
     echo "✅ Successfully authenticated with GCP"
   '';
-  
+
   scripts."gcp:setup".exec = ''
     echo "🏗️  Setting up GCP project for Cachet deployment..."
     set -euo pipefail
-    
+
     # Check if authenticated
     if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -n1 > /dev/null; then
       echo "❌ Not authenticated with GCP. Run 'gcp:auth' first."
       exit 1
     fi
-    
+
     # Set project (user will be prompted to select/create)
     echo "Please select or create a GCP project:"
     gcloud projects list
     read -p "Enter project ID (or press Enter to create new): " PROJECT_ID
-    
+
     if [ -z "$PROJECT_ID" ]; then
       read -p "Enter new project ID (e.g., cachet-prod-123): " PROJECT_ID
       gcloud projects create $PROJECT_ID
@@ -459,10 +487,10 @@ in
       echo "⏳ Waiting for project creation to complete..."
       sleep 5
     fi
-    
+
     gcloud config set project $PROJECT_ID
     echo "📋 Using project: $PROJECT_ID"
-    
+
     # Ensure billing is enabled (critical for Cloud SQL and other services)
     echo "🔍 Checking billing status..."
     if ! gcloud billing projects list --filter="projectId:$PROJECT_ID" --format="value(billingEnabled)" | grep -q "True"; then
@@ -471,7 +499,7 @@ in
       echo "   Press Enter when billing is enabled..."
       read
     fi
-    
+
     # Enable required APIs with error handling
     echo "🔧 Enabling required GCP APIs..."
     APIS=(
@@ -482,29 +510,29 @@ in
       containerregistry.googleapis.com
       cloudresourcemanager.googleapis.com
     )
-    
+
     for api in "''${APIS[@]}"; do
       echo "Enabling $api..."
       gcloud services enable $api || {
         echo "⚠️ Failed to enable $api - this may cause issues later"
       }
     done
-    
+
     echo "✅ GCP project setup completed!"
     echo "📝 Next steps (run in order):"
     echo "   1. Run 'gcp:db:setup' to create Cloud SQL database"
     echo "   2. Run 'gcp:secrets:setup' to configure secrets with SecretSpec"
     echo "   3. Run 'gcp:deploy:verifier' to deploy services"
   '';
-  
+
   scripts."gcp:db:setup".exec = ''
     echo "🗄️  Setting up Cloud SQL database..."
     set -euo pipefail
-    
+
     PROJECT_ID=$(gcloud config get-value project)
     INSTANCE_NAME="cachet-db"
     DB_NAME="cachet"
-    
+
     # Create Cloud SQL instance
     echo "Creating Cloud SQL PostgreSQL instance..."
     gcloud sql instances create $INSTANCE_NAME \
@@ -513,13 +541,13 @@ in
       --memory=3840MB \
       --region=us-central1 \
       --root-password=temp-password-change-me
-    
+
     # Create database
     gcloud sql databases create $DB_NAME --instance=$INSTANCE_NAME
-    
+
     # Get connection string
     CONNECTION_NAME=$(gcloud sql instances describe $INSTANCE_NAME --format="value(connectionName)")
-    
+
     echo "✅ Database setup completed!"
     echo "📋 Connection details:"
     echo "   Instance: $INSTANCE_NAME"
@@ -527,70 +555,70 @@ in
     echo "   Connection: $CONNECTION_NAME"
     echo "⚠️  Remember to change the root password!"
   '';
-  
+
   scripts."gcp:secrets:setup".exec = ''
-    echo "🔐 Setting up Secret Manager with SecretSpec integration..."
-    set -euo pipefail
-    
-    PROJECT_ID=$(gcloud config get-value project)
-    
-    # Generate secure database password
-    echo "🔑 Generating secure database password..."
-    DB_PASSWORD=$(openssl rand -base64 32)
-    
-    # Set the password for the postgres user
-    echo "📝 Setting database password..."
-    gcloud sql users set-password postgres \
-      --instance=cachet-db \
-      --password="$DB_PASSWORD"
-    
-    # Create database URL secret with proper connection string
-    echo "🔐 Creating/updating database-url secret..."
-    CONNECTION_NAME="$PROJECT_ID:us-central1:cachet-db"
-    DATABASE_URL="postgresql://postgres:$DB_PASSWORD@/cachet?host=/cloudsql/$CONNECTION_NAME"
-    
-    # Try to create, but if it exists, add a new version
-    if ! echo -n "$DATABASE_URL" | gcloud secrets create database-url --data-file=- 2>/dev/null; then
-      echo "Secret already exists, updating with new version..."
-      echo -n "$DATABASE_URL" | gcloud secrets versions add database-url --data-file=-
-    fi
-    
-    # Create JWT secret
-    echo "🔑 Creating/updating jwt-secret..."
-    JWT_SECRET_VALUE=$(openssl rand -base64 32)
-    if ! echo -n "$JWT_SECRET_VALUE" | gcloud secrets create jwt-secret --data-file=- 2>/dev/null; then
-      echo "Secret already exists, updating with new version..."
-      echo -n "$JWT_SECRET_VALUE" | gcloud secrets versions add jwt-secret --data-file=-
-    fi
-    
-    # Create .env file for local development with secretspec
-    echo "📝 Creating .env file for local development..."
-    cat > .env << EOF
-# Secrets for local development with secretspec
-CACHET_DB_URL="$DATABASE_URL"
-CACHET_JWT_SECRET="$JWT_SECRET_VALUE"
-EOF
-    
-    echo "✅ Secrets created with SecretSpec integration!"
-    echo "📋 Your secrets are now available via:"
-    echo "   - CACHET_DB_URL (database connection)"  
-    echo "   - CACHET_JWT_SECRET (JWT signing key)"
-    echo "💡 These are accessible via secretspec in devenv and stored in GCP Secret Manager for production"
-    echo "🔧 Local development will use the values from .env file"
+        echo "🔐 Setting up Secret Manager with SecretSpec integration..."
+        set -euo pipefail
+        
+        PROJECT_ID=$(gcloud config get-value project)
+        
+        # Generate secure database password
+        echo "🔑 Generating secure database password..."
+        DB_PASSWORD=$(openssl rand -base64 32)
+        
+        # Set the password for the postgres user
+        echo "📝 Setting database password..."
+        gcloud sql users set-password postgres \
+          --instance=cachet-db \
+          --password="$DB_PASSWORD"
+        
+        # Create database URL secret with proper connection string
+        echo "🔐 Creating/updating database-url secret..."
+        CONNECTION_NAME="$PROJECT_ID:us-central1:cachet-db"
+        DATABASE_URL="postgresql://postgres:$DB_PASSWORD@/cachet?host=/cloudsql/$CONNECTION_NAME"
+        
+        # Try to create, but if it exists, add a new version
+        if ! echo -n "$DATABASE_URL" | gcloud secrets create database-url --data-file=- 2>/dev/null; then
+          echo "Secret already exists, updating with new version..."
+          echo -n "$DATABASE_URL" | gcloud secrets versions add database-url --data-file=-
+        fi
+        
+        # Create JWT secret
+        echo "🔑 Creating/updating jwt-secret..."
+        JWT_SECRET_VALUE=$(openssl rand -base64 32)
+        if ! echo -n "$JWT_SECRET_VALUE" | gcloud secrets create jwt-secret --data-file=- 2>/dev/null; then
+          echo "Secret already exists, updating with new version..."
+          echo -n "$JWT_SECRET_VALUE" | gcloud secrets versions add jwt-secret --data-file=-
+        fi
+        
+        # Create .env file for local development with secretspec
+        echo "📝 Creating .env file for local development..."
+        cat > .env << EOF
+    # Secrets for local development with secretspec
+    CACHET_DB_URL="$DATABASE_URL"
+    CACHET_JWT_SECRET="$JWT_SECRET_VALUE"
+    EOF
+        
+        echo "✅ Secrets created with SecretSpec integration!"
+        echo "📋 Your secrets are now available via:"
+        echo "   - CACHET_DB_URL (database connection)"  
+        echo "   - CACHET_JWT_SECRET (JWT signing key)"
+        echo "💡 These are accessible via secretspec in devenv and stored in GCP Secret Manager for production"
+        echo "🔧 Local development will use the values from .env file"
   '';
-  
+
   scripts."gcp:deploy:verifier".exec = ''
     echo "🚀 Deploying Verifier service to Cloud Run with SecretSpec integration..."
     set -euo pipefail
-    
+
     PROJECT_ID=$(gcloud config get-value project)
     SERVICE_NAME="cachet-verifier"
-    
+
     # Ensure service account has secret access (idempotent)
     echo "🔐 Ensuring service account has Secret Manager access..."
     PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
     SERVICE_ACCOUNT="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
-    
+
     # Grant Secret Manager access (these commands are idempotent)
     gcloud secrets add-iam-policy-binding database-url \
         --member="serviceAccount:$SERVICE_ACCOUNT" \
@@ -599,11 +627,11 @@ EOF
     gcloud secrets add-iam-policy-binding jwt-secret \
         --member="serviceAccount:$SERVICE_ACCOUNT" \
         --role="roles/secretmanager.secretAccessor" --quiet || true
-    
+
     # Build and push container
     echo "📦 Building container..."
     gcloud builds submit --tag gcr.io/$PROJECT_ID/$SERVICE_NAME ./services/verifier
-    
+
     # Deploy to Cloud Run with SecretSpec-consistent secrets
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
     gcloud run deploy $SERVICE_NAME \
@@ -614,25 +642,25 @@ EOF
       --port 8080 \
       --set-env-vars ENVIRONMENT=production \
       --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest
-    
+
     echo "✅ Verifier service deployed with SecretSpec integration!"
     echo "🔗 Service URL: https://$SERVICE_NAME-$(echo $PROJECT_ID | tr ':' '-').us-central1.run.app"
     echo "🧪 Testing service endpoints..."
     sleep 5
-    
+
     SERVICE_URL="https://$SERVICE_NAME-$(echo $PROJECT_ID | tr ':' '-').us-central1.run.app"
     curl -f "$SERVICE_URL/packs" > /dev/null && echo "✓ /packs endpoint working"
     curl -f "$SERVICE_URL/health" > /dev/null && echo "✓ /health endpoint working" || echo "ℹ /health endpoint not available (service works via /packs)"
-    
+
     echo "🔍 Verifying SecretSpec consistency:"
     echo "   Local (via secretspec/dotenv): CACHET_DB_URL and CACHET_JWT_SECRET available"
     echo "   Cloud (via Secret Manager): Same secrets automatically injected"
   '';
-  
+
   scripts."gcp:deploy:issuance-gateway".exec = ''
     echo "🚀 Deploying Issuance Gateway to Cloud Run with Veriff integration..."
     set -euo pipefail
-    
+
     PROJECT_ID=$(gcloud config get-value project)
     if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then
       echo "❌ GCP project ID not set. Please run 'gcloud config set project YOUR_PROJECT_ID'"
@@ -640,7 +668,7 @@ EOF
     fi
     echo "📋 Using GCP project: $PROJECT_ID"
     SERVICE_NAME="cachet-issuance-gateway"
-    
+
     # Ensure service account has secret access (idempotent)
     echo "🔐 Ensuring service account has Secret Manager access..."
     PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
@@ -649,13 +677,13 @@ EOF
       --member="serviceAccount:$SERVICE_ACCOUNT" \
       --role="roles/secretmanager.secretAccessor" \
       --quiet || echo "IAM binding already exists"
-    
+
     # Build and push container using devenv container definition
     echo "📦 Building and pushing container with devenv..."
     # Use devenv container copy with proper registry configuration
     # Registry URL should be just the base, container name/tag handled automatically
     devenv container --registry docker://gcr.io/$PROJECT_ID/ copy issuance
-    
+
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
     gcloud run deploy $SERVICE_NAME \
@@ -667,10 +695,10 @@ EOF
       --set-env-vars ENVIRONMENT=production \
       --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
       --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
-    
+
     # Get the deployed service URL for webhook configuration
     SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=us-central1 --format='value(status.url)')
-    
+
     echo "✅ Issuance Gateway deployed successfully!"
     echo "🔗 Service URL: $SERVICE_URL"
     echo "🪝 Veriff Webhook URL: $SERVICE_URL/webhooks/veriff"
@@ -680,35 +708,35 @@ EOF
     echo "   2. Update mobile app to point to: $SERVICE_URL"
     echo "   3. Test the complete flow"
   '';
-  
+
   scripts."gcp:status".exec = ''
     echo "📊 Checking GCP deployment status..."
     set -euo pipefail
-    
+
     echo "🗄️  Cloud SQL Status:"
     gcloud sql instances list
-    
+
     echo ""
     echo "🌐 Cloud Run Services:"
     gcloud run services list --platform managed --region us-central1
-    
+
     echo ""
     echo "🔐 Secrets:"
     gcloud secrets list
-    
+
     echo ""
     echo "🔍 SecretSpec Integration Verification:"
     echo "   Local secrets available via secretspec ✓"
     echo "   Cloud secrets injected via Secret Manager ✓" 
     echo "   Same secret names in both environments ✓"
   '';
-  
+
   scripts."gcp:test-deployment".exec = ''
     echo "🧪 Testing complete GCP deployment with SecretSpec..."
     set -euo pipefail
-    
+
     SERVICE_URL=$(gcloud run services describe cachet-verifier --region=us-central1 --format='value(status.url)')
-    
+
     echo "1. Testing local SecretSpec access..."
     if [ -n "''${CACHET_DB_URL:-}" ] && [ -n "''${CACHET_JWT_SECRET:-}" ]; then
       echo "   ✅ Local secrets accessible via secretspec"
@@ -716,7 +744,7 @@ EOF
       echo "   ❌ Local secrets not available - check secretspec configuration"
       exit 1
     fi
-    
+
     echo "2. Testing deployed service..."
     if curl -f "$SERVICE_URL/packs" > /dev/null 2>&1; then
       echo "   ✅ Service responding correctly"
@@ -724,7 +752,7 @@ EOF
       echo "   ❌ Service not responding"
       exit 1
     fi
-    
+
     echo "3. Verifying secrets are configured in Cloud Run..."
     SECRET_CONFIG=$(gcloud run services describe cachet-verifier --region=us-central1 --format="value(spec.template.spec.containers[0].env[].valueFrom.secretKeyRef.name)" | tr '\n' ',' || echo "")
     if [[ "$SECRET_CONFIG" == *"database-url"* ]] && [[ "$SECRET_CONFIG" == *"jwt-secret"* ]]; then
@@ -733,7 +761,7 @@ EOF
       echo "   ❌ Secrets not configured in Cloud Run"
       exit 1
     fi
-    
+
     echo ""
     echo "✅ All tests passed! SecretSpec integration working correctly:"
     echo "   • Local development uses .env via secretspec"
@@ -759,7 +787,7 @@ EOF
     echo ""
     echo "✅ Once set up, use 'webhook:tunnel' or 'webhook:dev' for testing"
   '';
-  
+
   scripts."webhook:tunnel".exec = ''
     echo "🌐 Starting ngrok tunnel for webhook development..."
     echo ""
@@ -774,26 +802,26 @@ EOF
     echo ""
     echo "Press Ctrl+C to stop the tunnel..."
     echo ""
-    
+
     # Check if ngrok is authenticated
     if ! ngrok config check > /dev/null 2>&1; then
       echo "❌ ngrok not configured. Run 'webhook:setup' first."
       exit 1
     fi
-    
+
     ngrok http 8090 --log stdout
   '';
-  
+
   scripts."webhook:dev".exec = ''
     echo "🚀 Starting complete webhook development environment..."
     echo ""
-    
+
     # Check if ngrok is authenticated
     if ! ngrok config check > /dev/null 2>&1; then
       echo "❌ ngrok not configured. Run 'webhook:setup' first."
       exit 1
     fi
-    
+
     echo "This will start:"
     echo "  1. Local issuance gateway (port 8090)"
     echo "  2. ngrok tunnel for webhook reception"
@@ -804,22 +832,22 @@ EOF
     echo "  3. Update mobile app backend URL"
     echo "  4. Test complete end-to-end Veriff flow"
     echo ""
-    
+
     # Start issuance gateway in background
     echo "Starting issuance gateway..."
     cd services/issuance-gateway
     PORT=8090 go run . &
     GATEWAY_PID=$!
-    
+
     # Wait for it to start
     echo "Waiting for gateway to start..."
     sleep 3
-    
+
     # Start ngrok tunnel
     echo "Starting ngrok tunnel..."
     echo ""
     ngrok http 8090 --log stdout
-    
+
     # Cleanup on exit
     trap "kill $GATEWAY_PID 2>/dev/null" EXIT
   '';
@@ -845,7 +873,7 @@ EOF
       copyToRoot = pkgs.buildEnv {
         name = "workspace-root";
         paths = [
-          (pkgs.runCommand "workspace" {} ''
+          (pkgs.runCommand "workspace" { } ''
             mkdir -p $out/workspace
             cp -r ${./.} $out/workspace/
             chmod -R u+w $out/workspace
@@ -867,7 +895,7 @@ EOF
       copyToRoot = pkgs.buildEnv {
         name = "workspace-root";
         paths = [
-          (pkgs.runCommand "workspace" {} ''
+          (pkgs.runCommand "workspace" { } ''
             mkdir -p $out/workspace
             cp -r ${./.} $out/workspace/
             chmod -R u+w $out/workspace
@@ -889,7 +917,7 @@ EOF
       copyToRoot = pkgs.buildEnv {
         name = "workspace-root";
         paths = [
-          (pkgs.runCommand "workspace" {} ''
+          (pkgs.runCommand "workspace" { } ''
             mkdir -p $out/workspace
             cp -r ${./.} $out/workspace/
             chmod -R u+w $out/workspace
@@ -916,7 +944,7 @@ EOF
       copyToRoot = pkgs.buildEnv {
         name = "container-root";
         paths = [
-          (pkgs.runCommand "app-source" {} ''
+          (pkgs.runCommand "app-source" { } ''
             mkdir -p $out/app
             cp -r ${./.}/* $out/app/ || true
             cp -r ${./.}/.[^.]* $out/app/ || true
@@ -934,10 +962,10 @@ EOF
       gofmt.enable = true;
       # golangci-lint disabled at root level - runs per-service in lint:go script
       # golangci-lint.enable = true;
-      
+
       # Schema validation
       check-yaml.enable = true;
-      
+
       # Custom hooks
       schema-validate = {
         enable = true;
@@ -946,7 +974,7 @@ EOF
         files = "schemas/.*\\.yaml$";
         language = "system";
       };
-      
+
       # Prevent /healthz endpoints from being committed (Cloud Run issue)
       check-healthz = {
         enable = true;
@@ -956,7 +984,7 @@ EOF
         language = "system";
         pass_filenames = false;
       };
-      
+
       # Go mod tidy for all services (disabled temporarily due to hook conflicts)
       # go-mod-tidy = {
       #   enable = true;
@@ -971,8 +999,10 @@ EOF
   enterShell = ''
     echo "✅ Cachet devenv ready with SecretSpec integration."
     echo "  Backend:"
-    echo "    - Run services:     dev:services (or: devenv up --detach)"
+    echo "    - Start services:   dev:up (wraps devenv up --detach)"
     echo "    - Stop services:    dev:stop (or: devenv processes stop)"
+    echo "    - Tail logs:        dev:logs"
+    echo "    - Attach TUI:       dev:tui"
     echo "    - Format code:      fmt:go"
     echo "    - Lint (Go):        lint:go"
     echo "    - Test all:         test:all"
