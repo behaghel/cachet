@@ -31,6 +31,15 @@ jobs:
           cp .env.ci .env
           echo "✅ Dummy secrets configured for SecretSpec compatibility"
 
+      - name: Debug Go module environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          pwd
+          cat services/verifier/go.mod
+          devenv shell -- bash -lc "go env | grep -E 'GO111MODULE|GOMOD|GOWORK|GOPATH|GOMODCACHE'"
+          ls -R services/verifier | head
+
       - name: Run backend CI pipeline
         shell: bash
         run: |
@@ -307,4 +316,3 @@ jobs:
         run: |
           echo "✅ Deployment completed successfully"
           devenv shell -- gcp:status
-
