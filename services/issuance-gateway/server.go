@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -368,6 +369,7 @@ func NewServer() *Server {
 	}
 
 	cfg := config.MustLoad()
+	logStartupConfiguration(cfg)
 
 	s := &Server{
 		router:           chi.NewRouter(),
@@ -1227,7 +1229,7 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 	}
 
 	log.Debug().
-		Str("veriff_api_key", veriffAPIKey).
+		Bool("veriff_api_key_present", veriffAPIKey != "").
 		Str("veriff_base_url", veriffBaseURL).
 		Msg("Veriff configuration check")
 
@@ -1359,28 +1361,48 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 
 // createRealVeriffSession calls the real Veriff API to create a verification session
 func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey, baseURL string) (*CreateVeriffSessionResponse, error) {
-	callbackURL := os.Getenv("VERIFF_WEBHOOK_EXTERNAL_URL")
-	if callbackURL == "" {
-		callbackURL = fmt.Sprintf("%s/webhooks/veriff", strings.TrimRight(s.config.Services.IssuanceGateway.PublicURL, "/"))
+	callbackURL, err := s.resolveVeriffCallbackURL()
+	if err != nil {
+		return nil, err
+	}
+
+	verificationPayload := map[string]interface{}{
+		"callback": callbackURL,
+		"person": map[string]interface{}{
+			"firstName": "User",
+			"lastName":  "Test",
+		},
+		"document": map[string]interface{}{
+			"type":    "PASSPORT",
+			"country": "US",
+		},
+	}
+
+	if req.ClientID != "" {
+		verificationPayload["vendorData"] = req.ClientID
+	}
+
+	additionalData := map[string]interface{}{}
+	if req.ClientID != "" {
+		additionalData["clientId"] = req.ClientID
+	}
+	if req.RedirectURL != "" {
+		additionalData["redirectUrl"] = req.RedirectURL
+	}
+	if len(additionalData) > 0 {
+		verificationPayload["additionalData"] = additionalData
 	}
 
 	veriffReq := map[string]interface{}{
-		"verification": map[string]interface{}{
-			"callback": callbackURL,
-			"person": map[string]interface{}{
-				"firstName": "User",
-				"lastName":  "Test",
-			},
-			"metadata": map[string]interface{}{
-				"clientId": req.ClientID,
-			},
-		},
+		"verification": verificationPayload,
 	}
 
 	reqBody, err := json.Marshal(veriffReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
+
+	log.Debug().RawJSON("veriff_request", reqBody).Msg("Veriff session payload")
 
 	// Create HTTP request to Veriff API
 	httpReq, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/sessions", baseURL), bytes.NewBuffer(reqBody))
@@ -1426,6 +1448,63 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 	}
 
 	return response, nil
+}
+
+func (s *Server) resolveVeriffCallbackURL() (string, error) {
+	raw := trimEnvValue(os.Getenv("VERIFF_WEBHOOK_EXTERNAL_URL"))
+	if raw == "" {
+		base := trimEnvValue(s.config.Services.IssuanceGateway.PublicURL)
+		if base == "" {
+			return "", fmt.Errorf("issuance gateway public URL is not configured; set VERIFF_WEBHOOK_EXTERNAL_URL for Veriff callbacks")
+		}
+		raw = fmt.Sprintf("%s/webhooks/veriff", strings.TrimRight(base, "/"))
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("invalid Veriff callback URL %q: %w", raw, err)
+	}
+
+	if parsed.Scheme == "" || parsed.Host == "" {
+		return "", fmt.Errorf("veriff callback URL must include scheme and host: %s", raw)
+	}
+
+	if parsed.Scheme != "https" {
+		if parsed.Scheme == "http" && strings.Contains(parsed.Host, "ngrok") {
+			parsed.Scheme = "https"
+			raw = parsed.String()
+		} else {
+			return "", fmt.Errorf("veriff callback URL must use https: %s", parsed.String())
+		}
+	} else {
+		raw = parsed.String()
+	}
+
+	return raw, nil
+}
+
+func trimEnvValue(value string) string {
+	return strings.Trim(strings.TrimSpace(value), "\"'")
+}
+
+func logStartupConfiguration(cfg *config.Config) {
+	veriffAPIKeyPresent := os.Getenv("VERIFF_API_KEY") != ""
+	webhookEnvRaw, webhookEnvPresent := os.LookupEnv("VERIFF_WEBHOOK_EXTERNAL_URL")
+	webhookURL := trimEnvValue(webhookEnvRaw)
+	if webhookURL == "" {
+		webhookURL = "(derived from issuanceGateway.publicUrl)"
+	}
+
+	log.Info().
+		Str("environment", cfg.Environment).
+		Str("issuance_host", cfg.Services.IssuanceGateway.Host).
+		Int("issuance_port", cfg.Services.IssuanceGateway.Port).
+		Str("issuance_public_url", cfg.Services.IssuanceGateway.PublicURL).
+		Bool("veriff_api_key_present", veriffAPIKeyPresent).
+		Str("veriff_base_url", trimEnvValue(os.Getenv("VERIFF_BASE_URL"))).
+		Bool("veriff_webhook_env_present", webhookEnvPresent).
+		Str("veriff_webhook_external_url", webhookURL).
+		Msg("Issuance gateway configuration loaded")
 }
 
 // verifyWebhookSignature validates the Veriff webhook signature

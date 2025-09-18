@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/behaghel/cachet/services/common/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -432,4 +433,68 @@ func TestVerifyWebhookSignature(t *testing.T) {
 	assert.True(t, verifyWebhookSignature(payload, strings.ToUpper(signature), testWebhookSecret))
 	assert.False(t, verifyWebhookSignature(payload, signature, "wrong"))
 	assert.False(t, verifyWebhookSignature(payload, "", testWebhookSecret))
+}
+
+func TestResolveVeriffCallbackURL_ConvertsNgrokToHTTPS(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "https://issuer.example.com"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "\"http://c3d47af68db6.ngrok-free.app/sessions/veriff\"")
+
+	callbackURL, err := s.resolveVeriffCallbackURL()
+	require.NoError(t, err)
+	assert.Equal(t, "https://c3d47af68db6.ngrok-free.app/sessions/veriff", callbackURL)
+}
+
+func TestResolveVeriffCallbackURL_DefaultsToConfig(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "https://issuer.example.com"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "")
+
+	callbackURL, err := s.resolveVeriffCallbackURL()
+	require.NoError(t, err)
+	assert.Equal(t, "https://issuer.example.com/webhooks/veriff", callbackURL)
+}
+
+func TestResolveVeriffCallbackURL_ErrorsForInsecureConfig(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "http://localhost:8090"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "")
+
+	_, err := s.resolveVeriffCallbackURL()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "https")
+}
+
+func TestResolveVeriffCallbackURL_ErrorsForInsecureExternalURL(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "https://issuer.example.com"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "http://localhost:8080/callback")
+
+	_, err := s.resolveVeriffCallbackURL()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "https")
 }
