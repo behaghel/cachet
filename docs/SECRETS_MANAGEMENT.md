@@ -26,6 +26,7 @@ VERIFF_API_KEY = { description = "Veriff API key for SDK initialization", requir
 VERIFF_BASE_URL = { description = "Veriff API base URL", required = false, default = "https://stationapi.veriff.com" }
 VERIFF_WEBHOOK_SECRET = { description = "Veriff master signature key for webhook verification", required = true }
 VERIFF_WEBHOOK_BASE_URL = { description = "Base URL where Veriff should send webhooks", required = false, default = "http://localhost:8082" }
+VERIFF_WEBHOOK_EXTERNAL_URL = { description = "Public HTTPS callback URL Veriff should call", required = false, default = "" }
 
 [profiles.ci]
 # CI/CD Infrastructure secrets for deployment consistency
@@ -37,9 +38,11 @@ CACHIX_AUTH_TOKEN = { description = "Cachix authentication token for Nix caching
 
 | Environment | Provider | Secret Storage | Usage Pattern |
 |-------------|----------|----------------|---------------|
-| **Local Development** | `dotenv` | `.env.local` (backed by `pass`) | `secretspec run --provider dotenv -- command` |
+| **Local Development** | `dotenv://.env` | `.env` (backed by `pass`) | `secretspec run -- command` |
 | **CI/CD** | `env` | GitHub Actions secrets | `secretspec run --provider env --profile ci -- command` |
 | **Production** | Cloud Run environment | GCP Secret Manager | Injected via `--set-secrets` |
+
+> `devenv` exports `SECRETSPEC_PROVIDER=dotenv://.env` and `SECRETSPEC_PROFILE=default` for you, so running `secretspec` commands from within `devenv shell` automatically pulls secrets from `.env`.
 
 ## Local Development Setup
 
@@ -49,26 +52,33 @@ CACHIX_AUTH_TOKEN = { description = "Cachix authentication token for Nix caching
 devenv shell -- secretspec config init
 ```
 
-### 2. Create .env.local with pass integration
+### 2. Create `.env` with pass integration
 
 ```bash
-# .env.local (example)
+# Copy the template and fill with secure values
+cp .env.example .env
+
+# .env (example)
+CACHET_ENV="local"
+CACHET_CONFIG_PATH=""
 CACHET_DB_URL="postgresql://postgres:password@localhost:5432/cachet"
 CACHET_JWT_SECRET="your-jwt-secret-here"
 
 # Veriff Integration (using pass)
 VERIFF_API_KEY="$(pass veriff/cachet-api-key 2>/dev/null || echo 'dummy-veriff-api-key-for-local')"
 VERIFF_WEBHOOK_SECRET="$(pass veriff/cachet-webhook-secret 2>/dev/null || echo 'dummy-webhook-secret-for-local')"
+VERIFF_WEBHOOK_EXTERNAL_URL="$(pass veriff/cachet-webhook-external-url 2>/dev/null || echo 'https://your-ngrok-domain.ngrok-free.app')"
+# `.env` is gitignored—never commit real secrets.
 ```
 
 ### 3. Run services with SecretSpec
 
 ```bash
 # Start all backend services
-devenv shell -- secretspec run --provider dotenv -- dev:services
+devenv shell -- dev:up
 
 # Run individual commands
-devenv shell -- secretspec run --provider dotenv -- go run ./services/issuance-gateway
+devenv shell -- secretspec run -- go run ./services/issuance-gateway
 ```
 
 ## CI/CD Integration
@@ -126,7 +136,7 @@ gcloud run deploy cachet-issuance-gateway \
 ```
 📝 secretspec.toml (declaration)
     ├── Local Development
-    │   └── pass → .env.local → secretspec --provider dotenv
+    │   └── pass → .env → secretspec run
     ├── CI/CD
     │   └── GitHub Actions secrets → env vars → secretspec --provider env --profile ci  
     └── Production
@@ -139,11 +149,13 @@ gcloud run deploy cachet-issuance-gateway \
 
 ```bash
 # Check secret availability
-devenv shell -- secretspec check --provider dotenv
+devenv shell -- secretspec check
 
 # Run with secrets
-devenv shell -- secretspec run --provider dotenv -- dev:services
-devenv shell -- secretspec run --provider dotenv -- android:run
+devenv shell -- dev:up
+devenv shell -- secretspec run -- android:run
+
+> `dev:up` clears any pre-existing `CACHET_CONFIG_PATH` before loading secrets so the Go services fall back to their built-in config resolver.
 ```
 
 ### CI/CD
@@ -197,7 +209,7 @@ devenv shell -- gcp:deploy:verifier
 1. **Secret not found error**:
    ```bash
    # Check if secret is declared
-   devenv shell -- secretspec check --provider dotenv
+   devenv shell -- secretspec check
    
    # Verify secret exists in storage
    pass show veriff/cachet-api-key  # Local
@@ -221,13 +233,13 @@ devenv shell -- gcp:deploy:verifier
 
 ```bash
 # List all declared secrets
-devenv shell -- secretspec check --provider dotenv
+devenv shell -- secretspec check
 
 # Test secret access
-devenv shell -- secretspec get VERIFF_API_KEY --provider dotenv
+devenv shell -- secretspec get VERIFF_API_KEY
 
 # Run with debug output
-devenv shell -- secretspec run --provider dotenv -- env | grep VERIFF
+devenv shell -- secretspec run -- env | grep VERIFF
 ```
 
 ## Migration from Legacy Secret Management
@@ -247,7 +259,7 @@ go run ./services/issuance-gateway
 
 ### After (SecretSpec)
 ```bash
-devenv shell -- secretspec run --provider dotenv -- go run ./services/issuance-gateway
+devenv shell -- secretspec run -- go run ./services/issuance-gateway
 ```
 
 ## Related Documentation

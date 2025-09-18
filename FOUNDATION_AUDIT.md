@@ -50,7 +50,7 @@
 ### Suggestions
 - Enforce webhook signature verification: stop logging secrets, remove bypass, validate against `sha256=` header, and respond 401 on mismatch. Document key rotation.
 - Replace simulated crypto with platform primitives (e.g. Android `Cipher`, Kotlin Multiplatform `okio` + libsodium) or mark the vault as “design only” until real implementations land; do not ship mock encryption.
-- Parameterise backend base URLs via config (build variants/gradle properties) and forbid committing personal tunnels; supply sample `.env.local` values.
+- Parameterise backend base URLs via config (build variants/gradle properties) and forbid committing personal tunnels; supply sample `.env` values.
 - Bind OAuth tokens to specific Veriff session IDs and purge `verifiedSessions` after issuance; introduce persistence/TTL and concurrency-safe access (mutex or channel) before production exposure.
 
 ## Mobile & SDKs
@@ -86,7 +86,7 @@
 ### Suggestions
 - Wrap per-service commands in subshells (`(cd ...)`) or use `just` recipes to avoid directory bleed; ensure CI reuses those commands.
 - Add automated checks (pre-commit or CI) to verify docker-compose alignment (e.g. unit test reading env defaults).
-- Wire SecretSpec loading into the Go services (e.g. fail fast when `VERIFF_WEBHOOK_SECRET` absent) and document local `.env.local` setup in README.
+- Wire SecretSpec loading into the Go services (e.g. fail fast when `VERIFF_WEBHOOK_SECRET` absent) and document local `.env` setup in README.
 
 ## Documentation & Knowledge Transfer
 ### Findings
@@ -115,4 +115,3 @@
 3. Implement a minimal issuance→verification flow with real persistence, schema coverage, and integration tests.
 4. Update OpenAPI specs / docs to reflect the functioning endpoints and wire schema checks into CI.
 5. Iterate on mobile networking/configuration to align with the hardened backend.
-
