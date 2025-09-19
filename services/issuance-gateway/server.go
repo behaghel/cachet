@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -60,6 +62,15 @@ type VeriffSession struct {
 	Id              string `json:"id"`
 	Url             string `json:"url,omitempty"`
 	VerificationUrl string `json:"verification_url,omitempty"`
+	VendorData      string `json:"vendorData,omitempty"`
+	Action          string `json:"action,omitempty"`
+	Feature         string `json:"feature,omitempty"`
+	Code            int    `json:"code,omitempty"`
+
+	Decision struct {
+		Status string `json:"status,omitempty"`
+		Reason string `json:"reason,omitempty"`
+	} `json:"decision,omitempty"`
 
 	Person struct {
 		FirstName             string  `json:"firstName"`
@@ -353,6 +364,7 @@ type Server struct {
 	verifiedSessions map[string]VeriffSession // Store for verified Veriff sessions
 	sessionMu        sync.RWMutex
 	config           *config.Config
+	httpClient       *http.Client
 }
 
 type TokenInfo struct {
@@ -377,6 +389,7 @@ func NewServer() *Server {
 		accessTokens:     make(map[string]TokenInfo),
 		verifiedSessions: make(map[string]VeriffSession),
 		config:           cfg,
+		httpClient:       &http.Client{Timeout: 15 * time.Second},
 	}
 
 	s.setupMiddleware()
@@ -398,6 +411,7 @@ func (s *Server) setupRoutes() {
 	// OpenID4VCI endpoints
 	s.router.Post("/oauth/token", s.handleOAuthToken)
 	s.router.Post("/credential", s.handleCredentialIssuance)
+	s.router.Get("/sessions/veriff/{sessionID}", s.handleGetVeriffSessionStatus)
 
 	// Veriff session management
 	s.router.Post("/sessions/veriff", s.handleCreateVeriffSession)
@@ -979,13 +993,27 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	session, ok := s.verifiedSessions[req.SessionID]
 	s.sessionMu.RUnlock()
 	if !ok {
-		log.Error().Str("session_id", req.SessionID).Msg("Veriff session not found")
-		http.Error(w, "No verified identity session found", http.StatusBadRequest)
+		log.Warn().Str("session_id", req.SessionID).Msg("Veriff session not found; returning pending")
+		respondWithJSON(w, http.StatusAccepted, map[string]string{"status": "pending"})
 		return
 	}
 
-	if session.Status != "approved" {
-		http.Error(w, "Identity session not approved", http.StatusBadRequest)
+	status := normalizeVeriffStatus(session.Status)
+	if status == "" {
+		status = "pending"
+	}
+
+	switch status {
+	case "pending", "started", "submitted", "processing", "review", "resubmission_required":
+		respondWithJSON(w, http.StatusAccepted, map[string]string{"status": status})
+		return
+	case "declined", "abandoned", "expired":
+		respondWithJSON(w, http.StatusUnprocessableEntity, map[string]string{"status": status})
+		return
+	case "approved":
+		// continue
+	default:
+		respondWithJSON(w, http.StatusAccepted, map[string]string{"status": status})
 		return
 	}
 
@@ -1137,14 +1165,25 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session.SessionID = s.normalizeSessionID(session)
+	session.Status = normalizeVeriffStatus(session.Status)
+	if session.Status == "" && session.Decision.Status != "" {
+		session.Status = normalizeVeriffStatus(session.Decision.Status)
+	}
+	session.Action = strings.ToLower(session.Action)
+	s.upsertVeriffSession(session)
+
 	log.Info().
 		Str("session_id", session.SessionID).
-		Str("status", session.Status).
+		Str("status", s.getStoredSessionStatus(session.SessionID)).
+		Str("action", session.Action).
 		Msg("Veriff webhook received")
 
-	switch session.Status {
+	status := s.getStoredSessionStatus(session.SessionID)
+	switch status {
 	case "approved":
 		// Enhanced validation for gold quality credentials
+		session := s.getSessionCopy(session.SessionID)
 		enhancedValidation := validateVeriffSessionEnhanced(session)
 
 		log.Info().
@@ -1183,7 +1222,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	case "declined", "expired", "abandoned":
 		log.Info().
 			Str("session_id", session.SessionID).
-			Str("status", session.Status).
+			Str("status", status).
 			Msg("Verification session not approved")
 
 		w.WriteHeader(http.StatusAccepted) // Acknowledged but not processed
@@ -1191,9 +1230,9 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 			log.Error().Err(err).Msg("Failed to write webhook response")
 		}
 	default:
-		// Unknown status
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("ok")); err != nil {
+		// Pending or in-review statuses
+		w.WriteHeader(http.StatusAccepted)
+		if _, err := w.Write([]byte("pending")); err != nil {
 			log.Error().Err(err).Msg("Failed to write webhook response")
 		}
 	}
@@ -1492,6 +1531,261 @@ func (s *Server) resolveVeriffCallbackURL() (string, error) {
 
 func trimEnvValue(value string) string {
 	return strings.Trim(strings.TrimSpace(value), "\"'")
+}
+
+func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		log.Error().Err(err).Msg("Failed to encode JSON response")
+	}
+}
+
+func (s *Server) normalizeSessionID(session VeriffSession) string {
+	if session.SessionID != "" {
+		return session.SessionID
+	}
+	return session.Id
+}
+
+func normalizeVeriffStatus(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "approved", "declined", "pending", "submitted", "started", "processing", "review", "resubmission_required", "abandoned", "expired":
+		return strings.ToLower(strings.TrimSpace(status))
+	default:
+		return strings.ToLower(strings.TrimSpace(status))
+	}
+}
+
+func deriveStatusFromSession(session VeriffSession) string {
+	status := normalizeVeriffStatus(session.Status)
+	if status != "" {
+		return status
+	}
+	decisionStatus := normalizeVeriffStatus(session.Decision.Status)
+	if decisionStatus != "" {
+		return decisionStatus
+	}
+	action := normalizeVeriffStatus(session.Action)
+	if action != "" {
+		switch action {
+		case "approved", "declined":
+			return action
+		case "decision":
+			if decisionStatus != "" {
+				return decisionStatus
+			}
+			return "pending"
+		case "submitted", "started":
+			return "pending"
+		default:
+			return action
+		}
+	}
+	if session.Code != 0 {
+		switch session.Code {
+		case 7001:
+			return "pending"
+		case 7002:
+			return "submitted"
+		}
+	}
+	return "pending"
+}
+
+func (s *Server) upsertVeriffSession(session VeriffSession) {
+	sessionID := s.normalizeSessionID(session)
+	if sessionID == "" {
+		log.Warn().Msg("Received Veriff session event without session ID")
+		return
+	}
+	session.SessionID = sessionID
+	session.Status = deriveStatusFromSession(session)
+
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+
+	if existing, ok := s.verifiedSessions[sessionID]; ok {
+		if session.Status == "" {
+			session.Status = existing.Status
+		}
+		if session.Action == "" {
+			session.Action = existing.Action
+		}
+		if session.VendorData == "" {
+			session.VendorData = existing.VendorData
+		}
+		if session.Decision.Status == "" {
+			session.Decision = existing.Decision
+		}
+		if session.Person.FirstName == "" && existing.Person.FirstName != "" {
+			session.Person = existing.Person
+		}
+		if session.Document.Number == "" && existing.Document.Number != "" {
+			session.Document = existing.Document
+		}
+		if session.Verification.Timestamp == "" && existing.Verification.Timestamp != "" {
+			session.Verification = existing.Verification
+		}
+	}
+
+	s.verifiedSessions[sessionID] = session
+}
+
+func (s *Server) getStoredSessionStatus(sessionID string) string {
+	s.sessionMu.RLock()
+	defer s.sessionMu.RUnlock()
+	if session, ok := s.verifiedSessions[sessionID]; ok {
+		return normalizeVeriffStatus(session.Status)
+	}
+	return ""
+}
+
+func (s *Server) getSessionCopy(sessionID string) VeriffSession {
+	s.sessionMu.RLock()
+	defer s.sessionMu.RUnlock()
+	if session, ok := s.verifiedSessions[sessionID]; ok {
+		return session
+	}
+	return VeriffSession{SessionID: sessionID}
+}
+
+func (s *Server) handleGetVeriffSessionStatus(w http.ResponseWriter, r *http.Request) {
+	sessionID := chi.URLParam(r, "sessionID")
+	if sessionID == "" {
+		http.Error(w, "missing sessionID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	session, err := s.getLatestVeriffSession(ctx, sessionID)
+	if err != nil {
+		log.Error().Err(err).Str("session_id", sessionID).Msg("Failed to retrieve Veriff session status")
+		http.Error(w, "Failed to retrieve session status", http.StatusBadGateway)
+		return
+	}
+
+	status := normalizeVeriffStatus(session.Status)
+	if status == "" {
+		status = "pending"
+	}
+
+	response := map[string]interface{}{
+		"sessionId": sessionID,
+		"status":    status,
+		"action":    session.Action,
+		"code":      session.Code,
+	}
+
+	respondWithJSON(w, http.StatusOK, response)
+}
+
+func (s *Server) getLatestVeriffSession(ctx context.Context, sessionID string) (VeriffSession, error) {
+	// Check cache first
+	if cached := s.getSessionCopy(sessionID); cached.SessionID != "" && cached.Status != "" {
+		if normalizeVeriffStatus(cached.Status) == "approved" || normalizeVeriffStatus(cached.Status) == "declined" {
+			return cached, nil
+		}
+	}
+
+	session, err := s.fetchVeriffSessionFromAPI(ctx, sessionID)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+	s.upsertVeriffSession(session)
+	return session, nil
+}
+
+var errVeriffAPIKeyMissing = errors.New("VERIFF_API_KEY not configured")
+
+func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string) (VeriffSession, error) {
+	apiKey := strings.TrimSpace(os.Getenv("VERIFF_API_KEY"))
+	if apiKey == "" {
+		return VeriffSession{}, errVeriffAPIKeyMissing
+	}
+	baseURL := strings.TrimSpace(os.Getenv("VERIFF_BASE_URL"))
+	if baseURL == "" {
+		baseURL = "https://stationapi.veriff.com"
+	}
+	endpoint := fmt.Sprintf("%s/v1/sessions/%s", strings.TrimRight(baseURL, "/"), sessionID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-AUTH-CLIENT", apiKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return VeriffSession{}, fmt.Errorf("session %s not found", sessionID)
+	}
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return VeriffSession{}, fmt.Errorf("veriff API returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+
+	session, err := parseVeriffSession(body)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+	if session.SessionID == "" {
+		session.SessionID = sessionID
+	}
+	session.Status = deriveStatusFromSession(session)
+	return session, nil
+}
+
+func parseVeriffSession(data []byte) (VeriffSession, error) {
+	var wrapped struct {
+		Session      *VeriffSession `json:"session"`
+		Verification *VeriffSession `json:"verification"`
+	}
+	if err := json.Unmarshal(data, &wrapped); err == nil {
+		if wrapped.Session != nil {
+			session := *wrapped.Session
+			if session.SessionID == "" {
+				session.SessionID = session.Id
+			}
+			if session.Status == "" && session.Decision.Status != "" {
+				session.Status = session.Decision.Status
+			}
+			return session, nil
+		}
+		if wrapped.Verification != nil {
+			session := *wrapped.Verification
+			if session.SessionID == "" {
+				session.SessionID = session.Id
+			}
+			if session.Status == "" && session.Decision.Status != "" {
+				session.Status = session.Decision.Status
+			}
+			return session, nil
+		}
+	}
+
+	var minimal VeriffSession
+	if err := json.Unmarshal(data, &minimal); err != nil {
+		return VeriffSession{}, err
+	}
+	if minimal.SessionID == "" {
+		minimal.SessionID = minimal.Id
+	}
+	if minimal.Status == "" && minimal.Decision.Status != "" {
+		minimal.Status = minimal.Decision.Status
+	}
+	return minimal, nil
 }
 
 func logStartupConfiguration(cfg *config.Config) {

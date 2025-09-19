@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -531,4 +532,59 @@ func TestResolveVeriffCallbackURL_AppendsDefaultPathWhenMissing(t *testing.T) {
 	callbackURL, err := s.resolveVeriffCallbackURL()
 	require.NoError(t, err)
 	assert.Equal(t, "https://c3d47af68db6.ngrok-free.app/webhooks/veriff", callbackURL)
+}
+
+type roundTripFunc func(*http.Request) *http.Response
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
+}
+
+func TestGetVeriffSessionStatus_ReturnsCachedStatus(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	server := NewServer()
+	server.sessionMu.Lock()
+	server.verifiedSessions["session-123"] = VeriffSession{SessionID: "session-123", Status: "approved"}
+	server.sessionMu.Unlock()
+
+	req := httptest.NewRequest(http.MethodGet, "/sessions/veriff/session-123", nil)
+	w := httptest.NewRecorder()
+
+	server.router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var body map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.Equal(t, "approved", body["status"])
+}
+
+func TestGetVeriffSessionStatus_FetchesFromAPI(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	t.Setenv("VERIFF_API_KEY", "test-api-key")
+	t.Setenv("VERIFF_BASE_URL", "https://stationapi.veriff.com")
+
+	server := NewServer()
+	server.httpClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) *http.Response {
+			assert.Contains(t, req.URL.Path, "/v1/sessions/session-456")
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"session":{"id":"session-456","status":"approved","vendorData":"cachet-android-wallet"}}`)),
+				Header:     make(http.Header),
+			}
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sessions/veriff/session-456", nil)
+	w := httptest.NewRecorder()
+	server.router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var body map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.Equal(t, "approved", body["status"])
 }
