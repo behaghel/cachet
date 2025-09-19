@@ -99,17 +99,25 @@ class WalletViewModel(
     private fun requestCredentialAfterVerification() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Starting credential issuance simulation...")
-                // Simulate delay for verification process
-                kotlinx.coroutines.delay(3000)
-                
-                Log.d(TAG, "Requesting credential from backend...")
+                Log.d(TAG, "Awaiting Veriff decision before requesting credential")
                 val sessionId = pendingSessionId
                 if (sessionId == null) {
                     Log.e(TAG, "Session ID missing when requesting credential")
                     _uiState.value = WalletUiState.Error("Verification session not available")
                     return@launch
                 }
+
+                val waitResult = issuanceUseCase.waitForVerificationApproval(sessionId)
+                if (waitResult.isFailure) {
+                    val error = waitResult.exceptionOrNull()?.message ?: "Verification pending"
+                    Log.e(TAG, "Verification did not complete: $error")
+                    _uiState.value = WalletUiState.Error("Verification pending: $error")
+                    return@launch
+                }
+
+                Log.d(TAG, "Verification approved, proceeding with credential issuance")
+
+                Log.d(TAG, "Requesting credential from backend...")
                 issuanceUseCase.requestCredential(
                     clientId = "cachet-android-wallet",
                     credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),

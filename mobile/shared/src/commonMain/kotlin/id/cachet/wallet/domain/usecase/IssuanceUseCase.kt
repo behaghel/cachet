@@ -3,7 +3,9 @@ package id.cachet.wallet.domain.usecase
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.network.OpenID4VCIClient
+import id.cachet.wallet.network.VerificationStatusResponse
 import kotlinx.datetime.Clock
+import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 class IssuanceUseCase(
@@ -81,6 +83,38 @@ class IssuanceUseCase(
         } catch (e: Exception) {
             Result.failure(IssuanceException("Failed to revoke credential: ${e.message}", e))
         }
+    }
+
+    suspend fun getVerificationStatus(sessionId: String): Result<VerificationStatusResponse> {
+        return try {
+            val status = openID4VCIClient.getVerificationStatus(sessionId)
+            Result.success(status)
+        } catch (e: Exception) {
+            Result.failure(IssuanceException("Failed to fetch verification status: ${e.message}", e))
+        }
+    }
+
+    suspend fun waitForVerificationApproval(
+        sessionId: String,
+        maxAttempts: Int = 30,
+        delayMillis: Long = 2_000
+    ): Result<Unit> {
+        repeat(maxAttempts) { attempt ->
+            val statusResult = getVerificationStatus(sessionId)
+            if (statusResult.isSuccess) {
+                val status = statusResult.getOrNull()!!.status.lowercase()
+                when (status) {
+                    "approved" -> return Result.success(Unit)
+                    "declined", "abandoned", "expired" -> {
+                        return Result.failure(IssuanceException("Verification $status"))
+                    }
+                }
+            } else if (attempt == maxAttempts - 1) {
+                return Result.failure(statusResult.exceptionOrNull() ?: IssuanceException("Verification status unknown"))
+            }
+            delay(delayMillis)
+        }
+        return Result.failure(IssuanceException("Verification still pending"))
     }
 }
 

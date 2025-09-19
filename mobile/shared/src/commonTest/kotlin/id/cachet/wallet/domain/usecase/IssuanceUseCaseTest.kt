@@ -3,9 +3,10 @@ package id.cachet.wallet.domain.usecase
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
-import id.cachet.wallet.network.CredentialResponse
+import id.cachet.wallet.network.VerificationStatusResponse
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlin.test.Test
@@ -85,6 +86,12 @@ class IssuanceUseCaseTest {
         assertTrue(result.isSuccess)
         val storedCredential = result.getOrNull()
         assertNotNull(storedCredential)
+    }
+
+    @Test
+    fun testWaitForVerificationApproval() = runTest {
+        val result = issuanceUseCase.waitForVerificationApproval("session-success", maxAttempts = 1, delayMillis = 10)
+        assertTrue(result.isSuccess)
     }
     
     @Test 
@@ -179,6 +186,10 @@ private class MockOpenID4VCIClient : OpenID4VCIClient {
             format = format
         )
     }
+
+    override suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse {
+        return VerificationStatusResponse(sessionId = sessionId, status = "approved")
+    }
 }
 
 private class FailingOpenID4VCIClient(
@@ -222,5 +233,12 @@ private class FailingOpenID4VCIClient(
         )
 
         return CredentialResponse(credential = mockCredential, format = format)
+    }
+
+    override suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse {
+        if (failAtCredential) {
+            throw Exception("Status request failed")
+        }
+        return VerificationStatusResponse(sessionId = sessionId, status = "approved")
     }
 }

@@ -78,11 +78,18 @@ class OpenID4VCIClientTest {
         assertEquals("ldp_vc", credentialResponse.format)
         assertNotNull(credentialResponse.credential)
     }
+
+    @Test
+    fun testGetVerificationStatus() = runTest {
+        val status = mockClient.getVerificationStatus("session-789")
+        assertEquals("pending", status.status)
+    }
 }
 
 // Mock client for testing
 class MockOpenID4VCIClient : OpenID4VCIClient {
     private val validTokens = mutableSetOf<String>()
+    private val sessionStatuses = mutableMapOf<String, VerificationStatusResponse>()
     
     override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
         val token = "mock-access-token-${System.currentTimeMillis()}"
@@ -106,6 +113,8 @@ class MockOpenID4VCIClient : OpenID4VCIClient {
             throw OpenID4VCIException("Invalid access token")
         }
 
+        sessionStatuses[sessionId] = VerificationStatusResponse(sessionId = sessionId, status = "approved")
+
         val mockCredential = VerifiableCredential(
             id = "urn:uuid:mock-credential-${System.currentTimeMillis()}",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
@@ -123,5 +132,11 @@ class MockOpenID4VCIClient : OpenID4VCIClient {
             credential = mockCredential,
             format = format
         )
+    }
+
+    override suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse {
+        return sessionStatuses.getOrPut(sessionId) {
+            VerificationStatusResponse(sessionId = sessionId, status = "pending")
+        }
     }
 }

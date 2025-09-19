@@ -18,6 +18,7 @@ interface OpenID4VCIClient {
         types: List<String>,
         sessionId: String
     ): CredentialResponse
+    suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse
 }
 
 @Serializable
@@ -51,6 +52,14 @@ data class CredentialRequest(
 data class CredentialResponse(
     val credential: VerifiableCredential,
     val format: String
+)
+
+@Serializable
+data class VerificationStatusResponse(
+    @SerialName("sessionId") val sessionId: String,
+    val status: String,
+    val action: String? = null,
+    val code: Int? = null
 )
 
 class OpenID4VCIException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -118,6 +127,23 @@ class KtorOpenID4VCIClient(
         } catch (e: Exception) {
             if (e is OpenID4VCIException) throw e
             throw OpenID4VCIException("Network error during credential request", e)
+        }
+    }
+
+    override suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse {
+        try {
+            val response: HttpResponse = httpClient.get("$baseUrl/sessions/veriff/$sessionId") {
+                accept(ContentType.Application.Json)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body()
+            }
+
+            throw OpenID4VCIException("Status request failed: ${response.status}")
+        } catch (e: Exception) {
+            if (e is OpenID4VCIException) throw e
+            throw OpenID4VCIException("Network error during status request", e)
         }
     }
 }

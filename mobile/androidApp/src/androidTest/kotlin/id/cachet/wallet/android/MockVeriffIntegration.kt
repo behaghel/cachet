@@ -6,6 +6,7 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
+import id.cachet.wallet.network.VerificationStatusResponse
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonElement
@@ -21,6 +22,7 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
     var simulateNetworkDelay = true
     var customErrorMessage: String? = null
     private var customCredentialData: Map<String, JsonElement>? = null
+    private val sessionStatuses = mutableMapOf<String, VerificationStatusResponse>()
     
     // Simulate different verification scenarios
     enum class VerificationScenario {
@@ -47,12 +49,14 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
             }
             else -> {
                 // Simulate successful OAuth2 token response
-                return TokenResponse(
+                val token = TokenResponse(
                     access_token = "mock-veriff-token-${System.currentTimeMillis()}",
                     token_type = "Bearer",
                     expires_in = 3600,
                     scope = scope
                 )
+                sessionStatuses["mock-session"] = VerificationStatusResponse(sessionId = "mock-session", status = "pending")
+                return token
             }
         }
     }
@@ -80,6 +84,7 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
             else -> {
                 // Create mock credential based on successful Veriff verification
                 val credential = createMockVerifiedCredential(sessionId)
+                sessionStatuses[sessionId] = VerificationStatusResponse(sessionId = sessionId, status = "approved")
 
                 return CredentialResponse(
                     credential = credential,
@@ -104,6 +109,16 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
                 sessionId = "mock-session-id-$now"
             )
         )
+    }
+    
+    override suspend fun getVerificationStatus(sessionId: String): VerificationStatusResponse {
+        val status = sessionStatuses.getOrPut(sessionId) {
+            VerificationStatusResponse(
+                sessionId = sessionId,
+                status = if (scenario == VerificationScenario.VERIFICATION_FAILED) "declined" else "pending"
+            )
+        }
+        return status
     }
     
     private fun createMockVerifiedCredential(sessionId: String): VerifiableCredential {
