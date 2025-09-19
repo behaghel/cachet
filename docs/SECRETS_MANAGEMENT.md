@@ -22,11 +22,16 @@ CACHET_DB_URL = { description = "PostgreSQL database connection URL", required =
 CACHET_JWT_SECRET = { description = "JWT signing secret key", required = true }
 
 # Veriff Integration
-VERIFF_API_KEY = { description = "Veriff API key for SDK initialization", required = true }
-VERIFF_BASE_URL = { description = "Veriff API base URL", required = false, default = "https://stationapi.veriff.com" }
-VERIFF_WEBHOOK_SECRET = { description = "Veriff master signature key for webhook verification", required = true }
+VERIFF_API_KEY = { description = "Legacy fallback Veriff API key", required = false }
+VERIFF_BASE_URL = { description = "Veriff API base URL override", required = false, default = "https://stationapi.veriff.com" }
+VERIFF_WEBHOOK_SECRET = { description = "Legacy fallback webhook signing secret", required = false }
 VERIFF_WEBHOOK_BASE_URL = { description = "Base URL where Veriff should send webhooks", required = false, default = "http://localhost:8082" }
 VERIFF_WEBHOOK_EXTERNAL_URL = { description = "Public HTTPS callback URL Veriff should call", required = false, default = "" }
+VERIFF_ENVIRONMENT = { description = "Active Veriff integration (test|production)", required = false, default = "test" }
+VERIFF_TEST_API_KEY = { description = "Veriff sandbox API key", required = false }
+VERIFF_TEST_WEBHOOK_SECRET = { description = "Sandbox webhook signing secret", required = false }
+VERIFF_PROD_API_KEY = { description = "Veriff production API key", required = false }
+VERIFF_PROD_WEBHOOK_SECRET = { description = "Production webhook signing secret", required = false }
 
 [profiles.ci]
 # CI/CD Infrastructure secrets for deployment consistency
@@ -65,8 +70,11 @@ CACHET_DB_URL="postgresql://postgres:password@localhost:5432/cachet"
 CACHET_JWT_SECRET="your-jwt-secret-here"
 
 # Veriff Integration (using pass)
-VERIFF_API_KEY="$(pass veriff/cachet-api-key 2>/dev/null || echo 'dummy-veriff-api-key-for-local')"
-VERIFF_WEBHOOK_SECRET="$(pass veriff/cachet-webhook-secret 2>/dev/null || echo 'dummy-webhook-secret-for-local')"
+VERIFF_ENVIRONMENT="test"
+VERIFF_TEST_API_KEY="$(pass veriff/cachet-sandbox-api-key 2>/dev/null || echo 'dummy-veriff-api-key-for-local')"
+VERIFF_TEST_WEBHOOK_SECRET="$(pass veriff/cachet-sandbox-webhook-secret 2>/dev/null || echo 'dummy-webhook-secret-for-local')"
+VERIFF_PROD_API_KEY="$(pass veriff/cachet-production-api-key 2>/dev/null || echo '')"
+VERIFF_PROD_WEBHOOK_SECRET="$(pass veriff/cachet-production-webhook-secret 2>/dev/null || echo '')"
 VERIFF_WEBHOOK_EXTERNAL_URL="$(pass veriff/cachet-webhook-external-url 2>/dev/null || echo 'https://your-ngrok-domain.ngrok-free.app')"
 # `.env` is gitignored—never commit real secrets.
 ```
@@ -128,7 +136,17 @@ Services are deployed with secrets automatically injected from GCP Secret Manage
 
 ```bash
 gcloud run deploy cachet-issuance-gateway \
-  --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest
+  --set-env-vars VERIFF_ENVIRONMENT=production \
+  --set-secrets CACHET_DB_URL=database-url:latest, \
+               CACHET_JWT_SECRET=jwt-secret:latest, \
+               VERIFF_PROD_API_KEY=veriff-prod-api-key:latest, \
+               VERIFF_PROD_WEBHOOK_SECRET=veriff-prod-webhook-secret:latest
+
+# Staging example (remain on sandbox integration)
+gcloud run deploy cachet-issuance-gateway-staging \
+  --set-env-vars VERIFF_ENVIRONMENT=test \
+  --set-secrets VERIFF_TEST_API_KEY=veriff-test-api-key:latest, \
+               VERIFF_TEST_WEBHOOK_SECRET=veriff-test-webhook-secret:latest
 ```
 
 ## Secret Flow Diagram

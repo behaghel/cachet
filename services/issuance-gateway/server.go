@@ -60,6 +60,7 @@ type VeriffSession struct {
 	SessionID       string `json:"session_id"`
 	Status          string `json:"status"`
 	Id              string `json:"id"`
+	SessionToken    string `json:"session_token,omitempty"`
 	Url             string `json:"url,omitempty"`
 	VerificationUrl string `json:"verification_url,omitempty"`
 	VendorData      string `json:"vendorData,omitempty"`
@@ -357,14 +358,15 @@ const (
 )
 
 type Server struct {
-	router           *chi.Mux
-	signingKey       *rsa.PrivateKey
-	accessTokens     map[string]TokenInfo // In-memory token store (production should use Redis)
-	accessTokensMu   sync.RWMutex
-	verifiedSessions map[string]VeriffSession // Store for verified Veriff sessions
-	sessionMu        sync.RWMutex
-	config           *config.Config
-	httpClient       *http.Client
+	router            *chi.Mux
+	signingKey        *rsa.PrivateKey
+	accessTokens      map[string]TokenInfo // In-memory token store (production should use Redis)
+	accessTokensMu    sync.RWMutex
+	verifiedSessions  map[string]VeriffSession // Store for verified Veriff sessions
+	sessionMu         sync.RWMutex
+	config            *config.Config
+	httpClient        *http.Client
+	veriffIntegration string
 }
 
 type TokenInfo struct {
@@ -383,13 +385,16 @@ func NewServer() *Server {
 	cfg := config.MustLoad()
 	logStartupConfiguration(cfg)
 
+	veriffIntegration := determineVeriffIntegration(cfg)
+
 	s := &Server{
-		router:           chi.NewRouter(),
-		signingKey:       signingKey,
-		accessTokens:     make(map[string]TokenInfo),
-		verifiedSessions: make(map[string]VeriffSession),
-		config:           cfg,
-		httpClient:       &http.Client{Timeout: 15 * time.Second},
+		router:            chi.NewRouter(),
+		signingKey:        signingKey,
+		accessTokens:      make(map[string]TokenInfo),
+		verifiedSessions:  make(map[string]VeriffSession),
+		config:            cfg,
+		httpClient:        &http.Client{Timeout: 15 * time.Second},
+		veriffIntegration: veriffIntegration,
 	}
 
 	s.setupMiddleware()
@@ -419,6 +424,7 @@ func (s *Server) setupRoutes() {
 	// Veriff webhook
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 	s.router.Post("/hook", s.handleVeriffWebhook)
+	s.router.Post("/notification", s.handleVeriffWebhook)
 }
 
 // EnhancedVeriffValidation performs comprehensive validation for gold quality credentials
@@ -978,7 +984,17 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	log.Info().
 		Str("format", req.Format).
 		Interface("types", req.Types).
+		Str("session_id", req.SessionID).
 		Msg("Credential issuance requested")
+
+	if req.SessionID != "" {
+		s.sessionMu.RLock()
+		_, sessionKnown := s.verifiedSessions[req.SessionID]
+		s.sessionMu.RUnlock()
+		if !sessionKnown {
+			log.Debug().Str("session_id", req.SessionID).Msg("Veriff session not found in cache at credential request")
+		}
+	}
 
 	// Create verifiable credential (simplified SD-JWT VC)
 	now := time.Now()
@@ -1005,14 +1021,17 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 
 	switch status {
 	case "pending", "started", "submitted", "processing", "review", "resubmission_required":
+		log.Debug().Str("session_id", req.SessionID).Str("status", status).Msg("Credential issuance waiting on Veriff decision")
 		respondWithJSON(w, http.StatusAccepted, map[string]string{"status": status})
 		return
 	case "declined", "abandoned", "expired":
+		log.Warn().Str("session_id", req.SessionID).Str("status", status).Msg("Credential issuance blocked by Veriff decision")
 		respondWithJSON(w, http.StatusUnprocessableEntity, map[string]string{"status": status})
 		return
 	case "approved":
 		// continue
 	default:
+		log.Debug().Str("session_id", req.SessionID).Str("status", status).Msg("Credential issuance received unexpected Veriff status")
 		respondWithJSON(w, http.StatusAccepted, map[string]string{"status": status})
 		return
 	}
@@ -1091,6 +1110,7 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 
 	log.Info().
 		Str("credential_id", credentialID).
+		Str("session_id", req.SessionID).
 		Msg("Credential issued successfully")
 
 	s.sessionMu.Lock()
@@ -1140,7 +1160,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webhookSecret := os.Getenv("VERIFF_WEBHOOK_SECRET")
+	webhookSecret := s.getVeriffWebhookSecret()
 	if webhookSecret == "" {
 		log.Error().Msg("VERIFF_WEBHOOK_SECRET not configured; rejecting webhook")
 		http.Error(w, "Webhook secret not configured", http.StatusInternalServerError)
@@ -1158,8 +1178,8 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the JSON after verification
-	var session VeriffSession
-	if err := json.Unmarshal(body, &session); err != nil {
+	session, err := decodeVeriffWebhook(body)
+	if err != nil {
 		log.Error().Err(err).Msg("Failed to decode Veriff webhook")
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -1177,6 +1197,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		Str("session_id", session.SessionID).
 		Str("status", s.getStoredSessionStatus(session.SessionID)).
 		Str("action", session.Action).
+		Str("integration", s.activeVeriffIntegration()).
 		Msg("Veriff webhook received")
 
 	status := s.getStoredSessionStatus(session.SessionID)
@@ -1262,11 +1283,8 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 	sessionID := fmt.Sprintf("cachet-session-%d", time.Now().UnixNano())
 
 	// Check if we have real Veriff credentials
-	veriffAPIKey := os.Getenv("VERIFF_API_KEY")
-	veriffBaseURL := os.Getenv("VERIFF_BASE_URL")
-	if veriffBaseURL == "" {
-		veriffBaseURL = "https://stationapi.veriff.com"
-	}
+	veriffAPIKey := s.getVeriffAPIKey()
+	veriffBaseURL := s.resolveVeriffBaseURL()
 
 	log.Debug().
 		Bool("veriff_api_key_present", veriffAPIKey != "").
@@ -1283,14 +1301,17 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 		}
 
 		s.upsertVeriffSession(VeriffSession{
-			SessionID:  realResponse.SessionID,
-			Status:     "pending",
-			VendorData: req.ClientID,
+			SessionID:    realResponse.SessionID,
+			Status:       "pending",
+			VendorData:   req.ClientID,
+			SessionToken: realResponse.SessionToken,
 		})
 
 		log.Info().
 			Str("client_id", req.ClientID).
 			Str("session_id", realResponse.SessionID).
+			Str("veriff_integration", s.activeVeriffIntegration()).
+			Bool("session_token_present", realResponse.SessionToken != "").
 			Msg("Created real Veriff verification session")
 
 		w.Header().Set("Content-Type", "application/json")
@@ -1476,9 +1497,10 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 	var veriffResp struct {
 		Status       string `json:"status"`
 		Verification struct {
-			ID   string `json:"id"`
-			URL  string `json:"url"`
-			Host string `json:"host"`
+			ID           string `json:"id"`
+			URL          string `json:"url"`
+			Host         string `json:"host"`
+			SessionToken string `json:"sessionToken"`
 		} `json:"verification"`
 	}
 
@@ -1487,8 +1509,14 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 	}
 
 	// Convert to our response format
+	sessionToken := strings.TrimSpace(veriffResp.Verification.SessionToken)
+	if sessionToken == "" {
+		log.Warn().Msg("Veriff session token missing from API response; falling back to session ID")
+		sessionToken = veriffResp.Verification.ID
+	}
+
 	response := &CreateVeriffSessionResponse{
-		SessionToken: veriffResp.Verification.ID, // Veriff session ID serves as token
+		SessionToken: sessionToken,
 		SessionURL:   veriffResp.Verification.URL,
 		SessionID:    veriffResp.Verification.ID,
 	}
@@ -1498,6 +1526,10 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 
 func (s *Server) resolveVeriffCallbackURL() (string, error) {
 	raw := trimEnvValue(os.Getenv("VERIFF_WEBHOOK_EXTERNAL_URL"))
+	if raw == "" {
+		integrationCfg := s.getVeriffIntegrationConfig()
+		raw = trimEnvValue(integrationCfg.WebhookExternalURL)
+	}
 	if raw == "" {
 		base := trimEnvValue(s.config.Services.IssuanceGateway.PublicURL)
 		if base == "" {
@@ -1539,6 +1571,24 @@ func trimEnvValue(value string) string {
 	return strings.Trim(strings.TrimSpace(value), "\"'")
 }
 
+func fallbackAPIKeyEnv(integration string) string {
+	switch strings.ToLower(strings.TrimSpace(integration)) {
+	case "production", "prod", "live":
+		return "VERIFF_PROD_API_KEY"
+	default:
+		return "VERIFF_TEST_API_KEY"
+	}
+}
+
+func fallbackWebhookSecretEnv(integration string) string {
+	switch strings.ToLower(strings.TrimSpace(integration)) {
+	case "production", "prod", "live":
+		return "VERIFF_PROD_WEBHOOK_SECRET"
+	default:
+		return "VERIFF_TEST_WEBHOOK_SECRET"
+	}
+}
+
 func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -1552,6 +1602,69 @@ func (s *Server) normalizeSessionID(session VeriffSession) string {
 		return session.SessionID
 	}
 	return session.Id
+}
+
+func (s *Server) activeVeriffIntegration() string {
+	if s.veriffIntegration != "" {
+		return s.veriffIntegration
+	}
+	return "test"
+}
+
+func (s *Server) getVeriffIntegrationConfig() config.VeriffIntegrationConfig {
+	if s.config == nil {
+		return config.VeriffIntegrationConfig{}
+	}
+	if cfg, ok := s.config.Veriff.Integrations[s.activeVeriffIntegration()]; ok {
+		return cfg
+	}
+	return config.VeriffIntegrationConfig{}
+}
+
+func (s *Server) resolveVeriffBaseURL() string {
+	if base := strings.TrimSpace(os.Getenv("VERIFF_BASE_URL")); base != "" {
+		return base
+	}
+	if integrationCfg := s.getVeriffIntegrationConfig(); integrationCfg.BaseURL != "" {
+		return integrationCfg.BaseURL
+	}
+	return "https://stationapi.veriff.com"
+}
+
+func (s *Server) getVeriffAPIKey() string {
+	if key := strings.TrimSpace(os.Getenv("VERIFF_API_KEY")); key != "" {
+		return key
+	}
+	integrationCfg := s.getVeriffIntegrationConfig()
+	if envVar := strings.TrimSpace(integrationCfg.APIKeyEnv); envVar != "" {
+		if key := strings.TrimSpace(os.Getenv(envVar)); key != "" {
+			return key
+		}
+	}
+	if envVar := fallbackAPIKeyEnv(s.activeVeriffIntegration()); envVar != "" {
+		if key := strings.TrimSpace(os.Getenv(envVar)); key != "" {
+			return key
+		}
+	}
+	return ""
+}
+
+func (s *Server) getVeriffWebhookSecret() string {
+	if secret := strings.TrimSpace(os.Getenv("VERIFF_WEBHOOK_SECRET")); secret != "" {
+		return secret
+	}
+	integrationCfg := s.getVeriffIntegrationConfig()
+	if envVar := strings.TrimSpace(integrationCfg.WebhookSecretEnv); envVar != "" {
+		if secret := strings.TrimSpace(os.Getenv(envVar)); secret != "" {
+			return secret
+		}
+	}
+	if envVar := fallbackWebhookSecretEnv(s.activeVeriffIntegration()); envVar != "" {
+		if secret := strings.TrimSpace(os.Getenv(envVar)); secret != "" {
+			return secret
+		}
+	}
+	return ""
 }
 
 func normalizeVeriffStatus(status string) string {
@@ -1621,6 +1734,9 @@ func (s *Server) upsertVeriffSession(session VeriffSession) {
 		if session.VendorData == "" {
 			session.VendorData = existing.VendorData
 		}
+		if session.SessionToken == "" {
+			session.SessionToken = existing.SessionToken
+		}
 		if session.Decision.Status == "" {
 			session.Decision = existing.Decision
 		}
@@ -1678,6 +1794,13 @@ func (s *Server) handleGetVeriffSessionStatus(w http.ResponseWriter, r *http.Req
 		status = "pending"
 	}
 
+	log.Debug().
+		Str("session_id", sessionID).
+		Str("status", status).
+		Str("action", session.Action).
+		Int("code", session.Code).
+		Msg("Returning Veriff session status")
+
 	response := map[string]interface{}{
 		"sessionId": sessionID,
 		"status":    status,
@@ -1692,10 +1815,12 @@ func (s *Server) getLatestVeriffSession(ctx context.Context, sessionID string) (
 	// Check cache first
 	if cached := s.getSessionCopy(sessionID); cached.SessionID != "" && cached.Status != "" {
 		if normalizeVeriffStatus(cached.Status) == "approved" || normalizeVeriffStatus(cached.Status) == "declined" {
+			log.Debug().Str("session_id", sessionID).Str("status", cached.Status).Msg("Returning cached terminal Veriff status")
 			return cached, nil
 		}
 	}
 
+	log.Debug().Str("session_id", sessionID).Msg("Fetching latest Veriff status from API")
 	session, err := s.fetchVeriffSessionFromAPI(ctx, sessionID)
 	if errors.Is(err, ErrVeriffSessionNotFound) {
 		return VeriffSession{SessionID: sessionID, Status: "pending"}, nil
@@ -1704,6 +1829,7 @@ func (s *Server) getLatestVeriffSession(ctx context.Context, sessionID string) (
 		return VeriffSession{}, err
 	}
 	s.upsertVeriffSession(session)
+	log.Debug().Str("session_id", sessionID).Str("status", session.Status).Msg("Updated cached Veriff status from API")
 	return session, nil
 }
 
@@ -1711,14 +1837,12 @@ var errVeriffAPIKeyMissing = errors.New("VERIFF_API_KEY not configured")
 var ErrVeriffSessionNotFound = errors.New("veriff session not found")
 
 func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string) (VeriffSession, error) {
-	apiKey := strings.TrimSpace(os.Getenv("VERIFF_API_KEY"))
+	apiKey := s.getVeriffAPIKey()
 	if apiKey == "" {
 		return VeriffSession{}, errVeriffAPIKeyMissing
 	}
-	baseURL := strings.TrimSpace(os.Getenv("VERIFF_BASE_URL"))
-	if baseURL == "" {
-		baseURL = "https://stationapi.veriff.com"
-	}
+	baseURL := s.resolveVeriffBaseURL()
+	log.Debug().Str("session_id", sessionID).Str("base_url", baseURL).Str("integration", s.activeVeriffIntegration()).Msg("Calling Veriff session API")
 	endpoint := fmt.Sprintf("%s/v1/sessions/%s", strings.TrimRight(baseURL, "/"), sessionID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -1754,6 +1878,7 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 		session.SessionID = sessionID
 	}
 	session.Status = deriveStatusFromSession(session)
+	log.Debug().Str("session_id", sessionID).Str("status", session.Status).Msg("Veriff API response parsed")
 	return session, nil
 }
 
@@ -1798,12 +1923,74 @@ func parseVeriffSession(data []byte) (VeriffSession, error) {
 	return minimal, nil
 }
 
+func decodeVeriffWebhook(data []byte) (VeriffSession, error) {
+	var session VeriffSession
+	if err := json.Unmarshal(data, &session); err == nil {
+		if session.SessionID != "" || session.Id != "" {
+			return session, nil
+		}
+	}
+
+	parsed, err := parseVeriffSession(data)
+	if err != nil {
+		return VeriffSession{}, err
+	}
+
+	return parsed, nil
+}
+
+func determineVeriffIntegration(cfg *config.Config) string {
+	if env := strings.ToLower(strings.TrimSpace(os.Getenv("VERIFF_ENVIRONMENT"))); env != "" {
+		if cfg != nil {
+			if _, ok := cfg.Veriff.Integrations[env]; ok {
+				return env
+			}
+		}
+		return env
+	}
+
+	if cfg != nil {
+		if cfg.Veriff.DefaultIntegration != "" {
+			return strings.ToLower(cfg.Veriff.DefaultIntegration)
+		}
+		if len(cfg.Veriff.Integrations) == 1 {
+			for name := range cfg.Veriff.Integrations {
+				return strings.ToLower(name)
+			}
+		}
+	}
+
+	return "test"
+}
+
 func logStartupConfiguration(cfg *config.Config) {
+	veriffIntegration := determineVeriffIntegration(cfg)
 	veriffAPIKeyPresent := os.Getenv("VERIFF_API_KEY") != ""
+	if !veriffAPIKeyPresent {
+		fallbackEnv := fallbackAPIKeyEnv(veriffIntegration)
+		if fallbackEnv != "" {
+			veriffAPIKeyPresent = os.Getenv(fallbackEnv) != ""
+		}
+	}
+
 	webhookEnvRaw, webhookEnvPresent := os.LookupEnv("VERIFF_WEBHOOK_EXTERNAL_URL")
 	webhookURL := trimEnvValue(webhookEnvRaw)
 	if webhookURL == "" {
-		webhookURL = "(derived from issuanceGateway.publicUrl)"
+		if cfg != nil {
+			if integrationCfg, ok := cfg.Veriff.Integrations[veriffIntegration]; ok {
+				webhookURL = strings.TrimSpace(integrationCfg.WebhookExternalURL)
+			}
+		}
+		if webhookURL == "" {
+			webhookURL = "(derived from issuanceGateway.publicUrl)"
+		}
+	}
+
+	baseURL := trimEnvValue(os.Getenv("VERIFF_BASE_URL"))
+	if baseURL == "" && cfg != nil {
+		if integrationCfg, ok := cfg.Veriff.Integrations[veriffIntegration]; ok {
+			baseURL = integrationCfg.BaseURL
+		}
 	}
 
 	log.Info().
@@ -1811,8 +1998,9 @@ func logStartupConfiguration(cfg *config.Config) {
 		Str("issuance_host", cfg.Services.IssuanceGateway.Host).
 		Int("issuance_port", cfg.Services.IssuanceGateway.Port).
 		Str("issuance_public_url", cfg.Services.IssuanceGateway.PublicURL).
+		Str("veriff_integration", veriffIntegration).
 		Bool("veriff_api_key_present", veriffAPIKeyPresent).
-		Str("veriff_base_url", trimEnvValue(os.Getenv("VERIFF_BASE_URL"))).
+		Str("veriff_base_url", baseURL).
 		Bool("veriff_webhook_env_present", webhookEnvPresent).
 		Str("veriff_webhook_external_url", webhookURL).
 		Msg("Issuance gateway configuration loaded")

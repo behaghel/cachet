@@ -39,6 +39,23 @@
           "port": 8093,
           "publicUrl": "http://localhost:8093"
         }
+      },
+      "veriff": {
+        "defaultIntegration": "test",
+        "integrations": {
+          "test": {
+            "baseUrl": "https://stationapi.veriff.com",
+            "apiKeyEnv": "VERIFF_TEST_API_KEY",
+            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          },
+          "production": {
+            "baseUrl": "https://api.veriff.com",
+            "apiKeyEnv": "VERIFF_PROD_API_KEY",
+            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          }
+        }
       }
     },
     "staging": {
@@ -79,6 +96,23 @@
           "port": 8093,
           "publicUrl": "https://staging-vouch.cachet.dev"
         }
+      },
+      "veriff": {
+        "defaultIntegration": "test",
+        "integrations": {
+          "test": {
+            "baseUrl": "https://stationapi.veriff.com",
+            "apiKeyEnv": "VERIFF_TEST_API_KEY",
+            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          },
+          "production": {
+            "baseUrl": "https://api.veriff.com",
+            "apiKeyEnv": "VERIFF_PROD_API_KEY",
+            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          }
+        }
       }
     },
     "production": {
@@ -118,6 +152,23 @@
           "host": "0.0.0.0",
           "port": 8093,
           "publicUrl": "https://vouch.cachet.id"
+        }
+      },
+      "veriff": {
+        "defaultIntegration": "production",
+        "integrations": {
+          "test": {
+            "baseUrl": "https://stationapi.veriff.com",
+            "apiKeyEnv": "VERIFF_TEST_API_KEY",
+            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          },
+          "production": {
+            "baseUrl": "https://api.veriff.com",
+            "apiKeyEnv": "VERIFF_PROD_API_KEY",
+            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
+            "webhookExternalUrl": ""
+          }
         }
       }
     }

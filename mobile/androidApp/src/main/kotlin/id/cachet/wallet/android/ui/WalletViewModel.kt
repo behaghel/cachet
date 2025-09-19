@@ -107,7 +107,12 @@ class WalletViewModel(
                     return@launch
                 }
 
-                val waitResult = issuanceUseCase.waitForVerificationApproval(sessionId)
+                val waitResult = issuanceUseCase.waitForVerificationApproval(
+                    sessionId = sessionId,
+                    onStatusUpdate = { status ->
+                        Log.d(TAG, "Polling Veriff session $sessionId status=$status")
+                    }
+                )
                 if (waitResult.isFailure) {
                     val error = waitResult.exceptionOrNull()?.message ?: "Verification pending"
                     Log.e(TAG, "Verification did not complete: $error")

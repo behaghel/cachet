@@ -25,8 +25,21 @@ type ServicesConfig struct {
 	VouchingService ServiceConfig `json:"vouchingService"`
 }
 
+type VeriffIntegrationConfig struct {
+	BaseURL            string `json:"baseUrl"`
+	WebhookExternalURL string `json:"webhookExternalUrl,omitempty"`
+	APIKeyEnv          string `json:"apiKeyEnv,omitempty"`
+	WebhookSecretEnv   string `json:"webhookSecretEnv,omitempty"`
+}
+
+type VeriffConfig struct {
+	DefaultIntegration string                             `json:"defaultIntegration"`
+	Integrations       map[string]VeriffIntegrationConfig `json:"integrations"`
+}
+
 type environmentBlock struct {
 	Services ServicesConfig `json:"services"`
+	Veriff   VeriffConfig   `json:"veriff"`
 }
 
 type rootConfig struct {
@@ -37,6 +50,7 @@ type rootConfig struct {
 type Config struct {
 	Environment string
 	Services    ServicesConfig
+	Veriff      VeriffConfig
 }
 
 var (
@@ -78,6 +92,7 @@ func Load() (*Config, error) {
 		loadedConfig = &Config{
 			Environment: env,
 			Services:    envBlock.Services,
+			Veriff:      envBlock.Veriff,
 		}
 	})
 

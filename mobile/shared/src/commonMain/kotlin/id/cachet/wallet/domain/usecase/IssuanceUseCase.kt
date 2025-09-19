@@ -96,21 +96,28 @@ class IssuanceUseCase(
 
     suspend fun waitForVerificationApproval(
         sessionId: String,
-        maxAttempts: Int = 30,
-        delayMillis: Long = 2_000
+        maxAttempts: Int = 150,
+        delayMillis: Long = 2_000,
+        onStatusUpdate: (String) -> Unit = {}
     ): Result<Unit> {
+        // Mobile users can take a few minutes to complete capture (and Veriff may review asynchronously),
+        // so we allow roughly five minutes of polling by default before timing out.
         repeat(maxAttempts) { attempt ->
             val statusResult = getVerificationStatus(sessionId)
             if (statusResult.isSuccess) {
                 val status = statusResult.getOrNull()!!.status.lowercase()
+                onStatusUpdate(status)
                 when (status) {
                     "approved" -> return Result.success(Unit)
                     "declined", "abandoned", "expired" -> {
                         return Result.failure(IssuanceException("Verification $status"))
                     }
                 }
-            } else if (attempt == maxAttempts - 1) {
-                return Result.failure(statusResult.exceptionOrNull() ?: IssuanceException("Verification status unknown"))
+            } else {
+                onStatusUpdate("error:${statusResult.exceptionOrNull()?.message ?: "unknown"}")
+                if (attempt == maxAttempts - 1) {
+                    return Result.failure(statusResult.exceptionOrNull() ?: IssuanceException("Verification status unknown"))
+                }
             }
             delay(delayMillis)
         }

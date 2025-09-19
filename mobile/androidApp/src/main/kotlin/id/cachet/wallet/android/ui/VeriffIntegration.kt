@@ -55,11 +55,17 @@ class VeriffIntegration(
             // Step 1: Create session token from our backend
             val sessionResponse = createVeriffSession()
             Log.d(TAG, "Created session: ${sessionResponse.sessionId}")
-            
+
             // Step 2: Launch Veriff SDK using intent-based approach
-            val intent = Sdk.createLaunchIntent(activity, sessionResponse.sessionUrl)
-            
-            Log.d(TAG, "Launching Veriff SDK with session URL: ${sessionResponse.sessionUrl}")
+            val launchParameter = sessionResponse.sessionToken.ifBlank { sessionResponse.sessionUrl }
+
+            Log.d(
+                TAG,
+                "Launching Veriff SDK with token=${sessionResponse.sessionToken.isNotBlank()} " +
+                    "sessionUrl=${sessionResponse.sessionUrl}"
+            )
+
+            val intent = Sdk.createLaunchIntent(activity, launchParameter)
             
             // Note: In a real implementation, you would use startActivityForResult
             // and handle the result in onActivityResult. For this integration,
@@ -69,8 +75,9 @@ class VeriffIntegration(
                 
                 // For now, assume success when SDK is launched
                 // In a real app, result handling would be done in onActivityResult
+                val resolvedToken = sessionResponse.sessionToken.ifBlank { sessionResponse.sessionId }
                 onResult(VerificationResult.Success(
-                    sessionToken = sessionResponse.sessionToken,
+                    sessionToken = resolvedToken,
                     sessionId = sessionResponse.sessionId
                 ))
             } catch (e: Exception) {
