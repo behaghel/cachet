@@ -448,7 +448,8 @@ func validateVeriffSessionEnhanced(session VeriffSession) EnhancedValidationResu
 	qualityLevel := determineQualityLevel(qualityProfile)
 
 	// Enhanced validation checks for gold and platinum tiers
-	if qualityLevel == "gold" {
+	switch qualityLevel {
+	case "gold":
 		if err := validateGoldTierRequirements(session, qualityProfile); err != nil {
 			return EnhancedValidationResult{
 				IsValid:        true, // Session is still valid, just downgraded
@@ -458,7 +459,7 @@ func validateVeriffSessionEnhanced(session VeriffSession) EnhancedValidationResu
 				SensitiveData:  extractSensitiveData(session),
 			}
 		}
-	} else if qualityLevel == "platinum" {
+	case "platinum":
 		if err := validatePlatinumTierRequirements(session, qualityProfile); err != nil {
 			return EnhancedValidationResult{
 				IsValid:        true, // Session is still valid, just downgraded
@@ -1133,7 +1134,11 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close webhook request body")
+		}
+	}()
 
 	// Debug: Log all headers received from Veriff
 	log.Debug().Msg("=== VERIFF WEBHOOK DEBUG ===")
@@ -1486,7 +1491,11 @@ func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey,
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close Veriff session response body")
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -1855,7 +1864,11 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 	if err != nil {
 		return VeriffSession{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close Veriff API response body")
+		}
+	}()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return VeriffSession{}, ErrVeriffSessionNotFound
