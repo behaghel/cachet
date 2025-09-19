@@ -73,8 +73,27 @@ in
     secretspec run -- devenv up --detach
   '';
   scripts."dev:stop".exec = ''
-    devenv processes down >/dev/null 2>&1 || true
-    rm -f .devenv/processes.pid
+    PID_FILE=.devenv/processes.pid
+    if [ -f "$PID_FILE" ]; then
+      PID=$(cat "$PID_FILE")
+    else
+      PID=""
+    fi
+
+    devenv processes stop >/dev/null 2>&1 || true
+
+    if [ -n "$PID" ] && ps -p "$PID" >/dev/null 2>&1; then
+      echo "Force stopping lingering devenv process $PID"
+      kill "$PID" 2>/dev/null || true
+      sleep 1
+      if ps -p "$PID" >/dev/null 2>&1; then
+        kill -9 "$PID" 2>/dev/null || true
+      fi
+    fi
+
+    pkill -f "devenv:processes:" >/dev/null 2>&1 || true
+    pkill -f "secretspec run -- devenv up --detach" >/dev/null 2>&1 || true
+    rm -f "$PID_FILE"
   '';
   scripts."dev:logs".exec = ''
     LOG_FILE=.devenv/processes.log
