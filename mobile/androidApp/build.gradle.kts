@@ -31,20 +31,62 @@ val issuanceBaseUrlOverride = (project.findProperty("cachetIssuanceBaseUrl") as 
 fun detectLocalIp(): String? {
     return try {
         val interfaces = NetworkInterface.getNetworkInterfaces() ?: return null
+        val excludedPrefixes = listOf("docker", "br-", "veth", "virbr", "lo")
+        val preferred = mutableListOf<String>()
+        val fallback = mutableListOf<String>()
+
         while (interfaces.hasMoreElements()) {
             val networkInterface = interfaces.nextElement()
+
+            val isUp = try {
+                networkInterface.isUp
+            } catch (_: Exception) {
+                true
+            }
+            if (!isUp || networkInterface.isLoopback || networkInterface.isVirtual) continue
+
+            val name = networkInterface.name.lowercase()
+            val displayName = networkInterface.displayName?.lowercase() ?: ""
+            val isExcluded = excludedPrefixes.any { prefix ->
+                name.startsWith(prefix) || displayName.startsWith(prefix)
+            }
+
             val addresses = networkInterface.inetAddresses
             while (addresses.hasMoreElements()) {
                 val address = addresses.nextElement()
-                if (!address.isLoopbackAddress && address is Inet4Address) {
+                if (address is Inet4Address && address.isSiteLocalAddress) {
                     val host = address.hostAddress
-                    if (!host.startsWith("169.254")) {
-                        return host
+                    if (host.startsWith("169.254")) continue
+                    if (isExcluded) {
+                        fallback.add(host)
+                    } else {
+                        preferred.add(host)
                     }
                 }
             }
         }
-        null
+
+        val candidate = (preferred + fallback).firstOrNull()
+        if (candidate != null) {
+            return candidate
+        }
+
+        val fallbackCommand = if (System.getProperty("os.name").lowercase().contains("windows")) {
+            listOf("powershell", "-Command", "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -like '192.168.*' -or \$_.IPAddress -like '10.*' -or \$_.IPAddress -like '172.*'} | Select-Object -First 1 -ExpandProperty IPAddress)")
+        } else {
+            listOf("bash", "-c", "ip route get 8.8.8.8 | grep -oP 'src \\K[\\d.]+'");
+        }
+
+        return try {
+            val process = ProcessBuilder(fallbackCommand)
+                .redirectErrorStream(true)
+                .start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            if (output.matches("\\d+\\.\\d+\\.\\d+\\.\\d+".toRegex())) output else null
+        } catch (_: Exception) {
+            null
+        }
     } catch (e: Exception) {
         null
     }
@@ -160,51 +202,30 @@ tasks.register("updateNetworkSecurityConfig") {
     
     doLast {
         val networkConfigFile = file("src/main/res/xml/network_security_config.xml")
-        
-        // Get local IP address using shell command
-        val getIpCommand = if (System.getProperty("os.name").lowercase().contains("windows")) {
-            listOf("powershell", "-Command", "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' | Where-Object {\$_.IPAddress -like '192.168.*' -or \$_.IPAddress -like '10.*' -or \$_.IPAddress -like '172.*'}).IPAddress")
-        } else {
-            listOf("bash", "-c", "ip route get 8.8.8.8 | grep -oP 'src \\K[\\d.]+'")
-        }
-        
-        try {
-            val process = ProcessBuilder(getIpCommand)
-                .redirectErrorStream(true)
-                .start()
-            
-            val localIP = process.inputStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
-            
-            if (exitCode == 0 && localIP.isNotEmpty() && localIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+".toRegex())) {
-                println("Detected local IP: $localIP")
-                
-                if (networkConfigFile.exists()) {
-                    val content = networkConfigFile.readText()
-                    
-                    // Check if IP is already present
-                    if (!content.contains("<domain includeSubdomains=\"false\">$localIP</domain>")) {
-                        // Add the IP to the domain-config section
-                        val updatedContent = content.replace(
-                            "</domain-config>",
-                            "        <domain includeSubdomains=\"false\">$localIP</domain>\n    </domain-config>"
-                        )
-                        
-                        networkConfigFile.writeText(updatedContent)
-                        println("✅ Updated network_security_config.xml with IP: $localIP")
-                    } else {
-                        println("✅ IP $localIP already present in network_security_config.xml")
-                    }
+        val localIP = detectedLocalIp ?: detectLocalIp()
+
+        if (localIP != null && localIP.matches("\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+".toRegex())) {
+            println("Detected local IP: $localIP")
+
+            if (networkConfigFile.exists()) {
+                val content = networkConfigFile.readText()
+
+                if (!content.contains("<domain includeSubdomains=\"false\">$localIP</domain>")) {
+                    val updatedContent = content.replace(
+                        "</domain-config>",
+                        "        <domain includeSubdomains=\"false\">$localIP</domain>\n    </domain-config>"
+                    )
+
+                    networkConfigFile.writeText(updatedContent)
+                    println("✅ Updated network_security_config.xml with IP: $localIP")
                 } else {
-                    println("❌ network_security_config.xml not found")
+                    println("✅ IP $localIP already present in network_security_config.xml")
                 }
             } else {
-                println("⚠️ Could not detect local IP address (got: '$localIP')")
-                println("You may need to manually add your IP to network_security_config.xml")
+                println("❌ network_security_config.xml not found")
             }
-        } catch (e: Exception) {
-            println("⚠️ Error detecting IP: ${e.message}")
-            println("You may need to manually add your IP to network_security_config.xml")
+        } else {
+            println("⚠️ Could not detect local IP address; ensure network_security_config.xml includes your host")
         }
     }
 }

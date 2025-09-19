@@ -1282,6 +1282,12 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
+		s.upsertVeriffSession(VeriffSession{
+			SessionID:  realResponse.SessionID,
+			Status:     "pending",
+			VendorData: req.ClientID,
+		})
+
 		log.Info().
 			Str("client_id", req.ClientID).
 			Str("session_id", realResponse.SessionID).
@@ -1691,6 +1697,9 @@ func (s *Server) getLatestVeriffSession(ctx context.Context, sessionID string) (
 	}
 
 	session, err := s.fetchVeriffSessionFromAPI(ctx, sessionID)
+	if errors.Is(err, ErrVeriffSessionNotFound) {
+		return VeriffSession{SessionID: sessionID, Status: "pending"}, nil
+	}
 	if err != nil {
 		return VeriffSession{}, err
 	}
@@ -1699,6 +1708,7 @@ func (s *Server) getLatestVeriffSession(ctx context.Context, sessionID string) (
 }
 
 var errVeriffAPIKeyMissing = errors.New("VERIFF_API_KEY not configured")
+var ErrVeriffSessionNotFound = errors.New("veriff session not found")
 
 func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string) (VeriffSession, error) {
 	apiKey := strings.TrimSpace(os.Getenv("VERIFF_API_KEY"))
@@ -1724,7 +1734,7 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return VeriffSession{}, fmt.Errorf("session %s not found", sessionID)
+		return VeriffSession{}, ErrVeriffSessionNotFound
 	}
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
