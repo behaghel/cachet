@@ -404,6 +404,7 @@ func (s *Server) setupRoutes() {
 
 	// Veriff webhook
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
+	s.router.Post("/hook", s.handleVeriffWebhook)
 }
 
 // EnhancedVeriffValidation performs comprehensive validation for gold quality credentials

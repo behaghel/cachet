@@ -357,6 +357,24 @@ func TestVeriffWebhook_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+func TestVeriffWebhook_AliasHookPath(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
+	server := NewServer()
+	body, err := json.Marshal(createTestVeriffSession("test-session-456", "approved"))
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/hook", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-HMAC-SIGNATURE", signWebhookPayload(body))
+
+	w := httptest.NewRecorder()
+	server.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestVeriffWebhook_InvalidStatus(t *testing.T) {
 	cleanup := setupTestEnv(t)
 	defer cleanup()
