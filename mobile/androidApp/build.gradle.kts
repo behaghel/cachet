@@ -1,4 +1,6 @@
 import groovy.json.JsonSlurper
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 plugins {
     id("com.android.application")
@@ -23,7 +25,36 @@ val servicesConfig = environmentBlock["services"] as? Map<*, *>
     ?: throw GradleException("Environment '$cachetEnv' missing services configuration")
 val issuanceGatewayConfig = servicesConfig["issuanceGateway"] as? Map<*, *>
     ?: throw GradleException("Environment '$cachetEnv' missing issuanceGateway configuration")
-val issuanceBaseUrl = (issuanceGatewayConfig["emulatorUrl"] ?: issuanceGatewayConfig["publicUrl"]) as? String
+val issuanceBaseUrlOverride = (project.findProperty("cachetIssuanceBaseUrl") as String?)
+    ?: System.getenv("CACHET_ISSUANCE_BASE_URL")
+
+fun detectLocalIp(): String? {
+    return try {
+        val interfaces = NetworkInterface.getNetworkInterfaces() ?: return null
+        while (interfaces.hasMoreElements()) {
+            val networkInterface = interfaces.nextElement()
+            val addresses = networkInterface.inetAddresses
+            while (addresses.hasMoreElements()) {
+                val address = addresses.nextElement()
+                if (!address.isLoopbackAddress && address is Inet4Address) {
+                    val host = address.hostAddress
+                    if (!host.startsWith("169.254")) {
+                        return host
+                    }
+                }
+            }
+        }
+        null
+    } catch (e: Exception) {
+        null
+    }
+}
+
+val detectedLocalIp = detectLocalIp()
+
+val issuanceBaseUrl = issuanceBaseUrlOverride
+    ?: detectedLocalIp?.let { "http://$it:8090" }
+    ?: (issuanceGatewayConfig["emulatorUrl"] ?: issuanceGatewayConfig["publicUrl"]) as? String
     ?: throw GradleException("issuanceGateway configuration for '$cachetEnv' missing emulatorUrl/publicUrl")
 
 repositories {

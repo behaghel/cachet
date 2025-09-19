@@ -7,7 +7,7 @@ This repository is wired for deterministic builds and tightly managed tooling. A
 - To open an interactive shell: `devenv shell`
 - Backend helpers:
   - `devenv shell -- dev:up` — start core services (verifier, registry, receipts, issuance)
-  - `devenv shell -- dev:stop` — stop running services
+  - `devenv shell -- dev:down` — stop running services
   - `devenv shell -- dev:logs` — tail background service logs
   - `devenv shell -- dev:tui` — attach to the Process Compose TUI for managed services
   - Always start background services with `dev:up`; never launch the interactive TUI in shared sessions.
@@ -56,7 +56,7 @@ This repository is wired for deterministic builds and tightly managed tooling. A
 | Task | Command |
 | --- | --- |
 | Start services | `devenv shell -- dev:up` |
-| Stop services | `devenv shell -- dev:stop` |
+| Stop services | `devenv shell -- dev:down` |
 | Tail logs | `devenv shell -- dev:logs` |
 | Attach TUI | `devenv shell -- dev:tui` |
 | Go tests (all) | `devenv shell -- test:all` |

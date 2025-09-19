@@ -46,6 +46,8 @@ The build populates `BuildConfig.CACHET_ENV` and `BuildConfig.ISSUANCE_BASE_URL`
 Koin bootstrap forwards those values into the shared Kotlin module via Koin properties so the UI and
 shared business logic all reference the same URLs the backend advertises.
 
+When running locally the Android build script now detects your host machine's IPv4 address (e.g. `192.168.x.x`) and, by default, points `BuildConfig.ISSUANCE_BASE_URL` at that address so physical devices can connect without extra setup. If detection fails or you need a custom host, override the base URL by exporting `CACHET_ISSUANCE_BASE_URL=http://<your-host>:8090` or passing `-PcachetIssuanceBaseUrl=http://<your-host>:8090` to Gradle. The overrides take precedence over the detected address and the `emulatorUrl`/`publicUrl` values from `app-config.json`.
+
 Instrumentation tests use the same bootstrap path, keeping test and runtime configurations aligned.
 
 ## Adding or Updating Configuration

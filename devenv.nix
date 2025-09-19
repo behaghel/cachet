@@ -68,11 +68,13 @@ in
   scripts."dev:up".exec = ''
     # Start managed processes with secrets injected from SecretSpec
     unset CACHET_CONFIG_PATH
-    devenv processes down >/dev/null 2>&1 || true
+    devenv processes stop >/dev/null 2>&1 || true
+    pkill -f "process-compose --config" >/dev/null 2>&1 || true
     rm -f .devenv/processes.pid
-    secretspec run -- devenv up --detach
+    rm -f .devenv/run/pc.sock
+    secretspec run -- devenv up --detach verifier registry receipts issuance-gateway
   '';
-  scripts."dev:stop".exec = ''
+  scripts."dev:down".exec = ''
     PID_FILE=.devenv/processes.pid
     if [ -f "$PID_FILE" ]; then
       PID=$(cat "$PID_FILE")
@@ -93,7 +95,9 @@ in
 
     pkill -f "devenv:processes:" >/dev/null 2>&1 || true
     pkill -f "secretspec run -- devenv up --detach" >/dev/null 2>&1 || true
+    pkill -f "process-compose --config" >/dev/null 2>&1 || true
     rm -f "$PID_FILE"
+    rm -f .devenv/run/pc.sock
   '';
   scripts."dev:logs".exec = ''
     LOG_FILE=.devenv/processes.log
@@ -872,10 +876,10 @@ in
   '';
 
   # Run services with: `devenv up verifier registry receipts issuance-gateway`
-  processes.verifier.exec = "go run ./services/verifier";
-  processes.registry.exec = "go run ./services/registry";
-  processes.receipts.exec = "go run ./services/receipts-log";
-  processes.issuance-gateway.exec = "go run ./services/issuance-gateway";
+  processes.verifier.exec = "bash -lc 'cd services/verifier && go run .'";
+  processes.registry.exec = "bash -lc 'cd services/registry && go run .'";
+  processes.receipts.exec = "bash -lc 'cd services/receipts-log && go run .'";
+  processes.issuance-gateway.exec = "bash -lc 'cd services/issuance-gateway && go run .'";
 
   # Container definitions - single source of truth for dev and production
   containers = {
@@ -1019,7 +1023,7 @@ in
     echo "✅ Cachet devenv ready with SecretSpec integration."
     echo "  Backend:"
     echo "    - Start services:   dev:up (wraps devenv up --detach)"
-    echo "    - Stop services:    dev:stop (or: devenv processes stop)"
+    echo "    - Stop services:    dev:down (or: devenv processes stop)"
     echo "    - Tail logs:        dev:logs"
     echo "    - Attach TUI:       dev:tui"
     echo "    - Format code:      fmt:go"
