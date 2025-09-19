@@ -9,6 +9,7 @@ import id.cachet.wallet.android.ui.VerificationLauncher
 import id.cachet.wallet.android.ui.WalletApp
 import id.cachet.wallet.android.ui.theme.CachetWalletTheme
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.repository.VaultRepository
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.android.ui.WalletViewModel
@@ -36,6 +37,7 @@ class WalletVerificationFlowTest {
     private lateinit var mockCredentialRepository: CredentialRepository
     private lateinit var mockVeriffIntegration: MockVeriffIntegration
     private lateinit var mockIssuanceUseCase: IssuanceUseCase
+    private lateinit var mockVaultRepository: VaultRepository
 
     @Before
     fun setup() {
@@ -44,8 +46,9 @@ class WalletVerificationFlowTest {
 
         // Create mock implementations
         mockCredentialRepository = MockCredentialRepository()
+        mockVaultRepository = MockVaultRepository()
         mockVeriffIntegration = createMockVeriffIntegration()
-        mockIssuanceUseCase = IssuanceUseCase(mockCredentialRepository, mockVeriffIntegration)
+        mockIssuanceUseCase = IssuanceUseCase(mockCredentialRepository, mockVeriffIntegration, mockVaultRepository)
 
         // Start Koin with test modules
         startKoin {
@@ -64,8 +67,9 @@ class WalletVerificationFlowTest {
         single<CredentialRepository> { mockCredentialRepository }
         single<OpenID4VCIClient> { mockVeriffIntegration }
         single<VerificationLauncher> { mockVeriffIntegration }
+        single<VaultRepository> { mockVaultRepository }
         single<IssuanceUseCase> { mockIssuanceUseCase }
-        factory { WalletViewModel(get(), get()) }
+        factory { WalletViewModel(get(), get(), get()) }
     }
 
     @Test
@@ -320,6 +324,25 @@ class MockCredentialRepository : CredentialRepository {
 
     override suspend fun deleteCredential(id: String) {
         credentials.removeIf { it.localId == id }
+    }
+}
+
+class MockVaultRepository : VaultRepository {
+    private val predicates = mutableListOf<VaultPredicate>()
+
+    override suspend fun upsertArtifacts(artifacts: List<VaultArtifact>) {
+        // No-op for tests
+    }
+
+    override suspend fun upsertPredicates(predicates: List<VaultPredicate>) {
+        this.predicates.clear()
+        this.predicates.addAll(predicates)
+    }
+
+    override suspend fun getAllPredicates(): List<VaultPredicate> = predicates.toList()
+
+    override suspend fun clear() {
+        predicates.clear()
     }
 }
 

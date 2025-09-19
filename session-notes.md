@@ -32,3 +32,15 @@
 - [ ] `curl -f http://localhost:8090/health` succeeds.
 - [ ] Issuance gateway logs show the real UUID Veriff key during configuration.
 - [ ] Mobile flow reaches `POST /sessions/veriff` with HTTP 200.
+
+## 2025-09-19T17:18:19.580527+00:00
+- Discussed Spanish babysitter pack scope and next steps.
+
+## 2025-09-19T18:18:55.362070+00:00
+- Discussed authorisation requirements for Spanish childcare pack.
+
+## 2025-09-19T22:48:52.767319+00:00
+- Noted new requirement: document capture and authenticity pipeline feeding predicates; updated PRODUCT_BRIEF.md.
+
+## 2025-09-19T23:15:28.569049+00:00
+- Documented Personal Data Vault principles and MVP plan in PRODUCT_BRIEF.md.

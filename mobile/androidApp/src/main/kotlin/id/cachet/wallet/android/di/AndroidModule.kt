@@ -5,11 +5,13 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import id.cachet.wallet.android.BuildConfig
 import id.cachet.wallet.android.data.CredentialRepositoryImpl
+import id.cachet.wallet.android.data.VaultRepositoryImpl
 import id.cachet.wallet.android.ui.VerificationLauncher
 import id.cachet.wallet.android.ui.VeriffIntegration
 import id.cachet.wallet.android.ui.WalletViewModel
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.repository.VaultRepository
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -37,6 +39,10 @@ val androidModule = module {
         CredentialRepositoryImpl(get())
     }
 
+    single<VaultRepository> {
+        VaultRepositoryImpl(get())
+    }
+
     single<VerificationLauncher> {
         VeriffIntegration(
             backendBaseUrl = BuildConfig.ISSUANCE_BASE_URL
@@ -45,6 +51,6 @@ val androidModule = module {
 
     // ViewModels
     viewModel {
-        WalletViewModel(get(), get())
+        WalletViewModel(get(), get(), get())
     }
 }

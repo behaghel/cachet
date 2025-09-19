@@ -3,12 +3,19 @@ package id.cachet.wallet.domain.usecase
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.model.VaultArtifact
+import id.cachet.wallet.domain.model.VaultPredicate
+import id.cachet.wallet.domain.repository.VaultRepository
 import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
 import id.cachet.wallet.network.VerificationStatusResponse
+import id.cachet.wallet.network.VaultArtifactDTO
+import id.cachet.wallet.network.VaultPredicateDTO
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -17,8 +24,9 @@ import kotlin.test.assertTrue
 class IssuanceUseCaseTest {
     
     private val mockRepository = MockCredentialRepository()
+    private val mockVaultRepository = MockVaultRepository()
     private val mockClient = MockOpenID4VCIClient()
-    private val issuanceUseCase = IssuanceUseCase(mockRepository, mockClient)
+    private val issuanceUseCase = IssuanceUseCase(mockRepository, mockClient, mockVaultRepository)
     
     @Test
     fun testSuccessfulIssuance() = runTest {
@@ -43,7 +51,7 @@ class IssuanceUseCaseTest {
     @Test
     fun testNetworkFailureDuringTokenRequest() = runTest {
         val failingClient = FailingOpenID4VCIClient(failAtToken = true)
-        val useCase = IssuanceUseCase(mockRepository, failingClient)
+        val useCase = IssuanceUseCase(mockRepository, failingClient, mockVaultRepository)
         
         val result = useCase.requestCredential(
             clientId = "test-wallet",
@@ -60,7 +68,7 @@ class IssuanceUseCaseTest {
     @Test
     fun testNetworkFailureDuringCredentialRequest() = runTest {
         val failingClient = FailingOpenID4VCIClient(failAtCredential = true)
-        val useCase = IssuanceUseCase(mockRepository, failingClient)
+        val useCase = IssuanceUseCase(mockRepository, failingClient, mockVaultRepository)
         
         val result = useCase.requestCredential(
             clientId = "test-wallet",
@@ -180,10 +188,34 @@ private class MockOpenID4VCIClient : OpenID4VCIClient {
                 "sessionId" to sessionId
             )
         )
+
+        val issuedAt = Clock.System.now().epochSeconds
+        val artifactDto = VaultArtifactDTO(
+            id = "veriff-$sessionId",
+            type = "veriff-session",
+            source = "veriff",
+            payload = buildJsonObject {
+                put("sessionId", JsonPrimitive(sessionId))
+                put("decision", JsonPrimitive("approved"))
+            },
+            createdAt = issuedAt
+        )
+
+        val predicateDto = VaultPredicateDTO(
+            id = "age-$sessionId",
+            key = "age.ge.18",
+            value = "true",
+            proofType = "veriff",
+            issuedAt = issuedAt,
+            expiresAt = null,
+            artifact = artifactDto
+        )
         
         return CredentialResponse(
             credential = mockCredential,
-            format = format
+            format = format,
+            vaultArtifacts = listOf(artifactDto),
+            vaultPredicates = listOf(predicateDto)
         )
     }
 
@@ -240,5 +272,29 @@ private class FailingOpenID4VCIClient(
             throw Exception("Status request failed")
         }
         return VerificationStatusResponse(sessionId = sessionId, status = "approved")
+    }
+}
+
+private class MockVaultRepository : VaultRepository {
+    private val artifacts = mutableMapOf<String, VaultArtifact>()
+    private val predicates = mutableMapOf<String, VaultPredicate>()
+
+    override suspend fun upsertArtifacts(artifacts: List<VaultArtifact>) {
+        artifacts.forEach { this.artifacts[it.id] = it }
+    }
+
+    override suspend fun upsertPredicates(predicates: List<VaultPredicate>) {
+        predicates.forEach { predicate ->
+            this.predicates[predicate.id] = predicate.copy(
+                artifact = predicate.artifact?.let { artifacts[it.id] ?: it }
+            )
+        }
+    }
+
+    override suspend fun getAllPredicates(): List<VaultPredicate> = predicates.values.toList()
+
+    override suspend fun clear() {
+        artifacts.clear()
+        predicates.clear()
     }
 }

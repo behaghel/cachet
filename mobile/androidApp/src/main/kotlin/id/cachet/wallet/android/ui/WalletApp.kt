@@ -46,6 +46,7 @@ fun WalletApp() {
             is WalletUiState.HasCredentials -> {
                 CredentialsScreen(
                     credentials = currentState.credentials,
+                    vaultPredicates = currentState.vaultPredicates,
                     onStartVerification = { viewModel.startVeriffVerification() },
                     onRefresh = { viewModel.loadCredentials() }
                 )

@@ -7,10 +7,13 @@ import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
 import id.cachet.wallet.network.VerificationStatusResponse
+import id.cachet.wallet.network.VaultArtifactDTO
+import id.cachet.wallet.network.VaultPredicateDTO
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Mock implementation that simulates the full Veriff verification flow
@@ -86,9 +89,33 @@ class MockVeriffIntegration : OpenID4VCIClient, VerificationLauncher {
                 val credential = createMockVerifiedCredential(sessionId)
                 sessionStatuses[sessionId] = VerificationStatusResponse(sessionId = sessionId, status = "approved")
 
+                val issuedAt = Clock.System.now().epochSeconds
+                val artifactDto = VaultArtifactDTO(
+                    id = "veriff-$sessionId",
+                    type = "veriff-session",
+                    source = "veriff",
+                    payload = buildJsonObject {
+                        put("sessionId", JsonPrimitive(sessionId))
+                        put("decision", JsonPrimitive("approved"))
+                    },
+                    createdAt = issuedAt
+                )
+
+                val predicateDto = VaultPredicateDTO(
+                    id = "age-$sessionId",
+                    key = "age.ge.18",
+                    value = "true",
+                    proofType = "veriff",
+                    issuedAt = issuedAt,
+                    expiresAt = null,
+                    artifact = artifactDto
+                )
+
                 return CredentialResponse(
                     credential = credential,
-                    format = format
+                    format = format,
+                    vaultArtifacts = listOf(artifactDto),
+                    vaultPredicates = listOf(predicateDto)
                 )
             }
         }

@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -50,8 +51,28 @@ type CredentialRequest struct {
 }
 
 type CredentialResponse struct {
-	Credential interface{} `json:"credential"`
-	Format     string      `json:"format"`
+	Credential      interface{}             `json:"credential"`
+	Format          string                  `json:"format"`
+	VaultArtifacts  []VaultArtifactPayload  `json:"vaultArtifacts,omitempty"`
+	VaultPredicates []VaultPredicatePayload `json:"vaultPredicates,omitempty"`
+}
+
+type VaultArtifactPayload struct {
+	ID        string                 `json:"id"`
+	Type      string                 `json:"type"`
+	Source    string                 `json:"source"`
+	CreatedAt int64                  `json:"createdAt"`
+	Payload   map[string]interface{} `json:"payload"`
+}
+
+type VaultPredicatePayload struct {
+	ID        string                `json:"id"`
+	Key       string                `json:"key"`
+	Value     string                `json:"value"`
+	ProofType string                `json:"proofType,omitempty"`
+	IssuedAt  int64                 `json:"issuedAt"`
+	ExpiresAt *int64                `json:"expiresAt,omitempty"`
+	Artifact  *VaultArtifactPayload `json:"artifact,omitempty"`
 }
 
 // Veriff webhook data structures
@@ -611,6 +632,96 @@ func validateVeriffSession(session VeriffSession) ValidationResult {
 	}
 }
 
+func buildVeriffVaultArtifact(session VeriffSession, issuedAt time.Time) VaultArtifactPayload {
+	artifactID := session.SessionID
+	if artifactID == "" {
+		artifactID = uuid.New().String()
+	}
+
+	payload := map[string]interface{}{
+		"sessionId":       session.SessionID,
+		"status":          session.Status,
+		"action":          session.Action,
+		"decisionStatus":  session.Decision.Status,
+		"decisionReason":  session.Decision.Reason,
+		"vendorData":      session.VendorData,
+		"documentType":    session.Document.Type,
+		"documentCountry": session.Document.Country,
+		"verification": map[string]interface{}{
+			"livenessScore":     session.Verification.LivenessScore,
+			"overallConfidence": session.Verification.OverallConfidence,
+			"riskScore":         session.Verification.RiskScore,
+			"timestamp":         session.Verification.Timestamp,
+		},
+		"person": map[string]interface{}{
+			"firstName":   session.Person.FirstName,
+			"lastName":    session.Person.LastName,
+			"dateOfBirth": session.Person.DateOfBirth,
+		},
+	}
+
+	return VaultArtifactPayload{
+		ID:        artifactID,
+		Type:      "veriff-session",
+		Source:    "veriff",
+		CreatedAt: issuedAt.Unix(),
+		Payload:   payload,
+	}
+}
+
+func buildVeriffVaultPredicates(session VeriffSession, validation ValidationResult, artifact *VaultArtifactPayload, expiresAt time.Time, issuedAt time.Time) []VaultPredicatePayload {
+	age := calculateAge(session.Person.DateOfBirth)
+	agePredicateID := fmt.Sprintf("age-ge-18-%s", session.SessionID)
+	if session.SessionID == "" {
+		agePredicateID = fmt.Sprintf("age-ge-18-%s", uuid.New().String())
+	}
+
+	expiresUnix := expiresAt.Unix()
+	issuedUnix := issuedAt.Unix()
+	artifactRef := artifact
+
+	predicates := []VaultPredicatePayload{
+		{
+			ID:        agePredicateID,
+			Key:       "age.ge.18",
+			Value:     strconv.FormatBool(age >= 18),
+			ProofType: "veriff",
+			IssuedAt:  issuedUnix,
+			ExpiresAt: &expiresUnix,
+			Artifact:  artifactRef,
+		},
+		{
+			ID:        fmt.Sprintf("veriff-liveness-%s", session.SessionID),
+			Key:       "identity.livenessScore",
+			Value:     fmt.Sprintf("%.2f", session.Verification.LivenessScore),
+			ProofType: "veriff",
+			IssuedAt:  issuedUnix,
+			Artifact:  artifactRef,
+		},
+		{
+			ID:        fmt.Sprintf("veriff-confidence-%s", session.SessionID),
+			Key:       "verification.confidence",
+			Value:     fmt.Sprintf("%.2f", validation.Confidence),
+			ProofType: "veriff",
+			IssuedAt:  issuedUnix,
+			Artifact:  artifactRef,
+		},
+	}
+
+	if session.Document.Authenticity > 0 {
+		predicates = append(predicates, VaultPredicatePayload{
+			ID:        fmt.Sprintf("veriff-document-authenticity-%s", session.SessionID),
+			Key:       "document.authenticity",
+			Value:     fmt.Sprintf("%.2f", session.Document.Authenticity),
+			ProofType: "veriff",
+			IssuedAt:  issuedUnix,
+			Artifact:  artifactRef,
+		})
+	}
+
+	return predicates
+}
+
 // Helper functions for enhanced validation
 
 // calculateConsistencyScore evaluates internal data consistency
@@ -1108,6 +1219,11 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		Credential: vc,
 		Format:     req.Format,
 	}
+
+	vaultArtifact := buildVeriffVaultArtifact(veriffSession, now)
+	resp.VaultArtifacts = []VaultArtifactPayload{vaultArtifact}
+	vaultPredicates := buildVeriffVaultPredicates(veriffSession, validation, &resp.VaultArtifacts[0], expirationDate, now)
+	resp.VaultPredicates = vaultPredicates
 
 	log.Info().
 		Str("credential_id", credentialID).

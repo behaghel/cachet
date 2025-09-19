@@ -6,13 +6,15 @@ You run a parent community in Madrid. New caregivers join weekly; you want them 
 
 That’s Cachet: portable trust, human rights intact.
 
-## High‑level architecture (overview)
+## High-level architecture (overview)
 
-- Holder edge (Cachet Wallet, iOS/Android) — hardware‑backed keys, passkeys sign‑in, credential vault, proof planner, explainability UI, consent receipts. **Dual mode**: credential holder (receiving/presenting) AND relying party (requesting verification via QR/deeplink generation). All PII lives here.
-- Verifier — deterministic policy engine that validates presentations against signed Pack definitions (no ML gating). Returns a Badge and human‑readable “why”.
+- Holder edge (Cachet Wallet, iOS/Android) — hardware-backed keys, passkeys sign-in, credential vault, proof planner, explainability UI, consent receipts. **Dual mode**: credential holder (receiving/presenting) AND relying party (requesting verification via QR/deeplink generation). All PII lives here.
+- Verifier — deterministic policy engine that validates presentations against signed Pack definitions (no ML gating). Returns a Badge and human-readable “why”.
 - Issuance Gateway — converts Veriff outcomes and partner attestations (justice ministries, platforms) into verifiable credentials.
+- Document Capture & Validation — mobile-native pipeline that scans official documents, performs authenticity checks (security features, MRZ, NFC when available), and extracts structured claims for downstream predicates.
+- Personal Data Vault — on-device encrypted workspace that stores raw artefacts (documents, biometrics, reference proofs), derived predicates, consent receipts, and audit hashes under hardware-backed keys; nothing leaves without explicit purpose binding. Default posture: **greedy for predicates** — capture once, derive as much as possible locally, so holders never hand raw data to RPs again.
 - Registries — signed, versioned catalogs for Packs/Policies and Issuers/Schemas/Revocation endpoints.
-- Receipts & Transparency Log — creates consent receipts client‑side; anchors salted hashes in an append‑only Merkle log with Signed Tree Heads for public auditability.
+- Receipts & Transparency Log — creates consent receipts client-side; anchors salted hashes in an append-only Merkle log with Signed Tree Heads for public auditability.
 - Connector Hub & Vouching — pulls platform stats to mint credentials; runs reference capture → ZK “count ≥ K” proofs.
 - Design intent: edge‑first privacy, standards for interop, and explainability by default.
 
@@ -28,9 +30,36 @@ That’s Cachet: portable trust, human rights intact.
 - C2PA — content provenance for photos/videos submitted during assessments (helpful vs. deepfakes).
 - Trusted Execution Environments (SGX/SEV‑SNP) — optional server‑side secure compute for sensitive transforms.
 - HSM‑backed signing — protects registry/issuance/log signing keys; auditable key ceremonies.
-- Passkeys + Secure Enclave/StrongBox — phishing‑resistant auth and hardware key storage on devices.
+- Passkeys + Secure Enclave/StrongBox — phishing-resistant auth and hardware key storage on devices.
 - WebAssembly proof planner — portable, sandboxed local planner that composes the cheapest valid proofs per Pack.
-- Transparency Log (Merkle + STH) — tamper‑evident public auditing of receipt hashes without exposing PII.
+- Transparency Log (Merkle + STH) — tamper-evident public auditing of receipt hashes without exposing PII.
+- Trusted document processing (OCR/MRZ/NFC) — feeds the vault with high-fidelity artefacts and authenticity signals for predicate derivation.
+- Zero-knowledge backup primitives (Shamir/SRP) — optional recovery without giving Cachet access to raw vault contents.
+
+### Personal Data Vault — principles & promises
+
+- **Holder sovereignty:** the vault lives on-device, guarded by hardware-backed keys; nothing leaves unless the holder approves a purpose-bound disclosure. Optional zero-knowledge backup keeps Cachet blind.
+- **Greedy for predicates:** whenever the holder shares sensitive artefacts (e.g., via Veriff, document scan), we derive every useful predicate locally and cache it. Future presentations pull from this gallery of predicates rather than re-exposing raw data.
+- **Consent & auditability:** every derived predicate stores its consent receipt, TTL, and hashes linking back to source artefacts. The holder can inspect, export, or delete entries at any time.
+- **Lifecycle management:** the vault tracks freshness (expiry, revocation) and nudges holders to refresh artefacts before predicates go stale.
+
+### Personal Data Vault — MVP scope
+
+1. **Veriff ingestion pipeline**
+   - Persist approved Veriff session payloads (images, NFC, metrics) into the vault with per-item encryption.
+   - Derive baseline predicates (age, identity, liveness, document authenticity) and store their consent receipts.
+   - Expose revocation/freshness metadata so predicates auto-expire with Veriff’s decision TTL.
+
+2. **Vault explorer UX**
+   - Wallet tab showing predicate “cards” grouped by Pack (e.g., Identity, Driving, Childcare).
+   - Drill-down view listing evidence, issuer, consent, and expiry; actions to refresh or delete.
+   - Security controls: re-auth (biometric/passkey) before revealing sensitive artefacts, clear indicators when auto-backup is disabled.
+
+3. **Age ≥ 18 trust pack pilot**
+   - Mobile-to-mobile presentation that proves the cached `age >= 18` predicate (from Veriff or document scan) using selective disclosure.
+   - Generates consent receipts on both devices and logs hashes to the transparency log.
+
+Exit: Vault populated automatically after Veriff, holder can review predicates, and first trust pack (age verification) succeeds peer-to-peer.
 
 ## Core concepts
 
@@ -131,6 +160,9 @@ That’s Cachet: portable trust, human rights intact.
 ### Phase B — Proof depth (3–6 months)
 
 - Vouching ZK flow, platform connectors (≥2), device attestation predicate, BBS+ for unlinkability, jurisdictional Pack variants (FR/EE/ES).
+- Roll out on-device document capture (still image + optional NFC), authenticity heuristics, and structured data extraction feeding predicates (e.g., childcare first-aid cert, driving licence type).
+- Ship Personal Data Vault v1: hardware-backed encryption, consent-aware storage of source artefacts, predicate freshness tracking, optional zero-knowledge backup, and interfaces for holders/RPs to audit what data fuelled each Pack.
+- MVP: auto-populate the vault from Veriff sessions (store artefacts + derived metrics), expose a wallet UI for browsing predicates and evidence, and close the loop with a mobile-to-mobile age ≥ 18 verification pack.
 
 - Exit: Pack reuse rate ≥ 35%; issuer SLOs ≥ 99.9%/30d; appeals resolved median < 5d.
 

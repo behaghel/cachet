@@ -1,9 +1,7 @@
 package id.cachet.wallet.android.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -17,11 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.content.Intent
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import id.cachet.wallet.domain.model.StoredCredential
+import id.cachet.wallet.domain.model.VaultPredicate
 import id.cachet.wallet.domain.model.extractQuality
 import id.cachet.wallet.domain.model.getQualityBadge
 import id.cachet.wallet.domain.model.meetsQualityThreshold
 import id.cachet.wallet.domain.model.QualityIndicator
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -29,6 +32,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun CredentialsScreen(
     credentials: List<StoredCredential>,
+    vaultPredicates: List<VaultPredicate>,
     onStartVerification: () -> Unit,
     onRefresh: () -> Unit
 ) {
@@ -64,6 +68,20 @@ fun CredentialsScreen(
             }
         }
         
+        val context = LocalContext.current
+
+        VaultOverviewSection(
+            predicates = vaultPredicates,
+            onStartVerification = onStartVerification,
+            contextIntent = { message ->
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, message)
+                }
+                context.startActivity(Intent.createChooser(intent, "Share verification"))
+            }
+        )
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -73,6 +91,106 @@ fun CredentialsScreen(
         }
     }
 }
+
+@Composable
+private fun VaultOverviewSection(
+    predicates: List<VaultPredicate>,
+    onStartVerification: () -> Unit,
+    contextIntent: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Personal Data Vault",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            if (predicates.any { it.key == "age.ge.18" && it.value.equals("true", ignoreCase = true) }) {
+                TextButton(onClick = {
+                    val message = "Cachet proof: Age verified (>=18). Reference: ${generateShareCode()}"
+                    contextIntent(message)
+                }) {
+                    Text("Share Age Proof")
+                }
+            }
+        }
+
+        if (predicates.isEmpty()) {
+            Text(
+                text = "Complete identity verification to populate your vault.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(onClick = onStartVerification) {
+                Text("Start Verification")
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(predicates) { predicate ->
+                    VaultPredicateCard(predicate)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultPredicateCard(predicate: VaultPredicate) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        modifier = Modifier.widthIn(min = 200.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = formatClaimKey(predicate.key),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = predicate.value,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            predicate.artifact?.let { artifact ->
+                Text(
+                    text = "Source: ${artifact.source}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = "Issued: ${formatInstant(predicate.issuedAt)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            predicate.expiresAt?.let {
+                Text(
+                    text = "Expires: ${formatInstant(it)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -336,3 +454,11 @@ private fun formatClaimValue(value: String): String {
         else -> value
     }
 }
+
+private fun formatInstant(instant: Instant): String {
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${localDateTime.date}"
+}
+
+private fun generateShareCode(): String =
+    (1..6).joinToString("") { Random.nextInt(0, 10).toString() }

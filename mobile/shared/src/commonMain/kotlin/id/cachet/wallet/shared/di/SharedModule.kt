@@ -51,7 +51,8 @@ val sharedModule = module {
     single { 
         IssuanceUseCase(
             credentialRepository = get(),
-            openID4VCIClient = get()
+            openID4VCIClient = get(),
+            vaultRepository = get()
         ) 
     }
     

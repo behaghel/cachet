@@ -2,15 +2,19 @@ package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.repository.VaultRepository
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.VerificationStatusResponse
+import id.cachet.wallet.network.toVaultArtifact
+import id.cachet.wallet.network.toVaultPredicate
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 class IssuanceUseCase(
     private val credentialRepository: CredentialRepository,
-    private val openID4VCIClient: OpenID4VCIClient
+    private val openID4VCIClient: OpenID4VCIClient,
+    private val vaultRepository: VaultRepository
 ) {
     
     private fun generateUuid(): String {
@@ -51,7 +55,14 @@ class IssuanceUseCase(
             
             // Step 4: Store credential in local repository
             credentialRepository.storeCredential(storedCredential)
-            
+
+            credentialResponse.vaultArtifacts?.map { it.toVaultArtifact() }?.let { artifacts ->
+                vaultRepository.upsertArtifacts(artifacts)
+            }
+            credentialResponse.vaultPredicates?.map { it.toVaultPredicate() }?.let { predicates ->
+                vaultRepository.upsertPredicates(predicates)
+            }
+
             Result.success(storedCredential)
         } catch (e: Exception) {
             Result.failure(IssuanceException("Failed to issue credential: ${e.message}", e))

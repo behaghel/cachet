@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.cachet.wallet.domain.model.StoredCredential
+import id.cachet.wallet.domain.model.VaultPredicate
+import id.cachet.wallet.domain.repository.VaultRepository
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,7 +14,8 @@ import java.lang.ref.WeakReference
 
 class WalletViewModel(
     private val issuanceUseCase: IssuanceUseCase,
-    private val verificationLauncher: VerificationLauncher
+    private val verificationLauncher: VerificationLauncher,
+    private val vaultRepository: VaultRepository
 ) : ViewModel() {
     
     companion object {
@@ -41,10 +44,11 @@ class WalletViewModel(
             issuanceUseCase.getStoredCredentials()
                 .onSuccess { credentials ->
                     Log.d(TAG, "Loaded ${credentials.size} credentials")
-                    _uiState.value = if (credentials.isEmpty()) {
+                    val predicates = runCatching { vaultRepository.getAllPredicates() }.getOrElse { emptyList() }
+                    _uiState.value = if (credentials.isEmpty() && predicates.isEmpty()) {
                         WalletUiState.Empty
                     } else {
-                        WalletUiState.HasCredentials(credentials)
+                        WalletUiState.HasCredentials(credentials, predicates)
                     }
                 }
                 .onFailure { exception ->
@@ -166,6 +170,9 @@ sealed class WalletUiState {
     object Loading : WalletUiState()
     object Empty : WalletUiState()
     object VerificationInProgress : WalletUiState()
-    data class HasCredentials(val credentials: List<StoredCredential>) : WalletUiState()
+    data class HasCredentials(
+        val credentials: List<StoredCredential>,
+        val vaultPredicates: List<VaultPredicate>
+    ) : WalletUiState()
     data class Error(val message: String) : WalletUiState()
 }

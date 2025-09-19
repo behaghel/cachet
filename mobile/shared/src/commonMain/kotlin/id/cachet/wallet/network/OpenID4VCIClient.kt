@@ -1,6 +1,8 @@
 package id.cachet.wallet.network
 
 import id.cachet.wallet.domain.model.VerifiableCredential
+import id.cachet.wallet.domain.model.VaultArtifact
+import id.cachet.wallet.domain.model.VaultPredicate
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -8,6 +10,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.Json
 
 interface OpenID4VCIClient {
@@ -51,7 +54,9 @@ data class CredentialRequest(
 @Serializable
 data class CredentialResponse(
     val credential: VerifiableCredential,
-    val format: String
+    val format: String,
+    val vaultArtifacts: List<VaultArtifactDTO>? = null,
+    val vaultPredicates: List<VaultPredicateDTO>? = null
 )
 
 @Serializable
@@ -63,6 +68,26 @@ data class VerificationStatusResponse(
 )
 
 class OpenID4VCIException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+@Serializable
+data class VaultArtifactDTO(
+    val id: String,
+    val type: String,
+    val source: String,
+    val payload: JsonElement,
+    val createdAt: Long
+)
+
+@Serializable
+data class VaultPredicateDTO(
+    val id: String,
+    val key: String,
+    val value: String,
+    val proofType: String? = null,
+    val issuedAt: Long,
+    val expiresAt: Long? = null,
+    val artifact: VaultArtifactDTO? = null
+)
 
 class KtorOpenID4VCIClient(
     private val httpClient: HttpClient,
@@ -147,3 +172,20 @@ class KtorOpenID4VCIClient(
         }
     }
 }
+fun VaultArtifactDTO.toVaultArtifact(): VaultArtifact = VaultArtifact(
+    id = id,
+    type = type,
+    source = source,
+    payload = payload,
+    createdAt = kotlinx.datetime.Instant.fromEpochSeconds(createdAt)
+)
+
+fun VaultPredicateDTO.toVaultPredicate(): VaultPredicate = VaultPredicate(
+    id = id,
+    key = key,
+    value = value,
+    proofType = proofType,
+    issuedAt = kotlinx.datetime.Instant.fromEpochSeconds(issuedAt),
+    expiresAt = expiresAt?.let { kotlinx.datetime.Instant.fromEpochSeconds(it) },
+    artifact = artifact?.toVaultArtifact()
+)

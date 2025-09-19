@@ -11,6 +11,28 @@ CREATE TABLE credentials (
 CREATE INDEX idx_credentials_issuer ON credentials(issuer);
 CREATE INDEX idx_credentials_created ON credentials(created_at);
 
+CREATE TABLE vault_artifacts (
+    artifact_id TEXT PRIMARY KEY NOT NULL,
+    artifact_type TEXT NOT NULL,
+    source TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE vault_predicates (
+    predicate_id TEXT PRIMARY KEY NOT NULL,
+    artifact_id TEXT,
+    predicate_key TEXT NOT NULL,
+    predicate_value TEXT NOT NULL,
+    proof_type TEXT,
+    issued_at INTEGER NOT NULL,
+    expires_at INTEGER,
+    FOREIGN KEY (artifact_id) REFERENCES vault_artifacts(artifact_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_vault_predicates_key ON vault_predicates(predicate_key);
+CREATE INDEX idx_vault_predicates_artifact ON vault_predicates(artifact_id);
+
 insertCredential:
 INSERT INTO credentials (local_id, credential_id, issuer, credential_json, raw_jwt, created_at, is_revoked)
 VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -29,3 +51,20 @@ UPDATE credentials SET is_revoked = 1 WHERE local_id = ?;
 
 deleteCredential:
 DELETE FROM credentials WHERE local_id = ?;
+
+insertVaultArtifact:
+INSERT OR REPLACE INTO vault_artifacts (artifact_id, artifact_type, source, payload_json, created_at)
+VALUES (?, ?, ?, ?, ?);
+
+insertVaultPredicate:
+INSERT OR REPLACE INTO vault_predicates (predicate_id, artifact_id, predicate_key, predicate_value, proof_type, issued_at, expires_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+getAllVaultPredicates:
+SELECT vp.*, va.artifact_type, va.source, va.payload_json, va.created_at AS artifact_created_at
+FROM vault_predicates vp
+LEFT JOIN vault_artifacts va ON vp.artifact_id = va.artifact_id
+ORDER BY vp.issued_at DESC;
+
+deleteVaultData:
+DELETE FROM vault_artifacts;
