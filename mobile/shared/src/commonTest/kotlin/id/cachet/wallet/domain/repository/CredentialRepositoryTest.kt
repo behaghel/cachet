@@ -2,8 +2,9 @@ package id.cachet.wallet.domain.repository
 
 import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.model.StoredCredential
-import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -14,7 +15,7 @@ class CredentialRepositoryTest {
     private val repository = MockCredentialRepository()
     
     @Test
-    fun testStoreCredential() = runTest {
+    fun testStoreCredential() = runSuspendTest {
         val credential = createTestCredential()
         val storedCredential = StoredCredential(
             localId = "local-123",
@@ -31,25 +32,49 @@ class CredentialRepositoryTest {
     }
     
     @Test
-    fun testGetAllCredentials() = runTest {
+    fun testGetAllCredentials() = runSuspendTest {
         val credential1 = createTestCredential("cred-1")
         val credential2 = createTestCredential("cred-2")
         
-        repository.storeCredential(StoredCredential("local-1", credential1, Clock.System.now()))
-        repository.storeCredential(StoredCredential("local-2", credential2, Clock.System.now()))
+        repository.storeCredential(
+            StoredCredential(
+                localId = "local-1",
+                credential = credential1,
+                createdAt = Clock.System.now()
+            )
+        )
+        repository.storeCredential(
+            StoredCredential(
+                localId = "local-2",
+                credential = credential2,
+                createdAt = Clock.System.now()
+            )
+        )
         
         val allCredentials = repository.getAllCredentials()
         assertEquals(2, allCredentials.size)
     }
     
     @Test
-    fun testGetCredentialsByIssuer() = runTest {
+    fun testGetCredentialsByIssuer() = runSuspendTest {
         val issuer = "did:web:cachet.id"
         val credential1 = createTestCredential("cred-1", issuer)
         val credential2 = createTestCredential("cred-2", "did:web:other.id")
         
-        repository.storeCredential(StoredCredential("local-1", credential1, Clock.System.now()))
-        repository.storeCredential(StoredCredential("local-2", credential2, Clock.System.now()))
+        repository.storeCredential(
+            StoredCredential(
+                localId = "local-1",
+                credential = credential1,
+                createdAt = Clock.System.now()
+            )
+        )
+        repository.storeCredential(
+            StoredCredential(
+                localId = "local-2",
+                credential = credential2,
+                createdAt = Clock.System.now()
+            )
+        )
         
         val cachetCredentials = repository.getCredentialsByIssuer(issuer)
         assertEquals(1, cachetCredentials.size)
@@ -57,7 +82,7 @@ class CredentialRepositoryTest {
     }
     
     @Test
-    fun testMarkCredentialRevoked() = runTest {
+    fun testMarkCredentialRevoked() = runSuspendTest {
         val credential = createTestCredential()
         val storedCredential = StoredCredential(
             localId = "local-123",
@@ -74,7 +99,7 @@ class CredentialRepositoryTest {
     }
     
     @Test
-    fun testDeleteCredential() = runTest {
+    fun testDeleteCredential() = runSuspendTest {
         val credential = createTestCredential()
         val storedCredential = StoredCredential(
             localId = "local-123",
@@ -98,12 +123,16 @@ class CredentialRepositoryTest {
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = listOf("VerifiableCredential", "IdentityCredential"),
             issuer = issuer,
-            issuanceDate = Clock.System.now(),
+            issuanceDate = Clock.System.now().toString(),
             credentialSubject = mapOf(
-                "id" to "did:example:holder",
-                "verified" to true
+                "id" to JsonPrimitive("did:example:holder"),
+                "verified" to JsonPrimitive(true)
             )
         )
+    }
+
+    private fun runSuspendTest(block: suspend () -> Unit) {
+        runBlocking { block() }
     }
 }
 

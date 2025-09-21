@@ -123,10 +123,9 @@ jobs:
         shell: bash
         run: devenv shell -- android:build
 
-      # Note: Skipping unit tests temporarily due to compilation issues - will fix separately
-      # - name: Run Android tests
-      #   shell: bash
-      #   run: devenv shell -- android:test-unit
+      - name: Run Android unit tests
+        shell: bash
+        run: devenv shell -- android:test-unit
 
   # Schema validation (lightweight, no devenv needed)
   schema:

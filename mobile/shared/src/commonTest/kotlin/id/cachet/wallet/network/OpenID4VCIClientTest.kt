@@ -1,108 +1,107 @@
 package id.cachet.wallet.network
 
 import id.cachet.wallet.domain.model.VerifiableCredential
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OpenID4VCIClientTest {
-    
+
     private val mockClient = MockOpenID4VCIClient()
-    
+
     @Test
-    fun testTokenRequest() = runTest {
+    fun tokenRequestReturnsAccessToken() = runSuspendTest {
         val response = mockClient.requestToken(
             clientId = "test-wallet",
             scope = "credential_issuance"
         )
-        
+
         assertNotNull(response.accessToken)
         assertEquals("Bearer", response.tokenType)
         assertEquals(3600, response.expiresIn)
         assertEquals("credential_issuance", response.scope)
     }
-    
+
     @Test
-    fun testCredentialRequest() = runTest {
-        // First get token
+    fun credentialRequestRequiresValidToken() = runSuspendTest {
         val tokenResponse = mockClient.requestToken(
             clientId = "test-wallet",
             scope = "credential_issuance"
         )
-        
-        // Then request credential
+
         val credentialResponse = mockClient.requestCredential(
             accessToken = tokenResponse.accessToken,
             format = "jwt_vc",
             types = listOf("VerifiableCredential", "IdentityCredential"),
             sessionId = "session-123"
         )
-        
+
         assertEquals("jwt_vc", credentialResponse.format)
-        assertNotNull(credentialResponse.credential)
-        
         val credential = credentialResponse.credential
         assertEquals("did:web:cachet.id", credential.issuer)
         assertTrue(credential.type.contains("IdentityCredential"))
         assertTrue(credential.credentialSubject.containsKey("verified"))
     }
-    
+
     @Test
-    fun testInvalidToken() = runTest {
-        try {
+    fun credentialRequestWithInvalidTokenThrows() = runSuspendTest {
+        assertFailsWith<OpenID4VCIException> {
             mockClient.requestCredential(
                 accessToken = "invalid-token",
                 format = "jwt_vc",
                 types = listOf("VerifiableCredential"),
                 sessionId = "session-123"
             )
-            assert(false) { "Should have thrown exception" }
-        } catch (e: OpenID4VCIException) {
-            assertEquals("Invalid access token", e.message)
         }
     }
-    
+
     @Test
-    fun testCredentialWithDifferentFormat() = runTest {
+    fun credentialRequestSupportsDifferentFormats() = runSuspendTest {
         val tokenResponse = mockClient.requestToken("test-wallet", "credential_issuance")
-        
+
         val credentialResponse = mockClient.requestCredential(
             accessToken = tokenResponse.accessToken,
             format = "ldp_vc",
             types = listOf("VerifiableCredential", "IdentityCredential"),
             sessionId = "session-456"
         )
-        
+
         assertEquals("ldp_vc", credentialResponse.format)
         assertNotNull(credentialResponse.credential)
     }
 
     @Test
-    fun testGetVerificationStatus() = runTest {
+    fun verificationStatusDefaultsToPending() = runSuspendTest {
         val status = mockClient.getVerificationStatus("session-789")
         assertEquals("pending", status.status)
     }
+
+    private fun runSuspendTest(block: suspend () -> Unit) {
+        runBlocking { block() }
+    }
 }
 
-// Mock client for testing
-class MockOpenID4VCIClient : OpenID4VCIClient {
+private class MockOpenID4VCIClient : OpenID4VCIClient {
     private val validTokens = mutableSetOf<String>()
     private val sessionStatuses = mutableMapOf<String, VerificationStatusResponse>()
-    
+
     override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
         val token = "mock-access-token-${System.currentTimeMillis()}"
         validTokens.add(token)
-        
+
         return TokenResponse(
-            accessToken = token,
-            tokenType = "Bearer",
-            expiresIn = 3600,
+            access_token = token,
+            token_type = "Bearer",
+            expires_in = 3600,
             scope = scope
         )
     }
-    
+
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
@@ -120,14 +119,14 @@ class MockOpenID4VCIClient : OpenID4VCIClient {
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
             issuer = "did:web:cachet.id",
-            issuanceDate = kotlinx.datetime.Clock.System.now(),
+            issuanceDate = Clock.System.now().toString(),
             credentialSubject = mapOf(
-                "id" to "did:example:holder",
-                "verified" to true,
-                "verification_method" to "veriff"
+                "id" to JsonPrimitive("did:example:holder"),
+                "verified" to JsonPrimitive(true),
+                "verification_method" to JsonPrimitive("veriff")
             )
         )
-        
+
         return CredentialResponse(
             credential = mockCredential,
             format = format

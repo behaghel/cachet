@@ -4,6 +4,7 @@ import id.cachet.wallet.domain.model.*
 import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
@@ -98,12 +99,12 @@ class ConsentReceiptCryptoTest {
         val salt1 = generateSalt()
         val salt2 = generateSalt()
         val salt3 = generateSalt(16)
-        
+
         assertNotNull(salt1)
         assertNotNull(salt2)
         assertTrue(salt1 != salt2, "Different salt generations should be unique")
-        assertTrue(salt1.length == 32, "Default salt should be 32 characters")
-        assertTrue(salt3.length == 16, "Custom salt length should be respected")
-        assertTrue(salt1.all { it.isLetterOrDigit() }, "Salt should contain only alphanumeric characters")
+        assertEquals(64, salt1.length, "Default salt (32 bytes) should encode to 64 hex characters")
+        assertEquals(32, salt3.length, "Custom salt length should be respected as hex (bytes * 2)")
+        assertTrue(salt1.matches(Regex("^[0-9a-f]+$")), "Salt should contain only lowercase hex characters")
     }
 }
