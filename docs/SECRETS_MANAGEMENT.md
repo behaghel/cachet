@@ -180,11 +180,13 @@ devenv shell -- secretspec run -- android:run
 
 ```bash
 # Run deployment with CI profile
-devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
+devenv shell -- bash -lc 'export SECRETSPEC_PROVIDER=env://; export SECRETSPEC_PROFILE=ci; secretspec run -- gcp:deploy:issuance-gateway'
 
 # Check CI secrets
-devenv shell -- secretspec check --provider env --profile ci
+devenv shell -- bash -lc 'export SECRETSPEC_PROVIDER=env://; export SECRETSPEC_PROFILE=ci; secretspec check'
 ```
+
+> `devenv` exports `SECRETSPEC_PROVIDER=dotenv://.env` and `SECRETSPEC_PROFILE=default`. Override both before calling SecretSpec in CI so the `env://` provider can read GitHub Action secrets.
 
 ### Production
 

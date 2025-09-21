@@ -10,6 +10,7 @@ Our CI/CD pipeline now includes comprehensive caching that will dramatically spe
 - Caches the entire Nix store (`/nix/store`) including all devenv dependencies
 - **Expected speedup**: 5-10x faster devenv builds after first run
 - Cache key: Based on `devenv.nix` and `devenv.lock` files
+- Composite action prepares `/nix` with the right ownership before the cache restore so `tar` can create hard links without spewing errors
 
 #### 2. **Devenv Profile Caching**
 - Caches devenv installation and profiles

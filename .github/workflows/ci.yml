@@ -290,14 +290,19 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Use SecretSpec env provider with environment variables explicitly passed
-          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
-          devenv shell -- secretspec run --provider env --profile ci -- bash -c '
-            echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa-key.json
-            gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
-            gcloud config set project cachet-staging
-            gcloud auth configure-docker gcr.io --quiet
-            rm -f /tmp/gcp-sa-key.json
+          devenv shell -- bash -lc '
+            set -euo pipefail
+            export SECRETSPEC_PROVIDER=env://
+            export SECRETSPEC_PROFILE=ci
+
+            secretspec run -- bash -lc "
+              set -euo pipefail
+              echo \"$GCP_SA_KEY\" | base64 -d > /tmp/gcp-sa-key.json
+              gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
+              gcloud config set project cachet-staging
+              gcloud auth configure-docker gcr.io --quiet
+              rm -f /tmp/gcp-sa-key.json
+            "
           '
 
       - name: Deploy issuance gateway to Cloud Run via SecretSpec
@@ -306,9 +311,13 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN || '' }}
         run: |
-          # Deploy with SecretSpec using explicitly passed environment variables
-          env GCP_SA_KEY="$GCP_SA_KEY" CACHIX_AUTH_TOKEN="$CACHIX_AUTH_TOKEN" \
-          devenv shell -- secretspec run --provider env --profile ci -- gcp:deploy:issuance-gateway
+          devenv shell -- bash -lc '
+            set -euo pipefail
+            export SECRETSPEC_PROVIDER=env://
+            export SECRETSPEC_PROFILE=ci
+
+            secretspec run -- gcp:deploy:issuance-gateway
+          '
 
       - name: Update deployment status
         shell: bash

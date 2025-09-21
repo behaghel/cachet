@@ -63,6 +63,12 @@ runs:
         docker-images: false
         swap-storage: false
 
+    - name: Prepare Nix store directories
+      shell: bash
+      run: |
+        sudo mkdir -p /nix/store /nix/.links
+        sudo chown -R "$USER" /nix
+
 
     # Advanced Nix store caching
     - name: Cache Nix store
