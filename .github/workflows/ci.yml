@@ -301,6 +301,8 @@ jobs:
               gcloud auth activate-service-account --key-file /tmp/gcp-sa-key.json
               gcloud config set project cachet-staging
               gcloud auth configure-docker gcr.io --quiet
+              ACCESS_TOKEN=\"\$(gcloud auth print-access-token)\"
+              printf '%s' \"\$ACCESS_TOKEN\" | docker login -u oauth2accesstoken --password-stdin https://gcr.io
               rm -f /tmp/gcp-sa-key.json
             "
           '
