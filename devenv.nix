@@ -559,7 +559,7 @@ in
     echo "🔐 Provisioning CI/CD service account access..."
     DEFAULT_CI_SA="cachet-cicd@$PROJECT_ID.iam.gserviceaccount.com"
     read -p "CI service account email [$DEFAULT_CI_SA]: " CI_SA_EMAIL
-    CI_SA_EMAIL="${CI_SA_EMAIL:-$DEFAULT_CI_SA}"
+    CI_SA_EMAIL="''${CI_SA_EMAIL:-$DEFAULT_CI_SA}"
 
     if ! gcloud iam service-accounts describe "$CI_SA_EMAIL" >/dev/null 2>&1; then
       CI_SA_NAME=$(echo "$CI_SA_EMAIL" | cut -d'@' -f1)
