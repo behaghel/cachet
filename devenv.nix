@@ -556,6 +556,32 @@ in
       }
     done
 
+    echo "🔐 Provisioning CI/CD service account access..."
+    DEFAULT_CI_SA="cachet-cicd@$PROJECT_ID.iam.gserviceaccount.com"
+    read -p "CI service account email [$DEFAULT_CI_SA]: " CI_SA_EMAIL
+    CI_SA_EMAIL="${CI_SA_EMAIL:-$DEFAULT_CI_SA}"
+
+    if ! gcloud iam service-accounts describe "$CI_SA_EMAIL" >/dev/null 2>&1; then
+      CI_SA_NAME=$(echo "$CI_SA_EMAIL" | cut -d'@' -f1)
+      echo "➕ Creating service account $CI_SA_NAME..."
+      gcloud iam service-accounts create "$CI_SA_NAME" --display-name="Cachet CI/CD" || true
+      CI_SA_EMAIL="$CI_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
+    fi
+
+    echo "🛡️  Granting required roles to $CI_SA_EMAIL..."
+    for role in \
+      roles/run.admin \
+      roles/iam.serviceAccountUser \
+      roles/secretmanager.secretAccessor \
+      roles/storage.objectAdmin \
+      roles/containeranalysis.admin
+    do
+      gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+        --member="serviceAccount:$CI_SA_EMAIL" \
+        --role="$role" \
+        --quiet || echo "⚠️  Failed to grant $role (requires appropriate permissions)"
+    done
+
     echo "✅ GCP project setup completed!"
     echo "📝 Next steps (run in order):"
     echo "   1. Run 'gcp:db:setup' to create Cloud SQL database"
