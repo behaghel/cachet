@@ -302,7 +302,7 @@ jobs:
               gcloud config set project cachet-staging
               gcloud auth configure-docker gcr.io --quiet
               mkdir -p $HOME/.docker
-              printf '{ "credHelpers": { "gcr.io": "gcp" } }\n' > $HOME/.docker/config.json
+              printf '{ "credHelpers": { "gcr.io": "gcloud" } }\n' > $HOME/.docker/config.json
               ACCESS_TOKEN=\"\$(gcloud auth print-access-token)\"
               printf '%s' \"\$ACCESS_TOKEN\" | docker login -u oauth2accesstoken --password-stdin https://gcr.io >/dev/null
               rm -f /tmp/gcp-sa-key.json
