@@ -18,7 +18,12 @@ import pathlib
 import sys
 
 auth = sys.argv[1]
-payload = {"auths": {"https://gcr.io": {"auth": auth}}}
+payload = {
+    "auths": {
+        "https://gcr.io": {"auth": auth},
+        "gcr.io": {"auth": auth},
+    }
+}
 
 docker_config = pathlib.Path.home() / ".docker" / "config.json"
 docker_config.parent.mkdir(parents=True, exist_ok=True)
