@@ -303,7 +303,7 @@ jobs:
               ACCESS_TOKEN=\"\$(gcloud auth print-access-token)\"
               AUTH_CONFIG=\"\$(printf 'oauth2accesstoken:%s' \"\$ACCESS_TOKEN\" | base64 | tr -d '\n')\"
               mkdir -p $HOME/.docker
-              printf '{ "auths": { "https://gcr.io": { "auth": "%s" } } }\n' \"\$AUTH_CONFIG\" > $HOME/.docker/config.json
+              env AUTH_CONFIG=\"\$AUTH_CONFIG\" python3 -c "import json, os, pathlib; auth = os.environ['AUTH_CONFIG']; path = pathlib.Path(os.path.expanduser('~/.docker/config.json')); path.parent.mkdir(parents=True, exist_ok=True); path.write_text(json.dumps({'auths': {'https://gcr.io': {'auth': auth}}}), encoding='utf-8')"
               rm -f /tmp/gcp-sa-key.json
             "
           '
