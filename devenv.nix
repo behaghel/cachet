@@ -743,12 +743,14 @@ in
       --role="roles/secretmanager.secretAccessor" \
       --quiet || echo "IAM binding already exists"
 
-    # Build and push container using devenv container definition
-    echo "📦 Building and pushing container with devenv..."
-    # Use devenv container copy with proper registry configuration
-    # Registry URL should be just the base, container name/tag handled automatically
-    GODEBUG=http2client=0 \
-    devenv container --registry docker://gcr.io/$PROJECT_ID/ copy issuance
+    # Build and push container using Dockerfile (avoids skopeo digest issues)
+    echo "📦 Building Docker image for issuance gateway..."
+    docker build \
+      --tag gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
+      services/issuance-gateway
+
+    echo "🚢 Pushing Docker image to Artifact Registry..."
+    docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
 
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
