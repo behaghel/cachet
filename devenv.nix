@@ -746,8 +746,9 @@ in
     # Build and push container using Dockerfile (avoids skopeo digest issues)
     echo "📦 Building Docker image for issuance gateway..."
     docker build \
+      --file services/issuance-gateway/Dockerfile \
       --tag gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
-      services/issuance-gateway
+      .
 
     echo "🚢 Pushing Docker image to Artifact Registry..."
     docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
