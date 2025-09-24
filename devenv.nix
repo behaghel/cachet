@@ -574,6 +574,7 @@ in
       roles/iam.serviceAccountUser \
       roles/secretmanager.secretAccessor \
       roles/cloudsql.viewer \
+      roles/secretmanager.viewer \
       roles/storage.objectAdmin \
       roles/containeranalysis.admin \
       roles/artifactregistry.writer
