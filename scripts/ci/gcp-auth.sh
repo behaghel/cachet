@@ -9,25 +9,19 @@ echo "$GCP_SA_KEY" | base64 -d > "$TMP_KEY"
 gcloud auth activate-service-account --key-file "$TMP_KEY"
 gcloud config set project cachet-staging >/dev/null
 
-export ACCESS_TOKEN="$(gcloud auth print-access-token)"
-AUTH_CONFIG="$(printf 'oauth2accesstoken:%s' "$ACCESS_TOKEN" | base64 | tr -d '\n')"
+docker login -u _json_key --password-stdin https://gcr.io < "$TMP_KEY" >/dev/null
 
-python3 - "$AUTH_CONFIG" <<'PY'
+python3 - "$TMP_KEY" <<'PY'
+import base64
 import json
 import pathlib
 import sys
 
-auth = sys.argv[1]
-payload = {
-    "auths": {
-        "https://gcr.io": {"auth": auth},
-        "gcr.io": {"auth": auth},
-    }
-}
+key_path = pathlib.Path(sys.argv[1])
+password = key_path.read_text(encoding='utf-8')
+auth = base64.b64encode(f"_json_key:{password}".encode()).decode()
 
-docker_config = pathlib.Path.home() / ".docker" / "config.json"
-docker_config.parent.mkdir(parents=True, exist_ok=True)
-docker_config.write_text(json.dumps(payload), encoding="utf-8")
+payload = {"auths": {"https://gcr.io": {"auth": auth}, "gcr.io": {"auth": auth}}}
 
 containers_config = pathlib.Path.home() / ".config" / "containers" / "auth.json"
 containers_config.parent.mkdir(parents=True, exist_ok=True)
