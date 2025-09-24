@@ -284,7 +284,7 @@ jobs:
           
           echo "✅ Secrets configured for SecretSpec consistency"
 
-      - name: Diagnose GCR access
+      - name: Authenticate to Google Cloud via SecretSpec
         shell: bash
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
@@ -295,7 +295,7 @@ jobs:
             export SECRETSPEC_PROVIDER=env://
             export SECRETSPEC_PROFILE=ci
 
-            secretspec run -- bash scripts/ci/gcp-auth.sh scripts/ci/gcp-diagnose.sh
+            secretspec run -- bash scripts/ci/gcp-auth.sh
           '
 
       - name: Deploy issuance gateway to Cloud Run via SecretSpec
@@ -309,7 +309,7 @@ jobs:
             export SECRETSPEC_PROVIDER=env://
             export SECRETSPEC_PROFILE=ci
 
-            scripts/ci/gcp-auth.sh
+            secretspec run -- bash scripts/ci/gcp-auth.sh
             secretspec run -- gcp:deploy:issuance-gateway
           '
 

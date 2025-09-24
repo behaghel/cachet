@@ -574,7 +574,8 @@ in
       roles/iam.serviceAccountUser \
       roles/secretmanager.secretAccessor \
       roles/storage.objectAdmin \
-      roles/containeranalysis.admin
+      roles/containeranalysis.admin \
+      roles/artifactregistry.writer
     do
       gcloud projects add-iam-policy-binding "$PROJECT_ID" \
         --member="serviceAccount:$CI_SA_EMAIL" \
