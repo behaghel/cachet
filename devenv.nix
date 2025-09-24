@@ -247,11 +247,11 @@ in
     echo "✅ Java found: $(java -version 2>&1 | head -n1)"
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
-  scripts."android:build-staging".exec = ''
+  scripts."android:staging:build".exec = ''
     echo "Building staging APK against Cloud Run endpoints..."
     if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
       echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:build-staging"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:build"
       exit 1
     fi
     if [ ! -f mobile/gradlew ]; then
@@ -638,12 +638,13 @@ in
     DB_NAME="cachet"
 
     # Create Cloud SQL instance
-    echo "Creating Cloud SQL PostgreSQL instance..."
+    echo "Creating Cloud SQL PostgreSQL instance (db-f1-micro)..."
     gcloud sql instances create $INSTANCE_NAME \
       --database-version=POSTGRES_15 \
-      --cpu=1 \
-      --memory=3840MB \
+      --tier=db-f1-micro \
+      --storage-size=10 \
       --region=us-central1 \
+      --activation-policy=ALWAYS \
       --root-password=temp-password-change-me
 
     # Create database
@@ -837,6 +838,52 @@ in
     echo "   Local secrets available via secretspec ✓"
     echo "   Cloud secrets injected via Secret Manager ✓" 
     echo "   Same secret names in both environments ✓"
+  '';
+
+  scripts."gcp:staging:down".exec = ''
+    echo "🔻 Suspending staging environment to minimize cost..."
+    set -euo pipefail
+
+    echo "⏸️  Setting Cloud SQL activation policy to NEVER (manual)..."
+    gcloud sql instances patch cachet-db --activation-policy=NEVER --quiet
+
+    echo "🛑 Applying change and stopping instance..."
+    gcloud sql instances restart cachet-db --quiet || true
+    echo "   Cloud SQL will stop after restart completes. Storage charges may still apply."
+
+    echo "ℹ️  Cloud Run services scale to zero automatically; no additional action required."
+    echo "✅ Staging environment suspended. Run 'gcp:staging:up' to resume."
+  '';
+
+  scripts."gcp:staging:up".exec = ''
+    echo "🔺 Resuming staging environment..."
+    set -euo pipefail
+
+    echo "▶️  Restoring Cloud SQL activation policy to ALWAYS..."
+    gcloud sql instances patch cachet-db --activation-policy=ALWAYS --quiet
+
+    echo "🚀 Starting Cloud SQL instance..."
+    gcloud sql instances restart cachet-db --quiet
+
+    echo "⏳ Waiting for Cloud SQL to become RUNNABLE..."
+    for attempt in {1..30}; do
+      STATE=$(gcloud sql instances describe cachet-db --format='value(state)' 2>/dev/null || echo "UNKNOWN")
+      echo "   Cloud SQL state: $STATE"
+      if [ "$STATE" = "RUNNABLE" ]; then
+        break
+      fi
+      sleep 10
+    done
+
+    if [ "$STATE" != "RUNNABLE" ]; then
+      echo "❌ Cloud SQL did not become RUNNABLE within expected time."
+      exit 1
+    fi
+
+    echo "📦 Redeploying issuance gateway so staging matches Cloud Run..."
+    devenv run gcp:deploy:issuance-gateway
+
+    echo "✅ Staging environment is back online."
   '';
 
   scripts."gcp:test-deployment".exec = ''
@@ -1119,6 +1166,7 @@ in
     echo "  Android:"
     echo "    - Setup emulator:   android:emulator"
     echo "    - Build app:        android:build"
+    echo "    - Build staging:    android:staging:build"
     echo "    - Install app:      android:install"
     echo "    - Uninstall app:    android:uninstall"
     echo "    - Full dev setup:   android:run"
@@ -1139,6 +1187,8 @@ in
     echo "    - 🔐 Setup secrets:     gcp:secrets:setup (creates .env + Secret Manager)"
     echo "    - 🚀 Deploy service:    gcp:deploy:verifier (with secrets integration)"
     echo "    - 📊 Check status:      gcp:status"
+    echo "    - 🔻 Suspend staging:   gcp:staging:down"
+    echo "    - 🔺 Resume staging:    gcp:staging:up"
     echo "    - 🧪 Test deployment:  gcp:test-deployment"
     echo "    - 🔑 Authenticate:     gcp:auth (if needed)"
     echo "  💡 Secrets managed via SecretSpec - local (.env) + production (Secret Manager)"
