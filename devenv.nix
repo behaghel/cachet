@@ -747,6 +747,7 @@ in
     echo "📦 Building and pushing container with devenv..."
     # Use devenv container copy with proper registry configuration
     # Registry URL should be just the base, container name/tag handled automatically
+    GODEBUG=http2client=0 \
     devenv container --registry docker://gcr.io/$PROJECT_ID/ copy issuance
 
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
