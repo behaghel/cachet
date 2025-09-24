@@ -247,6 +247,43 @@ in
     echo "✅ Java found: $(java -version 2>&1 | head -n1)"
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
+  scripts."android:build-staging".exec = ''
+    echo "Building staging APK against Cloud Run endpoints..."
+    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
+      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:build-staging"
+      exit 1
+    fi
+    if [ ! -f mobile/gradlew ]; then
+      echo "❌ Error: gradlew not found in mobile directory"
+      exit 1
+    fi
+
+    echo "📡 Resolving latest Cloud Run URL for staging..."
+    RUN_URL=$(gcloud run services describe cachet-issuance-gateway \
+      --region=us-central1 \
+      --format='value(status.url)' 2>/dev/null)
+
+    if [ -z "$RUN_URL" ]; then
+      echo "❌ Failed to obtain Cloud Run URL. Ensure the service is deployed and you have access."
+      exit 1
+    fi
+
+    echo "✅ Targeting Cloud Run URL: $RUN_URL"
+
+    pushd mobile >/dev/null
+    ./gradlew --no-daemon :androidApp:assembleRelease \
+      -PcachetEnv=staging \
+      -PcachetIssuanceBaseUrl="$RUN_URL"
+    popd >/dev/null
+
+    APK_PATH="mobile/androidApp/build/outputs/apk/release/androidApp-release.apk"
+    if [ -f "$APK_PATH" ]; then
+      echo "🎉 Staging APK ready: $APK_PATH"
+    else
+      echo "⚠️ APK build finished but $APK_PATH not found"
+    fi
+  '';
   scripts."android:install".exec = ''
     echo "Installing app on device/emulator..."
     if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
