@@ -13,6 +13,7 @@ RUN cd services/issuance-gateway \
 # Copy sources required for build (service + shared module)
 COPY services/common ./services/common
 COPY services/issuance-gateway ./services/issuance-gateway
+COPY config ./config
 
 RUN cd services/issuance-gateway \
     && go build -o /out/server .
@@ -20,6 +21,7 @@ RUN cd services/issuance-gateway \
 FROM gcr.io/distroless/base-debian12
 WORKDIR /
 COPY --from=build /out/server /server
+COPY config /config
 ENV PORT=8080
 EXPOSE 8080
 ENTRYPOINT ["/server"]
