@@ -2123,6 +2123,9 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 
 	if cached := s.getSessionCopy(sessionID); cached.SessionToken != "" {
 		req.Header.Set("X-AUTH-TOKEN", cached.SessionToken)
+		log.Debug().Str("session_id", sessionID).Msg("Included session token when polling Veriff")
+	} else {
+		log.Warn().Str("session_id", sessionID).Msg("No session token cached when polling Veriff")
 	}
 
 	resp, err := s.httpClient.Do(req)
