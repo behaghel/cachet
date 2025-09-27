@@ -94,10 +94,15 @@ fun detectLocalIp(): String? {
 
 val detectedLocalIp = detectLocalIp()
 
-val issuanceBaseUrl = issuanceBaseUrlOverride
-    ?: detectedLocalIp?.let { "http://$it:8090" }
-    ?: (issuanceGatewayConfig["emulatorUrl"] ?: issuanceGatewayConfig["publicUrl"]) as? String
+val issuanceGatewayUrlFromConfig = (issuanceGatewayConfig["emulatorUrl"]
+    ?: issuanceGatewayConfig["publicUrl"]) as? String
     ?: throw GradleException("issuanceGateway configuration for '$cachetEnv' missing emulatorUrl/publicUrl")
+
+val localOverrideIp = if (cachetEnv == "local") detectedLocalIp else null
+
+val issuanceBaseUrl = issuanceBaseUrlOverride
+    ?: localOverrideIp?.let { "http://$it:8090" }
+    ?: issuanceGatewayUrlFromConfig
 
 repositories {
     google()

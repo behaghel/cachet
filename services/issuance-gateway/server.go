@@ -1414,7 +1414,14 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 
 	// Always try real Veriff API first (for production-quality integration)
 	if veriffAPIKey != "" {
-		realResponse, err := s.createRealVeriffSession(req, veriffAPIKey, veriffBaseURL)
+		callbackURL, err := s.resolveVeriffCallbackURLForRequest(r)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to resolve Veriff callback URL")
+			http.Error(w, "Veriff callback configuration error", http.StatusInternalServerError)
+			return
+		}
+
+		realResponse, err := s.createRealVeriffSession(req, veriffAPIKey, veriffBaseURL, callbackURL)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to create real Veriff session")
 			http.Error(w, fmt.Sprintf("Veriff API error: %v", err), http.StatusBadGateway)
@@ -1548,10 +1555,12 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 }
 
 // createRealVeriffSession calls the real Veriff API to create a verification session
-func (s *Server) createRealVeriffSession(req CreateVeriffSessionRequest, apiKey, baseURL string) (*CreateVeriffSessionResponse, error) {
-	callbackURL, err := s.resolveVeriffCallbackURL()
-	if err != nil {
-		return nil, err
+func (s *Server) createRealVeriffSession(
+	req CreateVeriffSessionRequest,
+	apiKey, baseURL, callbackURL string,
+) (*CreateVeriffSessionResponse, error) {
+	if strings.TrimSpace(callbackURL) == "" {
+		return nil, fmt.Errorf("veriff callback URL is required")
 	}
 
 	verificationPayload := map[string]interface{}{
@@ -1690,6 +1699,84 @@ func (s *Server) resolveVeriffCallbackURL() (string, error) {
 	}
 
 	return raw, nil
+}
+
+func (s *Server) resolveVeriffCallbackURLForRequest(r *http.Request) (string, error) {
+	configuredURL, cfgErr := s.resolveVeriffCallbackURL()
+	reqHost := requestHost(r)
+
+	if cfgErr == nil && configuredURL != "" {
+		if reqHost == "" {
+			return configuredURL, nil
+		}
+
+		parsedConfigured, err := url.Parse(configuredURL)
+		if err != nil {
+			log.Warn().Err(err).
+				Str("configured_callback", configuredURL).
+				Msg("Failed to parse configured Veriff callback URL; using request host")
+		} else if !hostsEqual(parsedConfigured.Host, reqHost) {
+			fallback := buildCallbackURLFromRequest(r, reqHost)
+			log.Warn().
+				Str("configured_callback", configuredURL).
+				Str("fallback_callback", fallback).
+				Msg("Configured Veriff callback host differs from request host; using request host")
+			return fallback, nil
+		} else {
+			return configuredURL, nil
+		}
+	}
+
+	if reqHost != "" {
+		fallback := buildCallbackURLFromRequest(r, reqHost)
+		if cfgErr != nil {
+			log.Warn().Err(cfgErr).
+				Str("fallback_callback", fallback).
+				Msg("Falling back to request-derived Veriff callback URL")
+		} else {
+			log.Warn().
+				Str("fallback_callback", fallback).
+				Msg("No configured Veriff callback URL; using request host")
+		}
+		return fallback, nil
+	}
+
+	if cfgErr != nil {
+		return "", cfgErr
+	}
+	return "", fmt.Errorf("unable to determine host for Veriff callback URL")
+}
+
+func requestHost(r *http.Request) string {
+	if host := strings.TrimSpace(r.Header.Get("X-Forwarded-Host")); host != "" {
+		return host
+	}
+	return strings.TrimSpace(r.Host)
+}
+
+func requestScheme(r *http.Request) string {
+	proto := strings.TrimSpace(strings.ToLower(r.Header.Get("X-Forwarded-Proto")))
+	if proto == "" {
+		if r.TLS != nil {
+			proto = "https"
+		} else {
+			proto = "https"
+		}
+	}
+	if proto != "https" {
+		return "https"
+	}
+	return proto
+}
+
+func buildCallbackURLFromRequest(r *http.Request, host string) string {
+	scheme := requestScheme(r)
+	trimmedHost := strings.TrimSpace(host)
+	return fmt.Sprintf("%s://%s/webhooks/veriff", scheme, trimmedHost)
+}
+
+func hostsEqual(a, b string) bool {
+	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
 }
 
 func trimEnvValue(value string) string {

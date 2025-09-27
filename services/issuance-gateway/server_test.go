@@ -518,6 +518,44 @@ func TestResolveVeriffCallbackURL_ErrorsForInsecureExternalURL(t *testing.T) {
 	assert.Contains(t, err.Error(), "https")
 }
 
+func TestResolveVeriffCallbackURLForRequest_UsesRequestHostWhenConfiguredHostDiffers(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "https://staging-issuance.cachet.dev"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "")
+	req := httptest.NewRequest(http.MethodPost, "/sessions/veriff", http.NoBody)
+	req.Host = "cachet-issuance-gateway-tncrtr5uha-uc.a.run.app"
+	req.Header.Set("X-Forwarded-Proto", "https")
+
+	callbackURL, err := s.resolveVeriffCallbackURLForRequest(req)
+	require.NoError(t, err)
+	assert.Equal(t, "https://cachet-issuance-gateway-tncrtr5uha-uc.a.run.app/webhooks/veriff", callbackURL)
+}
+
+func TestResolveVeriffCallbackURLForRequest_FallbacksWhenConfigInvalid(t *testing.T) {
+	s := &Server{
+		config: &config.Config{
+			Services: config.ServicesConfig{
+				IssuanceGateway: config.ServiceConfig{PublicURL: "http://localhost:8090"},
+			},
+		},
+	}
+
+	t.Setenv("VERIFF_WEBHOOK_EXTERNAL_URL", "")
+	req := httptest.NewRequest(http.MethodPost, "/sessions/veriff", http.NoBody)
+	req.Host = "cachet-issuance-gateway-tncrtr5uha-uc.a.run.app"
+	req.Header.Set("X-Forwarded-Proto", "https")
+
+	callbackURL, err := s.resolveVeriffCallbackURLForRequest(req)
+	require.NoError(t, err)
+	assert.Equal(t, "https://cachet-issuance-gateway-tncrtr5uha-uc.a.run.app/webhooks/veriff", callbackURL)
+}
+
 func TestResolveVeriffCallbackURL_AppendsDefaultPathWhenMissing(t *testing.T) {
 	s := &Server{
 		config: &config.Config{

@@ -271,17 +271,101 @@ in
 
     echo "✅ Targeting Cloud Run URL: $RUN_URL"
 
+    SIGNING_KEYSTORE="''${CACHET_ANDROID_SIGNING_KEYSTORE:-$HOME/.android/debug.keystore}"
+    SIGNING_STORE_PASSWORD="''${CACHET_ANDROID_SIGNING_STORE_PASSWORD:-android}"
+    SIGNING_KEY_ALIAS="''${CACHET_ANDROID_SIGNING_KEY_ALIAS:-androiddebugkey}"
+    SIGNING_KEY_PASSWORD="''${CACHET_ANDROID_SIGNING_KEY_PASSWORD:-$SIGNING_STORE_PASSWORD}"
+
+    SIGNING_ARGS=""
+    if [ -f "$SIGNING_KEYSTORE" ]; then
+      SIGNING_ARGS="-Pandroid.injected.signing.store.file=$SIGNING_KEYSTORE"
+      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.store.password=$SIGNING_STORE_PASSWORD"
+      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.key.alias=$SIGNING_KEY_ALIAS"
+      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.key.password=$SIGNING_KEY_PASSWORD"
+      echo "🔐 Using signing keystore: $SIGNING_KEYSTORE"
+    else
+      echo "⚠️ Signing keystore not found at $SIGNING_KEYSTORE; release APK will be unsigned."
+      echo "   Provide one via CACHET_ANDROID_SIGNING_KEYSTORE to get an installable build."
+    fi
+
     pushd mobile >/dev/null
     ./gradlew --no-daemon :androidApp:assembleRelease \
       -PcachetEnv=staging \
-      -PcachetIssuanceBaseUrl="$RUN_URL"
+      -PcachetIssuanceBaseUrl="$RUN_URL" \
+      $SIGNING_ARGS
     popd >/dev/null
 
-    APK_PATH="mobile/androidApp/build/outputs/apk/release/androidApp-release.apk"
-    if [ -f "$APK_PATH" ]; then
+    APK_DIR="mobile/androidApp/build/outputs/apk/release"
+    APK_PATH=""
+
+    if [ -d "$APK_DIR" ]; then
+      APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*release*.apk" ! -name "*-unsigned.apk" -print -quit 2>/dev/null || true)
+      if [ -z "$APK_PATH" ]; then
+        APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" -print -quit 2>/dev/null || true)
+      fi
+    fi
+
+    if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
       echo "🎉 Staging APK ready: $APK_PATH"
     else
-      echo "⚠️ APK build finished but $APK_PATH not found"
+      echo "⚠️ APK build finished but no APK found in $APK_DIR"
+    fi
+  '';
+  scripts."android:staging:install".exec = ''
+    echo "Installing staging release APK on device/emulator..."
+    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
+      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
+      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:install"
+      exit 1
+    fi
+
+    if ! command -v adb &> /dev/null; then
+      echo "❌ Error: adb not found. Ensure Android platform tools are on your PATH."
+      exit 1
+    fi
+
+    APK_DIR="mobile/androidApp/build/outputs/apk/release"
+    APK_PATH=""
+
+    if [ -d "$APK_DIR" ]; then
+      APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*release*.apk" ! -name "*-unsigned.apk" -print -quit 2>/dev/null || true)
+      if [ -z "$APK_PATH" ]; then
+        APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" -print -quit 2>/dev/null || true)
+      fi
+    fi
+
+    if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+      echo "❌ Staging APK not found in $APK_DIR"
+      echo "   Run: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:build"
+      exit 1
+    fi
+
+    if echo "$APK_PATH" | grep -q -- "-unsigned.apk$"; then
+      echo "❌ Staging APK at $APK_PATH is unsigned and cannot be installed."
+      echo "   Re-run the build with signing credentials (e.g. provide CACHET_ANDROID_SIGNING_KEYSTORE)."
+      exit 1
+    fi
+
+    if ! adb devices | grep -w "device" >/dev/null; then
+      echo "❌ No connected device/emulator detected. Connect one and retry."
+      exit 1
+    fi
+
+    PACKAGE_ID=$(grep 'applicationId' mobile/androidApp/build.gradle.kts | sed 's/.*applicationId = "//' | sed 's/".*//')
+    if [ -n "$PACKAGE_ID" ]; then
+      if adb shell pm list packages | grep -q "$PACKAGE_ID"; then
+        echo "ℹ️ Removing existing package $PACKAGE_ID before installing..."
+        if ! adb uninstall "$PACKAGE_ID" >/dev/null; then
+          echo "⚠️ Failed to uninstall existing $PACKAGE_ID; continuing with install attempt."
+        fi
+      fi
+    fi
+
+    if adb install -r "$APK_PATH"; then
+      echo "✅ Installed staging APK: $APK_PATH"
+    else
+      echo "❌ Failed to install $APK_PATH"
+      exit 1
     fi
   '';
   scripts."android:install".exec = ''
