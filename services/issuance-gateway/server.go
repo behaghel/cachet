@@ -2121,6 +2121,10 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-AUTH-CLIENT", apiKey)
 
+	if cached := s.getSessionCopy(sessionID); cached.SessionToken != "" {
+		req.Header.Set("X-AUTH-TOKEN", cached.SessionToken)
+	}
+
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return VeriffSession{}, err
