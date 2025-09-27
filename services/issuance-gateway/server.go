@@ -2159,7 +2159,13 @@ func (s *Server) fetchVeriffSessionFromAPI(ctx context.Context, sessionID string
 		session.SessionID = sessionID
 	}
 	session.Status = deriveStatusFromSession(session)
-	log.Debug().Str("session_id", sessionID).Str("status", session.Status).Msg("Veriff API response parsed")
+	log.Debug().
+		Str("session_id", sessionID).
+		Str("status", session.Status).
+		Str("decision_status", session.Decision.Status).
+		Str("action", session.Action).
+		Int("code", session.Code).
+		Msg("Veriff API response parsed")
 	return session, nil
 }
 

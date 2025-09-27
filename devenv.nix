@@ -867,6 +867,16 @@ in
       --role="roles/secretmanager.secretAccessor" \
       --quiet || echo "IAM binding already exists"
 
+    CURRENT_RUN_URL=$(gcloud run services describe $SERVICE_NAME --region=us-central1 --format='value(status.url)' 2>/dev/null || true)
+
+    if [ -n "$CURRENT_RUN_URL" ]; then
+      WEBHOOK_ENV="VERIFF_WEBHOOK_EXTERNAL_URL=$CURRENT_RUN_URL/webhooks/veriff"
+      echo "🔁 Using existing Cloud Run URL for webhooks: $CURRENT_RUN_URL"
+    else
+      WEBHOOK_ENV=""
+      echo "⚠️ Could not determine Cloud Run URL before deploy; webhooks will default to config value"
+    fi
+
     # Build and push container using Dockerfile (avoids skopeo digest issues)
     echo "📦 Building Docker image for issuance gateway..."
     docker build \
@@ -879,13 +889,18 @@ in
 
     # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
     echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
+    ENV_VARS="ENVIRONMENT=staging,CACHET_ENV=staging"
+    if [ -n "$WEBHOOK_ENV" ]; then
+      ENV_VARS="$ENV_VARS,$WEBHOOK_ENV"
+    fi
+
     gcloud run deploy $SERVICE_NAME \
       --image gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
       --platform managed \
       --region us-central1 \
       --allow-unauthenticated \
       --port 8090 \
-      --set-env-vars ENVIRONMENT=staging,CACHET_ENV=staging \
+      --set-env-vars $ENV_VARS \
       --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
       --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
 
