@@ -556,6 +556,25 @@ func TestResolveVeriffCallbackURLForRequest_FallbacksWhenConfigInvalid(t *testin
 	assert.Equal(t, "https://cachet-issuance-gateway-tncrtr5uha-uc.a.run.app/webhooks/veriff", callbackURL)
 }
 
+func TestGetVeriffAPIKey_IgnoresInvalidUUID(t *testing.T) {
+	s := &Server{}
+	t.Setenv("VERIFF_API_KEY", "placeholder-veriff-api-key")
+	t.Setenv("VERIFF_TEST_API_KEY", "")
+	t.Setenv("VERIFF_PROD_API_KEY", "")
+
+	require.Equal(t, "", s.getVeriffAPIKey())
+}
+
+func TestGetVeriffAPIKey_ReturnsValidUUID(t *testing.T) {
+	s := &Server{}
+	const validKey = "123e4567-e89b-12d3-a456-426614174000"
+	t.Setenv("VERIFF_API_KEY", validKey)
+	t.Setenv("VERIFF_TEST_API_KEY", "")
+	t.Setenv("VERIFF_PROD_API_KEY", "")
+
+	assert.Equal(t, validKey, s.getVeriffAPIKey())
+}
+
 func TestResolveVeriffCallbackURL_AppendsDefaultPathWhenMissing(t *testing.T) {
 	s := &Server{
 		config: &config.Config{

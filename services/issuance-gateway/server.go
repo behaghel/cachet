@@ -1779,6 +1779,17 @@ func hostsEqual(a, b string) bool {
 	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
 }
 
+func normalizeVeriffAPIKey(raw string) (string, error) {
+	key := trimEnvValue(raw)
+	if key == "" {
+		return "", nil
+	}
+	if _, err := uuid.Parse(key); err != nil {
+		return "", fmt.Errorf("veriff API key must be a valid UUID: %w", err)
+	}
+	return key, nil
+}
+
 func trimEnvValue(value string) string {
 	return strings.Trim(strings.TrimSpace(value), "\"'")
 }
@@ -1844,20 +1855,35 @@ func (s *Server) resolveVeriffBaseURL() string {
 }
 
 func (s *Server) getVeriffAPIKey() string {
-	if key := strings.TrimSpace(os.Getenv("VERIFF_API_KEY")); key != "" {
+	if key, err := normalizeVeriffAPIKey(os.Getenv("VERIFF_API_KEY")); err != nil {
+		log.Warn().Err(err).Msg("Ignoring VERIFF_API_KEY env var")
+	} else if key != "" {
 		return key
 	}
+
 	integrationCfg := s.getVeriffIntegrationConfig()
 	if envVar := strings.TrimSpace(integrationCfg.APIKeyEnv); envVar != "" {
-		if key := strings.TrimSpace(os.Getenv(envVar)); key != "" {
+		if key, err := normalizeVeriffAPIKey(os.Getenv(envVar)); err != nil {
+			log.Warn().
+				Str("env", envVar).
+				Err(err).
+				Msg("Ignoring Veriff API key from integration config env var")
+		} else if key != "" {
 			return key
 		}
 	}
+
 	if envVar := fallbackAPIKeyEnv(s.activeVeriffIntegration()); envVar != "" {
-		if key := strings.TrimSpace(os.Getenv(envVar)); key != "" {
+		if key, err := normalizeVeriffAPIKey(os.Getenv(envVar)); err != nil {
+			log.Warn().
+				Str("env", envVar).
+				Err(err).
+				Msg("Ignoring fallback Veriff API key env var")
+		} else if key != "" {
 			return key
 		}
 	}
+
 	return ""
 }
 
@@ -2181,11 +2207,23 @@ func determineVeriffIntegration(cfg *config.Config) string {
 
 func logStartupConfiguration(cfg *config.Config) {
 	veriffIntegration := determineVeriffIntegration(cfg)
-	veriffAPIKeyPresent := os.Getenv("VERIFF_API_KEY") != ""
+	veriffAPIKeyPresent := false
+	if key, err := normalizeVeriffAPIKey(os.Getenv("VERIFF_API_KEY")); err == nil && key != "" {
+		veriffAPIKeyPresent = true
+	} else if err != nil {
+		log.Warn().Err(err).Msg("VERIFF_API_KEY ignored during startup configuration logging")
+	}
 	if !veriffAPIKeyPresent {
 		fallbackEnv := fallbackAPIKeyEnv(veriffIntegration)
 		if fallbackEnv != "" {
-			veriffAPIKeyPresent = os.Getenv(fallbackEnv) != ""
+			if key, err := normalizeVeriffAPIKey(os.Getenv(fallbackEnv)); err == nil && key != "" {
+				veriffAPIKeyPresent = true
+			} else if err != nil {
+				log.Warn().
+					Str("env", fallbackEnv).
+					Err(err).
+					Msg("Fallback Veriff API key env var ignored during startup logging")
+			}
 		}
 	}
 
