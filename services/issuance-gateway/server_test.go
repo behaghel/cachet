@@ -20,6 +20,7 @@ import (
 
 // setupTestEnv configures environment for testing
 const testWebhookSecret = "test-veriff-webhook-secret"
+const testVeriffAPIKey = "123e4567-e89b-12d3-a456-426614174000"
 
 func setupTestEnv(t *testing.T) func() {
 	// Set webhook secret to deterministic value for signature validation
@@ -28,12 +29,32 @@ func setupTestEnv(t *testing.T) func() {
 		t.Fatalf("failed to set VERIFF_WEBHOOK_SECRET: %v", err)
 	}
 
+	originalTestKey := os.Getenv("VERIFF_TEST_API_KEY")
+	if err := os.Setenv("VERIFF_TEST_API_KEY", testVeriffAPIKey); err != nil {
+		t.Fatalf("failed to set VERIFF_TEST_API_KEY: %v", err)
+	}
+
+	originalProdKey := os.Getenv("VERIFF_PROD_API_KEY")
+	if err := os.Setenv("VERIFF_PROD_API_KEY", testVeriffAPIKey); err != nil {
+		t.Fatalf("failed to set VERIFF_PROD_API_KEY: %v", err)
+	}
+
 	// Return cleanup function
 	return func() {
 		if originalSecret == "" {
 			_ = os.Unsetenv("VERIFF_WEBHOOK_SECRET")
 		} else {
 			_ = os.Setenv("VERIFF_WEBHOOK_SECRET", originalSecret)
+		}
+		if originalTestKey == "" {
+			_ = os.Unsetenv("VERIFF_TEST_API_KEY")
+		} else {
+			_ = os.Setenv("VERIFF_TEST_API_KEY", originalTestKey)
+		}
+		if originalProdKey == "" {
+			_ = os.Unsetenv("VERIFF_PROD_API_KEY")
+		} else {
+			_ = os.Setenv("VERIFF_PROD_API_KEY", originalProdKey)
 		}
 	}
 }
