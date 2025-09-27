@@ -1450,6 +1450,14 @@ func (s *Server) handleCreateVeriffSession(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if !s.allowMockVeriffSessions() {
+		log.Error().Msg("VERIFF_API_KEY missing and mock sessions disabled")
+		http.Error(w, "Veriff API key not configured", http.StatusBadGateway)
+		return
+	}
+
+	log.Warn().Msg("Using mock Veriff session flow")
+
 	// Fallback to mock implementation
 	response := CreateVeriffSessionResponse{
 		SessionToken: fmt.Sprintf("veriff-token-%s", sessionID),
@@ -1777,6 +1785,30 @@ func buildCallbackURLFromRequest(r *http.Request, host string) string {
 
 func hostsEqual(a, b string) bool {
 	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
+}
+
+func (s *Server) allowMockVeriffSessions() bool {
+	if override := strings.TrimSpace(os.Getenv("ALLOW_MOCK_VERIFF")); override != "" {
+		switch strings.ToLower(override) {
+		case "1", "true", "yes", "enabled":
+			return true
+		case "0", "false", "no", "disabled":
+			return false
+		}
+	}
+
+	if s.config != nil {
+		env := strings.ToLower(strings.TrimSpace(s.config.Environment))
+		if env == "local" || env == "ci" || env == "test" {
+			return true
+		}
+		if env != "" {
+			return false
+		}
+	}
+
+	// Default to allowing mocks only when environment is unspecified (mirrors local dev)
+	return true
 }
 
 func normalizeVeriffAPIKey(raw string) (string, error) {
@@ -2256,6 +2288,7 @@ func logStartupConfiguration(cfg *config.Config) {
 		Bool("veriff_api_key_present", veriffAPIKeyPresent).
 		Str("veriff_base_url", baseURL).
 		Bool("veriff_webhook_env_present", webhookEnvPresent).
+		Bool("veriff_mock_allowed", (&Server{config: cfg}).allowMockVeriffSessions()).
 		Str("veriff_webhook_external_url", webhookURL).
 		Msg("Issuance gateway configuration loaded")
 }

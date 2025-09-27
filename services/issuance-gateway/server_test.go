@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/behaghel/cachet/services/common/config"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -594,6 +595,50 @@ func TestGetVeriffAPIKey_ReturnsValidUUID(t *testing.T) {
 	t.Setenv("VERIFF_PROD_API_KEY", "")
 
 	assert.Equal(t, validKey, s.getVeriffAPIKey())
+}
+
+func TestHandleCreateVeriffSession_RequiresRealKeyOutsideLocal(t *testing.T) {
+	s := &Server{
+		router:           chi.NewRouter(),
+		config:           &config.Config{Environment: "staging"},
+		verifiedSessions: make(map[string]VeriffSession),
+	}
+	s.router.Post("/sessions/veriff", s.handleCreateVeriffSession)
+
+	t.Setenv("VERIFF_API_KEY", "")
+	t.Setenv("VERIFF_TEST_API_KEY", "")
+	t.Setenv("VERIFF_PROD_API_KEY", "")
+
+	reqBody := bytes.NewBufferString(`{"clientId":"test-client"}`)
+	req := httptest.NewRequest(http.MethodPost, "/sessions/veriff", reqBody)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	s.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadGateway, w.Code)
+}
+
+func TestHandleCreateVeriffSession_AllowsMockWhenLocal(t *testing.T) {
+	s := &Server{
+		router:           chi.NewRouter(),
+		config:           &config.Config{Environment: "local"},
+		verifiedSessions: make(map[string]VeriffSession),
+	}
+	s.router.Post("/sessions/veriff", s.handleCreateVeriffSession)
+
+	t.Setenv("VERIFF_API_KEY", "")
+	t.Setenv("VERIFF_TEST_API_KEY", "")
+	t.Setenv("VERIFF_PROD_API_KEY", "")
+
+	reqBody := bytes.NewBufferString(`{"clientId":"test-client"}`)
+	req := httptest.NewRequest(http.MethodPost, "/sessions/veriff", reqBody)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	s.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestResolveVeriffCallbackURL_AppendsDefaultPathWhenMissing(t *testing.T) {

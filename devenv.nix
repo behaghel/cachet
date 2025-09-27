@@ -885,7 +885,7 @@ in
       --region us-central1 \
       --allow-unauthenticated \
       --port 8090 \
-      --set-env-vars ENVIRONMENT=production \
+      --set-env-vars ENVIRONMENT=staging,CACHET_ENV=staging \
       --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
       --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
 
