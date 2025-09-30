@@ -1,7 +1,23 @@
 {
   "defaultEnvironment": "local",
+  "veriff": {
+    "defaultIntegration": "test",
+    "integrations": {
+      "test": {
+        "baseUrl": "https://stationapi.veriff.com",
+        "apiKeyEnv": "VERIFF_TEST_API_KEY",
+        "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET"
+      },
+      "production": {
+        "baseUrl": "https://api.veriff.com",
+        "apiKeyEnv": "VERIFF_PROD_API_KEY",
+        "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET"
+      }
+    }
+  },
   "environments": {
     "local": {
+      "activeVeriffIntegration": "test",
       "services": {
         "verifier": {
           "host": "0.0.0.0",
@@ -38,84 +54,11 @@
           "host": "0.0.0.0",
           "port": 8093,
           "publicUrl": "http://localhost:8093"
-        }
-      },
-      "veriff": {
-        "defaultIntegration": "test",
-        "integrations": {
-          "test": {
-            "baseUrl": "https://stationapi.veriff.com",
-            "apiKeyEnv": "VERIFF_TEST_API_KEY",
-            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          },
-          "production": {
-            "baseUrl": "https://api.veriff.com",
-            "apiKeyEnv": "VERIFF_PROD_API_KEY",
-            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          }
-        }
-      }
-    },
-    "staging": {
-      "services": {
-        "verifier": {
-          "host": "0.0.0.0",
-          "port": 8081,
-          "publicUrl": "https://staging-verifier.cachet.dev"
-        },
-        "registry": {
-          "host": "0.0.0.0",
-          "port": 8082,
-          "publicUrl": "https://staging-registry.cachet.dev"
-        },
-        "receiptsLog": {
-          "host": "0.0.0.0",
-          "port": 8083,
-          "publicUrl": "https://staging-receipts.cachet.dev"
-        },
-        "issuanceGateway": {
-          "host": "0.0.0.0",
-          "port": 8090,
-          "publicUrl": "https://staging-issuance.cachet.dev",
-          "emulatorUrl": "https://staging-issuance.cachet.dev"
-        },
-        "connectorHub": {
-          "host": "0.0.0.0",
-          "port": 8091,
-          "publicUrl": "https://staging-connector.cachet.dev"
-        },
-        "transparencyLog": {
-          "host": "0.0.0.0",
-          "port": 8092,
-          "publicUrl": "https://staging-transparency.cachet.dev"
-        },
-        "vouchingService": {
-          "host": "0.0.0.0",
-          "port": 8093,
-          "publicUrl": "https://staging-vouch.cachet.dev"
-        }
-      },
-      "veriff": {
-        "defaultIntegration": "test",
-        "integrations": {
-          "test": {
-            "baseUrl": "https://stationapi.veriff.com",
-            "apiKeyEnv": "VERIFF_TEST_API_KEY",
-            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          },
-          "production": {
-            "baseUrl": "https://api.veriff.com",
-            "apiKeyEnv": "VERIFF_PROD_API_KEY",
-            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          }
         }
       }
     },
     "ci": {
+      "activeVeriffIntegration": "test",
       "services": {
         "verifier": {
           "host": "0.0.0.0",
@@ -153,22 +96,46 @@
           "port": 8093,
           "publicUrl": "http://localhost:8093"
         }
-      },
-      "veriff": {
-        "defaultIntegration": "test",
-        "integrations": {
-          "test": {
-            "baseUrl": "https://stationapi.veriff.com",
-            "apiKeyEnv": "VERIFF_TEST_API_KEY",
-            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          },
-          "production": {
-            "baseUrl": "https://api.veriff.com",
-            "apiKeyEnv": "VERIFF_PROD_API_KEY",
-            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          }
+      }
+    },
+    "staging": {
+      "activeVeriffIntegration": "production",
+      "veriffWebhookExternalUrl": "https://cachet-issuance-gateway-7bbecbl2mq-uc.a.run.app/webhooks/veriff",
+      "services": {
+        "verifier": {
+          "host": "0.0.0.0",
+          "port": 8081,
+          "publicUrl": ""
+        },
+        "registry": {
+          "host": "0.0.0.0",
+          "port": 8082,
+          "publicUrl": ""
+        },
+        "receiptsLog": {
+          "host": "0.0.0.0",
+          "port": 8083,
+          "publicUrl": ""
+        },
+        "issuanceGateway": {
+          "host": "0.0.0.0",
+          "port": 8090,
+          "publicUrl": "https://cachet-issuance-gateway-7bbecbl2mq-uc.a.run.app"
+        },
+        "connectorHub": {
+          "host": "0.0.0.0",
+          "port": 8091,
+          "publicUrl": ""
+        },
+        "transparencyLog": {
+          "host": "0.0.0.0",
+          "port": 8092,
+          "publicUrl": ""
+        },
+        "vouchingService": {
+          "host": "0.0.0.0",
+          "port": 8093,
+          "publicUrl": ""
         }
       }
     },
@@ -177,55 +144,37 @@
         "verifier": {
           "host": "0.0.0.0",
           "port": 8081,
-          "publicUrl": "https://verifier.cachet.id"
+          "publicUrl": ""
         },
         "registry": {
           "host": "0.0.0.0",
           "port": 8082,
-          "publicUrl": "https://registry.cachet.id"
+          "publicUrl": ""
         },
         "receiptsLog": {
           "host": "0.0.0.0",
           "port": 8083,
-          "publicUrl": "https://receipts.cachet.id"
+          "publicUrl": ""
         },
         "issuanceGateway": {
           "host": "0.0.0.0",
           "port": 8090,
-          "publicUrl": "https://issuance.cachet.id",
-          "emulatorUrl": "https://issuance.cachet.id"
+          "publicUrl": ""
         },
         "connectorHub": {
           "host": "0.0.0.0",
           "port": 8091,
-          "publicUrl": "https://connector.cachet.id"
+          "publicUrl": ""
         },
         "transparencyLog": {
           "host": "0.0.0.0",
           "port": 8092,
-          "publicUrl": "https://transparency.cachet.id"
+          "publicUrl": ""
         },
         "vouchingService": {
           "host": "0.0.0.0",
           "port": 8093,
-          "publicUrl": "https://vouch.cachet.id"
-        }
-      },
-      "veriff": {
-        "defaultIntegration": "production",
-        "integrations": {
-          "test": {
-            "baseUrl": "https://stationapi.veriff.com",
-            "apiKeyEnv": "VERIFF_TEST_API_KEY",
-            "webhookSecretEnv": "VERIFF_TEST_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          },
-          "production": {
-            "baseUrl": "https://api.veriff.com",
-            "apiKeyEnv": "VERIFF_PROD_API_KEY",
-            "webhookSecretEnv": "VERIFF_PROD_WEBHOOK_SECRET",
-            "webhookExternalUrl": ""
-          }
+          "publicUrl": ""
         }
       }
     }

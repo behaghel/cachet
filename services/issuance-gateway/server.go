@@ -2237,6 +2237,11 @@ func determineVeriffIntegration(cfg *config.Config) string {
 	}
 
 	if cfg != nil {
+		if cfg.Veriff.ActiveIntegration != "" {
+			if _, ok := cfg.Veriff.Integrations[strings.ToLower(cfg.Veriff.ActiveIntegration)]; ok {
+				return strings.ToLower(cfg.Veriff.ActiveIntegration)
+			}
+		}
 		if cfg.Veriff.DefaultIntegration != "" {
 			return strings.ToLower(cfg.Veriff.DefaultIntegration)
 		}

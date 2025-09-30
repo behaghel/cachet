@@ -32,18 +32,26 @@ type VeriffIntegrationConfig struct {
 	WebhookSecretEnv   string `json:"webhookSecretEnv,omitempty"`
 }
 
-type VeriffConfig struct {
+type veriffRootConfig struct {
 	DefaultIntegration string                             `json:"defaultIntegration"`
 	Integrations       map[string]VeriffIntegrationConfig `json:"integrations"`
 }
 
+type VeriffConfig struct {
+	DefaultIntegration string                             `json:"defaultIntegration"`
+	ActiveIntegration  string                             `json:"activeIntegration"`
+	Integrations       map[string]VeriffIntegrationConfig `json:"integrations"`
+}
+
 type environmentBlock struct {
-	Services ServicesConfig `json:"services"`
-	Veriff   VeriffConfig   `json:"veriff"`
+	Services                ServicesConfig `json:"services"`
+	ActiveVeriffIntegration string         `json:"activeVeriffIntegration,omitempty"`
+	VeriffWebhookExternal   string         `json:"veriffWebhookExternalUrl,omitempty"`
 }
 
 type rootConfig struct {
 	DefaultEnvironment string                      `json:"defaultEnvironment"`
+	Veriff             veriffRootConfig            `json:"veriff"`
 	Environments       map[string]environmentBlock `json:"environments"`
 }
 
@@ -89,10 +97,19 @@ func Load() (*Config, error) {
 			return
 		}
 
+		services := envBlock.Services
+		applyServiceDefaults(&services)
+
+		veriffConfig, err := buildVeriffConfig(root.Veriff, envBlock.ActiveVeriffIntegration, envBlock.VeriffWebhookExternal, path, env)
+		if err != nil {
+			loadErr = err
+			return
+		}
+
 		loadedConfig = &Config{
 			Environment: env,
-			Services:    envBlock.Services,
-			Veriff:      envBlock.Veriff,
+			Services:    services,
+			Veriff:      veriffConfig,
 		}
 	})
 
@@ -168,4 +185,62 @@ func fileExists(path string) bool {
 	}
 
 	return !info.IsDir()
+}
+
+func applyServiceDefaults(s *ServicesConfig) {
+	fallbackEmulator := func(svc *ServiceConfig) {
+		if svc.PublicURL != "" && svc.EmulatorURL == "" {
+			svc.EmulatorURL = svc.PublicURL
+		}
+	}
+
+	fallbackEmulator(&s.Verifier)
+	fallbackEmulator(&s.Registry)
+	fallbackEmulator(&s.ReceiptsLog)
+	fallbackEmulator(&s.IssuanceGateway)
+	fallbackEmulator(&s.ConnectorHub)
+	fallbackEmulator(&s.TransparencyLog)
+	fallbackEmulator(&s.VouchingService)
+}
+
+func buildVeriffConfig(root veriffRootConfig, activeIntegration, overrideWebhook, path, env string) (VeriffConfig, error) {
+	if len(root.Integrations) == 0 {
+		return VeriffConfig{}, fmt.Errorf("config: veriff.integrations is empty in %s", path)
+	}
+
+	defaultIntegration := root.DefaultIntegration
+	if defaultIntegration == "" {
+		// Pick deterministic default (first key) if not specified
+		for name := range root.Integrations {
+			defaultIntegration = name
+			break
+		}
+	}
+
+	if _, ok := root.Integrations[defaultIntegration]; !ok {
+		return VeriffConfig{}, fmt.Errorf("config: veriff.defaultIntegration %q not defined in integrations (file: %s)", defaultIntegration, path)
+	}
+
+	resolvedActive := activeIntegration
+	if resolvedActive == "" {
+		resolvedActive = defaultIntegration
+	}
+
+	if _, ok := root.Integrations[resolvedActive]; !ok {
+		return VeriffConfig{}, fmt.Errorf("config: environment %q references unknown Veriff integration %q", env, resolvedActive)
+	}
+
+	copiedIntegrations := make(map[string]VeriffIntegrationConfig, len(root.Integrations))
+	for name, cfg := range root.Integrations {
+		if overrideWebhook != "" {
+			cfg.WebhookExternalURL = overrideWebhook
+		}
+		copiedIntegrations[name] = cfg
+	}
+
+	return VeriffConfig{
+		DefaultIntegration: defaultIntegration,
+		ActiveIntegration:  resolvedActive,
+		Integrations:       copiedIntegrations,
+	}, nil
 }

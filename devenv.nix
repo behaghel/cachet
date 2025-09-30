@@ -66,1044 +66,146 @@ in
 
   # Handy scripts
   scripts."dev:up".exec = ''
-    # Start managed processes with secrets injected from SecretSpec
-    unset CACHET_CONFIG_PATH
-    devenv processes stop >/dev/null 2>&1 || true
-    pkill -f "process-compose --config" >/dev/null 2>&1 || true
-    rm -f .devenv/processes.pid
-    rm -f .devenv/run/pc.sock
-    secretspec run -- devenv up --detach verifier registry receipts issuance-gateway
+    ./scripts/dev-up.sh
   '';
   scripts."dev:down".exec = ''
-    PID_FILE=.devenv/processes.pid
-    if [ -f "$PID_FILE" ]; then
-      PID=$(cat "$PID_FILE")
-    else
-      PID=""
-    fi
-
-    devenv processes stop >/dev/null 2>&1 || true
-
-    if [ -n "$PID" ] && ps -p "$PID" >/dev/null 2>&1; then
-      echo "Force stopping lingering devenv process $PID"
-      kill "$PID" 2>/dev/null || true
-      sleep 1
-      if ps -p "$PID" >/dev/null 2>&1; then
-        kill -9 "$PID" 2>/dev/null || true
-      fi
-    fi
-
-    pkill -f "devenv:processes:" >/dev/null 2>&1 || true
-    pkill -f "secretspec run -- devenv up --detach" >/dev/null 2>&1 || true
-    pkill -f "process-compose --config" >/dev/null 2>&1 || true
-    rm -f "$PID_FILE"
-    rm -f .devenv/run/pc.sock
+    ./scripts/dev-down.sh
   '';
   scripts."dev:logs".exec = ''
-    LOG_FILE=.devenv/processes.log
-    if [ ! -f "$LOG_FILE" ]; then
-      echo "Processes log not found. Start services with dev:up first." >&2
-      exit 1
-    fi
-    exec tail -f "$LOG_FILE"
+    ./scripts/dev-logs.sh
   '';
   scripts."dev:tui".exec = ''
-    SOCKET=$(readlink -f .devenv/run/pc.sock 2>/dev/null || true)
-    if [ -z "$SOCKET" ] || [ ! -S "$SOCKET" ]; then
-      echo "Process Compose socket not found. Start services with dev:up first." >&2
-      exit 1
-    fi
-    exec process-compose attach --unix-socket "$SOCKET"
+    ./scripts/dev-tui.sh
   '';
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = "golangci-lint run ./... || true";
   scripts."ci:deps".exec = ''
-    echo "📦 Downloading dependencies..."
-    cd services/verifier && go mod download
-    cd ../registry && go mod download  
-    cd ../receipts-log && go mod download
-    cd ../common && go mod download
-    cd ../connector-hub && go mod download
-    cd ../transparency-log && go mod download
-    cd ../vouching-service && go mod download
-    echo "✅ Dependencies downloaded"
+    ./scripts/ci-deps.sh
   '';
   scripts."ci:test".exec = ''
-    echo "🧪 Running tests with coverage..."
-    set -euo pipefail  # Exit on any error
-
-    mkdir -p coverage
-    echo "Testing verifier..."
-    (cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
-    echo "Testing registry..."
-    (cd services/registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
-    echo "Testing receipts-log..."
-    (cd services/receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
-    echo "Testing issuance-gateway..."
-    (cd services/issuance-gateway && go test -v -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
-    echo "✅ All tests completed successfully with coverage"
+    ./scripts/ci-test.sh
   '';
   scripts."ci:lint".exec = ''
-    echo "🔍 Running golangci-lint on all services..."
-    set -euo pipefail  # Exit on any error
-
-    # Use absolute paths and single commands to avoid cd issues in CI
-    echo "Linting verifier..."
-    (cd services/verifier && golangci-lint run)
-    echo "Linting registry..."
-    (cd services/registry && golangci-lint run)
-    echo "Linting receipts-log..."
-    (cd services/receipts-log && golangci-lint run)
-    echo "Linting connector-hub..."
-    (cd services/connector-hub && golangci-lint run)
-    echo "Linting transparency-log..."  
-    (cd services/transparency-log && golangci-lint run)
-    echo "Linting vouching-service..."
-    (cd services/vouching-service && golangci-lint run)
-    echo "Linting issuance-gateway..."
-    (cd services/issuance-gateway && golangci-lint run)
-    echo "✅ All services passed linting successfully"
+    ./scripts/ci-lint.sh
   '';
   scripts."ci:security".exec = ''
-    echo "🔒 Running security scan..."
-    set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
-
-    # Install gosec if not already available
-    if ! command -v gosec &> /dev/null; then
-      echo "📦 Installing gosec..."
-      go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest || {
-        echo "❌ Failed to install gosec"
-        exit 1
-      }
-    fi
-
-    # Run security scan on each service with proper Go module context
-    echo "🔍 Scanning services for security issues..."
-    echo "Scanning verifier..."
-    cd services/verifier && gosec -exclude-generated ./...
-    echo "Scanning registry..."
-    cd ../registry && gosec -exclude-generated ./...
-    echo "Scanning receipts-log..."
-    cd ../receipts-log && gosec -exclude-generated ./...
-    echo "Scanning connector-hub..."
-    cd ../connector-hub && gosec -exclude-generated ./...
-    echo "Scanning transparency-log..."
-    cd ../transparency-log && gosec -exclude-generated ./...
-    echo "Scanning vouching-service..."
-    cd ../vouching-service && gosec -exclude-generated ./...
-    echo "Scanning issuance-gateway..."
-    cd ../issuance-gateway && gosec -exclude-generated ./...
-
-    echo "✅ Security scan completed successfully"
+    ./scripts/ci-security.sh
   '';
   scripts."test:all".exec = ''
-    echo "Running tests for all services..."
-    cd services/verifier && go test -v ./... && echo "✅ Verifier tests passed"
-    cd ../registry && go test -v ./... && echo "✅ Registry tests passed"  
-    cd ../receipts-log && go test -v ./... && echo "✅ Receipts-log tests passed"
-    cd ../issuance-gateway && go test -v ./... && echo "✅ Issuance gateway tests passed"
+    ./scripts/test-all.sh
   '';
   scripts."test:coverage".exec = ''
-    echo "Running tests with coverage..."
-    mkdir -p coverage
-    cd services/verifier && go test -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
-    cd ../registry && go test -coverprofile=../../coverage/registry.out -covermode=atomic ./...
-    cd ../receipts-log && go test -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
-    cd ../issuance-gateway && go test -coverprofile=../../coverage/issuance.out -covermode=atomic ./...
-    echo "Coverage reports generated in coverage/"
+    ./scripts/test-coverage.sh
   '';
   scripts."test:integration".exec = ''
-    echo "Running integration tests..."
-    devenv up --detach
-    sleep 5
-    # Note: Using /health instead of /healthz - Cloud Run intercepts /healthz requests
-    curl -f http://localhost:8081/health && echo "✅ Verifier healthy"
-    curl -f http://localhost:8082/health && echo "✅ Registry healthy" 
-    curl -f http://localhost:8083/health && echo "✅ Receipts healthy"
-    curl -f http://localhost:8090/health && echo "✅ Issuance gateway healthy"
-    devenv processes stop
+    ./scripts/test-integration.sh
   '';
   scripts."android:emulator".exec = ''
-    echo "Creating Android emulator..."
-    avdmanager create avd --force --name cachet-emulator --package 'system-images;android-34;google_apis_playstore;x86_64' || true
-    echo "Starting Android emulator..."
-    emulator @cachet-emulator -no-audio -no-window &
-    echo "Waiting for emulator to boot..."
-    adb wait-for-device
-    echo "✅ Android emulator ready"
+    ./scripts/android-emulator.sh
   '';
   scripts."android:build".exec = ''
-    echo "Building Android app..."
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:build"
-      exit 1
-    fi
-    if [ ! -f mobile/gradlew ]; then
-      echo "❌ Error: gradlew not found in mobile directory"
-      pwd
-      exit 1
-    fi
-    echo "✅ Java found: $(java -version 2>&1 | head -n1)"
-    cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
-  '';
-  scripts."android:staging:build".exec = ''
-    echo "Building staging APK against Cloud Run endpoints..."
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:build"
-      exit 1
-    fi
-    if [ ! -f mobile/gradlew ]; then
-      echo "❌ Error: gradlew not found in mobile directory"
-      exit 1
-    fi
-
-    echo "📡 Resolving latest Cloud Run URL for staging..."
-    RUN_URL=$(gcloud run services describe cachet-issuance-gateway \
-      --region=us-central1 \
-      --format='value(status.url)' 2>/dev/null)
-
-    if [ -z "$RUN_URL" ]; then
-      echo "❌ Failed to obtain Cloud Run URL. Ensure the service is deployed and you have access."
-      exit 1
-    fi
-
-    echo "✅ Targeting Cloud Run URL: $RUN_URL"
-
-    SIGNING_KEYSTORE="''${CACHET_ANDROID_SIGNING_KEYSTORE:-$HOME/.android/debug.keystore}"
-    SIGNING_STORE_PASSWORD="''${CACHET_ANDROID_SIGNING_STORE_PASSWORD:-android}"
-    SIGNING_KEY_ALIAS="''${CACHET_ANDROID_SIGNING_KEY_ALIAS:-androiddebugkey}"
-    SIGNING_KEY_PASSWORD="''${CACHET_ANDROID_SIGNING_KEY_PASSWORD:-$SIGNING_STORE_PASSWORD}"
-
-    SIGNING_ARGS=""
-    if [ -f "$SIGNING_KEYSTORE" ]; then
-      SIGNING_ARGS="-Pandroid.injected.signing.store.file=$SIGNING_KEYSTORE"
-      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.store.password=$SIGNING_STORE_PASSWORD"
-      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.key.alias=$SIGNING_KEY_ALIAS"
-      SIGNING_ARGS="$SIGNING_ARGS -Pandroid.injected.signing.key.password=$SIGNING_KEY_PASSWORD"
-      echo "🔐 Using signing keystore: $SIGNING_KEYSTORE"
-    else
-      echo "⚠️ Signing keystore not found at $SIGNING_KEYSTORE; release APK will be unsigned."
-      echo "   Provide one via CACHET_ANDROID_SIGNING_KEYSTORE to get an installable build."
-    fi
-
-    pushd mobile >/dev/null
-    ./gradlew --no-daemon :androidApp:assembleRelease \
-      -PcachetEnv=staging \
-      -PcachetIssuanceBaseUrl="$RUN_URL" \
-      $SIGNING_ARGS
-    popd >/dev/null
-
-    APK_DIR="mobile/androidApp/build/outputs/apk/release"
-    APK_PATH=""
-
-    if [ -d "$APK_DIR" ]; then
-      APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*release*.apk" ! -name "*-unsigned.apk" -print -quit 2>/dev/null || true)
-      if [ -z "$APK_PATH" ]; then
-        APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" -print -quit 2>/dev/null || true)
-      fi
-    fi
-
-    if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
-      echo "🎉 Staging APK ready: $APK_PATH"
-    else
-      echo "⚠️ APK build finished but no APK found in $APK_DIR"
-    fi
-  '';
-  scripts."android:staging:install".exec = ''
-    echo "Installing staging release APK on device/emulator..."
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:install"
-      exit 1
-    fi
-
-    if ! command -v adb &> /dev/null; then
-      echo "❌ Error: adb not found. Ensure Android platform tools are on your PATH."
-      exit 1
-    fi
-
-    APK_DIR="mobile/androidApp/build/outputs/apk/release"
-    APK_PATH=""
-
-    if [ -d "$APK_DIR" ]; then
-      APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*release*.apk" ! -name "*-unsigned.apk" -print -quit 2>/dev/null || true)
-      if [ -z "$APK_PATH" ]; then
-        APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" -print -quit 2>/dev/null || true)
-      fi
-    fi
-
-    if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
-      echo "❌ Staging APK not found in $APK_DIR"
-      echo "   Run: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:staging:build"
-      exit 1
-    fi
-
-    if echo "$APK_PATH" | grep -q -- "-unsigned.apk$"; then
-      echo "❌ Staging APK at $APK_PATH is unsigned and cannot be installed."
-      echo "   Re-run the build with signing credentials (e.g. provide CACHET_ANDROID_SIGNING_KEYSTORE)."
-      exit 1
-    fi
-
-    if ! adb devices | grep -w "device" >/dev/null; then
-      echo "❌ No connected device/emulator detected. Connect one and retry."
-      exit 1
-    fi
-
-    PACKAGE_ID=$(grep 'applicationId' mobile/androidApp/build.gradle.kts | sed 's/.*applicationId = "//' | sed 's/".*//')
-    if [ -n "$PACKAGE_ID" ]; then
-      if adb shell pm list packages | grep -q "$PACKAGE_ID"; then
-        echo "ℹ️ Removing existing package $PACKAGE_ID before installing..."
-        if ! adb uninstall "$PACKAGE_ID" >/dev/null; then
-          echo "⚠️ Failed to uninstall existing $PACKAGE_ID; continuing with install attempt."
-        fi
-      fi
-    fi
-
-    if adb install -r "$APK_PATH"; then
-      echo "✅ Installed staging APK: $APK_PATH"
-    else
-      echo "❌ Failed to install $APK_PATH"
-      exit 1
-    fi
+    ./scripts/android-build.sh
   '';
   scripts."android:install".exec = ''
-    echo "Installing app on device/emulator..."
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:install"
-      exit 1
-    fi
-    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
+    ./scripts/android-install.sh
   '';
   scripts."android:uninstall".exec = ''
-    echo "Uninstalling app from device/emulator..."
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:uninstall"
-      exit 1
-    fi
-    # Try using gradle uninstallDebug task first
-    if cd mobile && ./gradlew --no-daemon :androidApp:uninstallDebug 2>/dev/null; then
-      echo "✅ App uninstalled via Gradle"
-    else
-      # Fallback to adb uninstall if gradle task doesn't work
-      echo "Gradle uninstall failed, trying adb..."
-      PACKAGE_ID=$(grep 'applicationId' mobile/androidApp/build.gradle.kts | sed 's/.*applicationId = "//' | sed 's/".*//')
-      if [ -n "$PACKAGE_ID" ]; then
-        adb uninstall "$PACKAGE_ID"
-        echo "✅ App uninstalled via adb: $PACKAGE_ID"
-      else
-        echo "❌ Could not determine package ID from build.gradle.kts"
-        exit 1
-      fi
-    fi
+    ./scripts/android-uninstall.sh
   '';
   scripts."android:run".exec = ''
-    echo "🚀 Starting full development environment..."
-    echo "1. Starting backend services..."
-    devenv up --detach
-    sleep 3
-    echo "2. Building and installing Android app..."
-    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
-    echo "3. Launching app..."
-    adb shell am start -n id.cachet.wallet.android/.MainActivity
-    echo "✅ Done! Backend running, app installed and launched."
-    echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
+    ./scripts/android-run.sh
   '';
   scripts."android:test".exec = ''
-    echo "🧪 Running Android instrumented tests..."
-    echo "1. Checking emulator connection..."
-    adb devices | grep device || (echo "❌ No Android emulator detected. Run 'android:emulator' first." && exit 1)
-    echo "2. Building and running tests..."
-    cd mobile && ./gradlew --no-daemon :androidApp:connectedAndroidTest
-    echo "✅ Android tests completed!"
-    echo "📊 Test results available in mobile/androidApp/build/reports/androidTests/"
+    ./scripts/android-test.sh
   '';
   scripts."android:test-unit".exec = ''
-    set -euo pipefail
-
-    echo "🧪 Running unit tests..."
-
-    if [ -z "$JAVA_HOME" ] && ! command -v java &> /dev/null; then
-      echo "❌ Error: Java not found. Make sure you're running with DEVENV_ENABLE_ANDROID=1"
-      echo "   Usage: DEVENV_ENABLE_ANDROID=1 devenv shell -- android:test-unit"
-      exit 1
-    fi
-
-    (
-      cd mobile
-
-      echo "1. Running shared module tests (:shared:testDebugUnitTest)..."
-      ./gradlew --no-daemon :shared:testDebugUnitTest
-
-      echo "2. Running Android unit tests (:androidApp:testDebugUnitTest)..."
-      ./gradlew --no-daemon :androidApp:testDebugUnitTest
-    )
-
-    echo "✅ Unit tests completed!"
-    echo "📊 Test results available in mobile/*/build/reports/tests/"
+    ./scripts/android-test-unit.sh
   '';
 
   scripts."android:logs".exec = ''
-    echo "📱 Streaming Android device/emulator logs..."
-    echo "📍 Use Ctrl+C to stop log streaming"
-    echo "🔍 Filtering for Cachet wallet app logs..."
-    echo ""
-
-    # Check if ADB is available
-    if ! command -v adb &> /dev/null; then
-      echo "❌ Error: adb not found. Make sure Android SDK is installed."
-      exit 1
-    fi
-
-    # Get connected devices and select the first one
-    DEVICES=$(adb devices | grep -E '\tdevice$' | cut -f1)
-    if [ -z "$DEVICES" ]; then
-      echo "❌ No Android device/emulator detected."
-      echo "   Make sure your device is connected or emulator is running."
-      adb devices
-      exit 1
-    fi
-
-    # Get the first device
-    FIRST_DEVICE=$(echo "$DEVICES" | head -n1)
-    echo "🔗 Connected devices:"
-    adb devices
-    echo ""
-    echo "📱 Using device: $FIRST_DEVICE"
-    echo ""
-
-    # Clear old logs and start streaming from the selected device
-    adb -s "$FIRST_DEVICE" logcat -c  # Clear existing logs
-
-    # Stream logs with better filtering for mobile apps
-    echo "🔍 Starting log stream (filtered for Cachet app)..."
-    echo "   Monitoring: App crashes, network errors, Veriff integration, OkHttp requests"
-    echo ""
-
-    adb -s "$FIRST_DEVICE" logcat \
-      -s "AndroidRuntime:E" \
-      -s "System.err:*" \
-      -s "CachetWallet:*" \
-      -s "VeriffIntegration:*" \
-      -s "OkHttp:*" \
-      -s "NetworkSecurityConfig:*" \
-      -s "id.cachet.wallet:*" \
-      -s "*:E" \
-      -s "*:W" \
-    | while read line; do
-      # Highlight important patterns
-      if echo "$line" | grep -qiE "(crash|exception|error|failed|veriff|cachet)"; then
-        echo "🔴 $line"
-      elif echo "$line" | grep -qiE "(warn|warning)"; then
-        echo "🟡 $line" 
-      else
-        echo "ℹ️  $line"
-      fi
-    done
+    ./scripts/android-logs.sh
   '';
   scripts."schema:validate".exec = ''
-    echo "🔍 Validating OpenAPI schema..."
-    yamllint schemas/openapi.yaml
-
-    # Install and use redocly for OpenAPI validation
-    if ! command -v redocly &> /dev/null; then
-        echo "📦 Installing @redocly/cli..."
-        npm install -g @redocly/cli
-    fi
-
-    redocly lint schemas/openapi.yaml
-    echo "✅ Schema validation passed!"
+    ./scripts/schema-validate.sh
   '';
   scripts."schema:generate".exec = ''
-    echo "🔧 Generating code from OpenAPI schema..."
-
-    echo "1. Generating Go models..."
-    mkdir -p generated/go
-    oapi-codegen -generate types -package models schemas/openapi.yaml > generated/go/models.go
-
-    echo "2. Generating Kotlin models..."
-    mkdir -p generated/kotlin
-    openapi-generator-cli generate \
-      -i schemas/openapi.yaml \
-      -g kotlin \
-      -o generated/kotlin \
-      --additional-properties=packageName=id.cachet.wallet.generated,serializationLibrary=kotlinx_serialization
-
-    echo "✅ Code generation completed!"
-    echo "📁 Generated files:"
-    echo "   - Go: generated/go/models.go"
-    echo "   - Kotlin: generated/kotlin/"
+    ./scripts/schema-generate.sh
   '';
   scripts."schema:test".exec = ''
-    echo "🧪 Running schema compatibility tests..."
-
-    echo "1. Validating schema..."
-    yamllint schemas/openapi.yaml
-
-    echo "2. Generating temporary models..."
-    rm -rf /tmp/cachet-schema-test
-    mkdir -p /tmp/cachet-schema-test/go /tmp/cachet-schema-test/kotlin
-
-    oapi-codegen -generate types -package models schemas/openapi.yaml > /tmp/cachet-schema-test/go/models.go
-    openapi-generator-cli generate \
-      -i schemas/openapi.yaml \
-      -g kotlin \
-      -o /tmp/cachet-schema-test/kotlin \
-      --additional-properties=packageName=id.cachet.wallet.generated,serializationLibrary=kotlinx_serialization
-
-    echo "3. Testing Go compilation..."
-    cd /tmp/cachet-schema-test/go && go mod init test && go mod tidy && go build .
-
-    echo "✅ Schema compatibility tests passed!"
+    ./scripts/schema-test.sh
   '';
   scripts."schema:sync".exec = ''
-    echo "🔄 Synchronizing schemas across codebase..."
-
-    echo "1. Running validation..."
-    yamllint schemas/openapi.yaml
-
-    echo "2. Generating fresh models..."
-    schema:generate
-
-    echo "3. Running compatibility tests..."
-    schema:test
-
-    echo "4. Updating mobile project..."
-    # Copy generated Kotlin models to mobile project
-    cp -r generated/kotlin/src/main/kotlin/* mobile/shared/src/commonMain/kotlin/ 2>/dev/null || true
-
-    echo "5. Running tests..."
-    test:all
-
-    echo "✅ Schema synchronization completed!"
+    ./scripts/schema-sync.sh
   '';
   scripts."test:schema-integration".exec = ''
-    echo "🧪 Running schema integration tests..."
-
-    echo "1. Testing Go schema compatibility..."
-    cd tests/schema-integration && go test -v .
-
-    echo "2. Testing Kotlin schema compatibility..."
-    cd mobile && gradle :shared:test --tests "*SchemaCompatibilityTest*"
-
-    echo "✅ Schema integration tests completed!"
+    ./scripts/test-schema-integration.sh
   '';
   scripts."ci:full".exec = ''
-    echo "🚀 Running full CI pipeline locally..."
-
-    echo "📋 Step 1: Schema validation and generation..."
-    schema:validate
-    schema:generate
-
-    echo "🧪 Step 2: Backend tests..."
-    test:all
-    test:integration
-
-    echo "📱 Step 3: Mobile tests..."
-    android:test-unit
-
-    echo "🔄 Step 4: Schema compatibility tests..."
-    test:schema-integration
-
-    echo "🔍 Step 5: Quality checks..."
-    fmt:go
-    lint:go
-
-    echo "✅ Full CI pipeline completed successfully!"
-    echo "🎉 Ready to create pull request!"
+    ./scripts/ci-full.sh
   '';
 
   # GCP deployment scripts
   scripts."gcp:auth".exec = ''
-    echo "🔐 Authenticating with Google Cloud..."
-    gcloud auth login
-    echo "✅ Successfully authenticated with GCP"
+    ./scripts/gcp-auth.sh
   '';
 
   scripts."gcp:setup".exec = ''
-    echo "🏗️  Setting up GCP project for Cachet deployment..."
-    set -euo pipefail
-
-    # Check if authenticated
-    if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -n1 > /dev/null; then
-      echo "❌ Not authenticated with GCP. Run 'gcp:auth' first."
-      exit 1
-    fi
-
-    # Set project (user will be prompted to select/create)
-    echo "Please select or create a GCP project:"
-    gcloud projects list
-    read -p "Enter project ID (or press Enter to create new): " PROJECT_ID
-
-    if [ -z "$PROJECT_ID" ]; then
-      read -p "Enter new project ID (e.g., cachet-prod-123): " PROJECT_ID
-      gcloud projects create $PROJECT_ID
-      
-      # Wait for project creation to propagate
-      echo "⏳ Waiting for project creation to complete..."
-      sleep 5
-    fi
-
-    gcloud config set project $PROJECT_ID
-    echo "📋 Using project: $PROJECT_ID"
-
-    # Ensure billing is enabled (critical for Cloud SQL and other services)
-    echo "🔍 Checking billing status..."
-    if ! gcloud billing projects list --filter="projectId:$PROJECT_ID" --format="value(billingEnabled)" | grep -q "True"; then
-      echo "⚠️  Billing is not enabled for this project."
-      echo "   Please enable billing at: https://console.cloud.google.com/billing/linkedaccount?project=$PROJECT_ID"
-      echo "   Press Enter when billing is enabled..."
-      read
-    fi
-
-    # Enable required APIs with error handling
-    echo "🔧 Enabling required GCP APIs..."
-    APIS=(
-      cloudbuild.googleapis.com
-      run.googleapis.com  
-      sqladmin.googleapis.com
-      secretmanager.googleapis.com
-      containerregistry.googleapis.com
-      cloudresourcemanager.googleapis.com
-    )
-
-    for api in "''${APIS[@]}"; do
-      echo "Enabling $api..."
-      gcloud services enable $api || {
-        echo "⚠️ Failed to enable $api - this may cause issues later"
-      }
-    done
-
-    echo "🔐 Provisioning CI/CD service account access..."
-    DEFAULT_CI_SA="cachet-cicd@$PROJECT_ID.iam.gserviceaccount.com"
-    read -p "CI service account email [$DEFAULT_CI_SA]: " CI_SA_EMAIL
-    CI_SA_EMAIL="''${CI_SA_EMAIL:-$DEFAULT_CI_SA}"
-
-    if ! gcloud iam service-accounts describe "$CI_SA_EMAIL" >/dev/null 2>&1; then
-      CI_SA_NAME=$(echo "$CI_SA_EMAIL" | cut -d'@' -f1)
-      echo "➕ Creating service account $CI_SA_NAME..."
-      gcloud iam service-accounts create "$CI_SA_NAME" --display-name="Cachet CI/CD" || true
-      CI_SA_EMAIL="$CI_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
-    fi
-
-    echo "🛡️  Granting required roles to $CI_SA_EMAIL..."
-    for role in \
-      roles/run.admin \
-      roles/iam.serviceAccountUser \
-      roles/secretmanager.secretAccessor \
-      roles/cloudsql.viewer \
-      roles/secretmanager.viewer \
-      roles/storage.objectAdmin \
-      roles/containeranalysis.admin \
-      roles/artifactregistry.writer
-    do
-      gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-        --member="serviceAccount:$CI_SA_EMAIL" \
-        --role="$role" \
-        --quiet || echo "⚠️  Failed to grant $role (requires appropriate permissions)"
-    done
-
-    echo "✅ GCP project setup completed!"
-    echo "📝 Next steps (run in order):"
-    echo "   1. Run 'gcp:db:setup' to create Cloud SQL database"
-    echo "   2. Run 'gcp:secrets:setup' to configure secrets with SecretSpec"
-    echo "   3. Run 'gcp:deploy:verifier' to deploy services"
+    ./scripts/gcp-setup.sh
   '';
 
   scripts."gcp:db:setup".exec = ''
-    echo "🗄️  Setting up Cloud SQL database..."
-    set -euo pipefail
-
-    PROJECT_ID=$(gcloud config get-value project)
-    INSTANCE_NAME="cachet-db"
-    DB_NAME="cachet"
-
-    # Create Cloud SQL instance
-    echo "Creating Cloud SQL PostgreSQL instance (db-f1-micro)..."
-    gcloud sql instances create $INSTANCE_NAME \
-      --database-version=POSTGRES_15 \
-      --tier=db-f1-micro \
-      --storage-size=10 \
-      --region=us-central1 \
-      --activation-policy=ALWAYS \
-      --root-password=temp-password-change-me
-
-    # Create database
-    gcloud sql databases create $DB_NAME --instance=$INSTANCE_NAME
-
-    # Get connection string
-    CONNECTION_NAME=$(gcloud sql instances describe $INSTANCE_NAME --format="value(connectionName)")
-
-    echo "✅ Database setup completed!"
-    echo "📋 Connection details:"
-    echo "   Instance: $INSTANCE_NAME"
-    echo "   Database: $DB_NAME"
-    echo "   Connection: $CONNECTION_NAME"
-    echo "⚠️  Remember to change the root password!"
+    ./scripts/gcp-db-setup.sh
   '';
 
   scripts."gcp:secrets:setup".exec = ''
-        echo "🔐 Setting up Secret Manager with SecretSpec integration..."
-        set -euo pipefail
-        
-        PROJECT_ID=$(gcloud config get-value project)
-        
-        # Generate secure database password
-        echo "🔑 Generating secure database password..."
-        DB_PASSWORD=$(openssl rand -base64 32)
-        
-        # Set the password for the postgres user
-        echo "📝 Setting database password..."
-        gcloud sql users set-password postgres \
-          --instance=cachet-db \
-          --password="$DB_PASSWORD"
-        
-        # Create database URL secret with proper connection string
-        echo "🔐 Creating/updating database-url secret..."
-        CONNECTION_NAME="$PROJECT_ID:us-central1:cachet-db"
-        DATABASE_URL="postgresql://postgres:$DB_PASSWORD@/cachet?host=/cloudsql/$CONNECTION_NAME"
-        
-        # Try to create, but if it exists, add a new version
-        if ! echo -n "$DATABASE_URL" | gcloud secrets create database-url --data-file=- 2>/dev/null; then
-          echo "Secret already exists, updating with new version..."
-          echo -n "$DATABASE_URL" | gcloud secrets versions add database-url --data-file=-
-        fi
-        
-        # Create JWT secret
-        echo "🔑 Creating/updating jwt-secret..."
-        JWT_SECRET_VALUE=$(openssl rand -base64 32)
-        if ! echo -n "$JWT_SECRET_VALUE" | gcloud secrets create jwt-secret --data-file=- 2>/dev/null; then
-          echo "Secret already exists, updating with new version..."
-          echo -n "$JWT_SECRET_VALUE" | gcloud secrets versions add jwt-secret --data-file=-
-        fi
-        
-        # Create .env file for local development with secretspec
-        echo "📝 Creating .env file for local development..."
-        cat > .env << EOF
-    # Secrets for local development with secretspec
-    CACHET_DB_URL="$DATABASE_URL"
-    CACHET_JWT_SECRET="$JWT_SECRET_VALUE"
-    EOF
-        
-        echo "✅ Secrets created with SecretSpec integration!"
-        echo "📋 Your secrets are now available via:"
-        echo "   - CACHET_DB_URL (database connection)"  
-        echo "   - CACHET_JWT_SECRET (JWT signing key)"
-        echo "💡 These are accessible via secretspec in devenv and stored in GCP Secret Manager for production"
-        echo "🔧 Local development will use the values from .env file"
+    ./scripts/gcp-secrets-setup.sh
   '';
 
   scripts."gcp:deploy:verifier".exec = ''
-    echo "🚀 Deploying Verifier service to Cloud Run with SecretSpec integration..."
-    set -euo pipefail
-
-    PROJECT_ID=$(gcloud config get-value project)
-    SERVICE_NAME="cachet-verifier"
-
-    # Ensure service account has secret access (idempotent)
-    echo "🔐 Ensuring service account has Secret Manager access..."
-    PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-    SERVICE_ACCOUNT="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
-
-    # Grant Secret Manager access (these commands are idempotent)
-    gcloud secrets add-iam-policy-binding database-url \
-        --member="serviceAccount:$SERVICE_ACCOUNT" \
-        --role="roles/secretmanager.secretAccessor" --quiet || true
-        
-    gcloud secrets add-iam-policy-binding jwt-secret \
-        --member="serviceAccount:$SERVICE_ACCOUNT" \
-        --role="roles/secretmanager.secretAccessor" --quiet || true
-
-    # Build and push container
-    echo "📦 Building container..."
-    gcloud builds submit --tag gcr.io/$PROJECT_ID/$SERVICE_NAME ./services/verifier
-
-    # Deploy to Cloud Run with SecretSpec-consistent secrets
-    echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
-    gcloud run deploy $SERVICE_NAME \
-      --image gcr.io/$PROJECT_ID/$SERVICE_NAME \
-      --platform managed \
-      --region us-central1 \
-      --allow-unauthenticated \
-      --port 8080 \
-      --set-env-vars ENVIRONMENT=production \
-      --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest
-
-    echo "✅ Verifier service deployed with SecretSpec integration!"
-    echo "🔗 Service URL: https://$SERVICE_NAME-$(echo $PROJECT_ID | tr ':' '-').us-central1.run.app"
-    echo "🧪 Testing service endpoints..."
-    sleep 5
-
-    SERVICE_URL="https://$SERVICE_NAME-$(echo $PROJECT_ID | tr ':' '-').us-central1.run.app"
-    curl -f "$SERVICE_URL/packs" > /dev/null && echo "✓ /packs endpoint working"
-    curl -f "$SERVICE_URL/health" > /dev/null && echo "✓ /health endpoint working" || echo "ℹ /health endpoint not available (service works via /packs)"
-
-    echo "🔍 Verifying SecretSpec consistency:"
-    echo "   Local (via secretspec/dotenv): CACHET_DB_URL and CACHET_JWT_SECRET available"
-    echo "   Cloud (via Secret Manager): Same secrets automatically injected"
+    ./scripts/gcp-deploy-verifier.sh
   '';
 
   scripts."gcp:deploy:issuance-gateway".exec = ''
-    echo "🚀 Deploying Issuance Gateway to Cloud Run with Veriff integration..."
+    ./scripts/gcp-deploy-issuance-gateway.sh
+  '';
+
+  scripts."env:switch".exec = ''
     set -euo pipefail
+    ./scripts/env-switch.sh
+  '';
 
-    PROJECT_ID=$(gcloud config get-value project)
-    if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then
-      echo "❌ GCP project ID not set. Please run 'gcloud config set project YOUR_PROJECT_ID'"
-      exit 1
-    fi
-    echo "📋 Using GCP project: $PROJECT_ID"
-    SERVICE_NAME="cachet-issuance-gateway"
-
-    # Ensure service account has secret access (idempotent)
-    echo "🔐 Ensuring service account has Secret Manager access..."
-    PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-    SERVICE_ACCOUNT="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-      --member="serviceAccount:$SERVICE_ACCOUNT" \
-      --role="roles/secretmanager.secretAccessor" \
-      --quiet || echo "IAM binding already exists"
-
-    CURRENT_RUN_URL=$(gcloud run services describe $SERVICE_NAME --region=us-central1 --format='value(status.url)' 2>/dev/null || true)
-
-    if [ -n "$CURRENT_RUN_URL" ]; then
-      WEBHOOK_ENV="VERIFF_WEBHOOK_EXTERNAL_URL=$CURRENT_RUN_URL/webhooks/veriff"
-      echo "🔁 Using existing Cloud Run URL for webhooks: $CURRENT_RUN_URL"
-    else
-      WEBHOOK_ENV=""
-      echo "⚠️ Could not determine Cloud Run URL before deploy; webhooks will default to config value"
-    fi
-
-    # Build and push container using Dockerfile (avoids skopeo digest issues)
-    echo "📦 Building Docker image for issuance gateway..."
-    docker build \
-      --file services/issuance-gateway/Dockerfile \
-      --tag gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
-      .
-
-    echo "🚢 Pushing Docker image to Artifact Registry..."
-    docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
-
-    # Deploy to Cloud Run with SecretSpec-consistent secrets + Veriff credentials  
-    echo "🌐 Deploying to Cloud Run with secrets from Secret Manager..."
-    ENV_VARS="ENVIRONMENT=staging,CACHET_ENV=staging"
-    if [ -n "$WEBHOOK_ENV" ]; then
-      ENV_VARS="$ENV_VARS,$WEBHOOK_ENV"
-    fi
-
-    gcloud run deploy $SERVICE_NAME \
-      --image gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
-      --platform managed \
-      --region us-central1 \
-      --allow-unauthenticated \
-      --port 8090 \
-      --set-env-vars $ENV_VARS \
-      --set-secrets CACHET_DB_URL=database-url:latest,CACHET_JWT_SECRET=jwt-secret:latest,VERIFF_API_KEY=veriff-api-key:latest,VERIFF_WEBHOOK_SECRET=veriff-webhook-secret:latest \
-      --set-env-vars VERIFF_BASE_URL=https://stationapi.veriff.com
-
-    # Get the deployed service URL for webhook configuration
-    SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=us-central1 --format='value(status.url)')
-
-    echo "✅ Issuance Gateway deployed successfully!"
-    echo "🔗 Service URL: $SERVICE_URL"
-    echo "🪝 Veriff Webhook URL: $SERVICE_URL/webhooks/veriff"
-    echo ""
-    echo "⚠️  Next steps:"
-    echo "   1. Configure Veriff integration to use webhook URL: $SERVICE_URL/webhooks/veriff"
-    echo "   2. Update mobile app to point to: $SERVICE_URL"
-    echo "   3. Test the complete flow"
+  scripts."veriff:switch".exec = ''
+    set -euo pipefail
+    ./scripts/veriff-switch.sh
   '';
 
   scripts."gcp:status".exec = ''
-    echo "📊 Checking GCP deployment status..."
-    set -euo pipefail
-
-    echo "🗄️  Cloud SQL Status:"
-    gcloud sql instances list
-
-    echo ""
-    echo "🌐 Cloud Run Services:"
-    gcloud run services list --platform managed --region us-central1
-
-    echo ""
-    echo "🔐 Secrets:"
-    gcloud secrets list
-
-    echo ""
-    echo "🔍 SecretSpec Integration Verification:"
-    echo "   Local secrets available via secretspec ✓"
-    echo "   Cloud secrets injected via Secret Manager ✓" 
-    echo "   Same secret names in both environments ✓"
+    ./scripts/gcp-status.sh
   '';
 
   scripts."gcp:staging:down".exec = ''
-    echo "🔻 Suspending staging environment to minimize cost..."
-    set -euo pipefail
-
-    echo "⏸️  Setting Cloud SQL activation policy to NEVER (manual)..."
-    gcloud sql instances patch cachet-db --activation-policy=NEVER --quiet
-
-    echo "🛑 Applying change and stopping instance..."
-    gcloud sql instances restart cachet-db --quiet || true
-    echo "   Cloud SQL will stop after restart completes. Storage charges may still apply."
-
-    echo "ℹ️  Cloud Run services scale to zero automatically; no additional action required."
-    echo "✅ Staging environment suspended. Run 'gcp:staging:up' to resume."
+    ./scripts/gcp-staging-down.sh
   '';
 
   scripts."gcp:staging:up".exec = ''
-    echo "🔺 Resuming staging environment..."
-    set -euo pipefail
-
-    echo "▶️  Restoring Cloud SQL activation policy to ALWAYS..."
-    gcloud sql instances patch cachet-db --activation-policy=ALWAYS --quiet
-
-    echo "🚀 Starting Cloud SQL instance..."
-    gcloud sql instances restart cachet-db --quiet
-
-    echo "⏳ Waiting for Cloud SQL to become RUNNABLE..."
-    for attempt in {1..30}; do
-      STATE=$(gcloud sql instances describe cachet-db --format='value(state)' 2>/dev/null || echo "UNKNOWN")
-      echo "   Cloud SQL state: $STATE"
-      if [ "$STATE" = "RUNNABLE" ]; then
-        break
-      fi
-      sleep 10
-    done
-
-    if [ "$STATE" != "RUNNABLE" ]; then
-      echo "❌ Cloud SQL did not become RUNNABLE within expected time."
-      exit 1
-    fi
-
-    echo "📦 Redeploying issuance gateway so staging matches Cloud Run..."
-    devenv run gcp:deploy:issuance-gateway
-
-    echo "✅ Staging environment is back online."
+    ./scripts/gcp-staging-up.sh
   '';
 
   scripts."gcp:test-deployment".exec = ''
-    echo "🧪 Testing complete GCP deployment with SecretSpec..."
-    set -euo pipefail
-
-    SERVICE_URL=$(gcloud run services describe cachet-verifier --region=us-central1 --format='value(status.url)')
-
-    echo "1. Testing local SecretSpec access..."
-    if [ -n "''${CACHET_DB_URL:-}" ] && [ -n "''${CACHET_JWT_SECRET:-}" ]; then
-      echo "   ✅ Local secrets accessible via secretspec"
-    else
-      echo "   ❌ Local secrets not available - check secretspec configuration"
-      exit 1
-    fi
-
-    echo "2. Testing deployed service..."
-    if curl -f "$SERVICE_URL/packs" > /dev/null 2>&1; then
-      echo "   ✅ Service responding correctly"
-    else
-      echo "   ❌ Service not responding"
-      exit 1
-    fi
-
-    echo "3. Verifying secrets are configured in Cloud Run..."
-    SECRET_CONFIG=$(gcloud run services describe cachet-verifier --region=us-central1 --format="value(spec.template.spec.containers[0].env[].valueFrom.secretKeyRef.name)" | tr '\n' ',' || echo "")
-    if [[ "$SECRET_CONFIG" == *"database-url"* ]] && [[ "$SECRET_CONFIG" == *"jwt-secret"* ]]; then
-      echo "   ✅ Secrets properly configured in Cloud Run"
-    else
-      echo "   ❌ Secrets not configured in Cloud Run"
-      exit 1
-    fi
-
-    echo ""
-    echo "✅ All tests passed! SecretSpec integration working correctly:"
-    echo "   • Local development uses .env via secretspec"
-    echo "   • Production uses Secret Manager via Cloud Run"  
-    echo "   • Same secret names and consistent access pattern"
-    echo "   • Service deployed and functional"
+    ./scripts/gcp-test-deployment.sh
   '';
 
   # Webhook development scripts using ngrok
   scripts."webhook:setup".exec = ''
-    echo "🔧 Setting up ngrok for webhook development..."
-    echo ""
-    echo "ngrok requires a free account to create tunnels."
-    echo ""
-    echo "📋 Steps to set up ngrok:"
-    echo "   1. Sign up: https://dashboard.ngrok.com/signup"
-    echo "   2. Get your authtoken: https://dashboard.ngrok.com/get-started/your-authtoken"
-    echo "   3. Run: ngrok config add-authtoken YOUR_TOKEN"
-    echo "   4. Test: webhook:tunnel"
-    echo ""
-    echo "⚡ Alternatively, run this one-liner after getting your token:"
-    echo "   ngrok config add-authtoken YOUR_TOKEN_HERE"
-    echo ""
-    echo "✅ Once set up, use 'webhook:tunnel' or 'webhook:dev' for testing"
+    ./scripts/webhook-setup.sh
   '';
 
   scripts."webhook:tunnel".exec = ''
-    echo "🌐 Starting ngrok tunnel for webhook development..."
-    echo ""
-    echo "This will expose your local issuance gateway (port 8090) to the internet"
-    echo "so Veriff can send webhooks to test the complete flow."
-    echo ""
-    echo "💡 Usage:"
-    echo "   1. Keep this running in one terminal"
-    echo "   2. Copy the HTTPS URL (e.g., https://abc123.ngrok.io)"
-    echo "   3. Update mobile app to use this URL"
-    echo "   4. Test complete Veriff webhook flow"
-    echo ""
-    echo "Press Ctrl+C to stop the tunnel..."
-    echo ""
-
-    # Check if ngrok is authenticated
-    if ! ngrok config check > /dev/null 2>&1; then
-      echo "❌ ngrok not configured. Run 'webhook:setup' first."
-      exit 1
-    fi
-
-    ngrok http 8090 --log stdout
+    ./scripts/webhook-tunnel.sh
   '';
 
   scripts."webhook:dev".exec = ''
-    echo "🚀 Starting complete webhook development environment..."
-    echo ""
-
-    # Check if ngrok is authenticated
-    if ! ngrok config check > /dev/null 2>&1; then
-      echo "❌ ngrok not configured. Run 'webhook:setup' first."
-      exit 1
-    fi
-
-    echo "This will start:"
-    echo "  1. Local issuance gateway (port 8090)"
-    echo "  2. ngrok tunnel for webhook reception"
-    echo ""
-    echo "📋 Setup steps:"
-    echo "  1. Wait for both services to start"
-    echo "  2. Note the ngrok HTTPS URL"
-    echo "  3. Update mobile app backend URL"
-    echo "  4. Test complete end-to-end Veriff flow"
-    echo ""
-
-    # Start issuance gateway in background
-    echo "Starting issuance gateway..."
-    cd services/issuance-gateway
-    PORT=8090 go run . &
-    GATEWAY_PID=$!
-
-    # Wait for it to start
-    echo "Waiting for gateway to start..."
-    sleep 3
-
-    # Start ngrok tunnel
-    echo "Starting ngrok tunnel..."
-    echo ""
-    ngrok http 8090 --log stdout
-
-    # Cleanup on exit
-    trap "kill $GATEWAY_PID 2>/dev/null" EXIT
+    ./scripts/webhook-dev.sh
   '';
 
   # Run services with: `devenv up verifier registry receipts issuance-gateway`
@@ -1264,8 +366,8 @@ in
     echo "    - Integration test: test:integration"
     echo "  Android:"
     echo "    - Setup emulator:   android:emulator"
+    echo "    - Switch env:       env:switch"
     echo "    - Build app:        android:build"
-    echo "    - Build staging:    android:staging:build"
     echo "    - Install app:      android:install"
     echo "    - Uninstall app:    android:uninstall"
     echo "    - Full dev setup:   android:run"

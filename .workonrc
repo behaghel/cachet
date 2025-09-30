@@ -1,1 +1,2 @@
-ASSIST_CMD=claude
+ASSIST_CMD=nix shell nixpkgs#codex -c codex
+STARSHIP_PROJECT_ENV=CACHET_ENV

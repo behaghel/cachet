@@ -22,16 +22,16 @@ CACHET_DB_URL = { description = "PostgreSQL database connection URL", required =
 CACHET_JWT_SECRET = { description = "JWT signing secret key", required = true }
 
 # Veriff Integration
-VERIFF_API_KEY = { description = "Legacy fallback Veriff API key", required = false }
+VERIFF_API_KEY = { description = "Integration-specific Veriff API key wired into the gateway", required = false }
 VERIFF_BASE_URL = { description = "Veriff API base URL override", required = false, default = "https://stationapi.veriff.com" }
-VERIFF_WEBHOOK_SECRET = { description = "Legacy fallback webhook signing secret", required = false }
+VERIFF_WEBHOOK_SECRET = { description = "Integration-specific webhook signing secret", required = false }
 VERIFF_WEBHOOK_BASE_URL = { description = "Base URL where Veriff should send webhooks", required = false, default = "http://localhost:8082" }
 VERIFF_WEBHOOK_EXTERNAL_URL = { description = "Public HTTPS callback URL Veriff should call", required = false, default = "" }
 VERIFF_ENVIRONMENT = { description = "Active Veriff integration (test|production)", required = false, default = "test" }
-VERIFF_TEST_API_KEY = { description = "Veriff sandbox API key", required = false }
-VERIFF_TEST_WEBHOOK_SECRET = { description = "Sandbox webhook signing secret", required = false }
-VERIFF_PROD_API_KEY = { description = "Veriff production API key", required = false }
-VERIFF_PROD_WEBHOOK_SECRET = { description = "Production webhook signing secret", required = false }
+VERIFF_TEST_API_KEY = { description = "Veriff sandbox API key (fallback)", required = false }
+VERIFF_TEST_WEBHOOK_SECRET = { description = "Sandbox webhook signing secret (fallback)", required = false }
+VERIFF_PROD_API_KEY = { description = "Veriff production API key (fallback)", required = false }
+VERIFF_PROD_WEBHOOK_SECRET = { description = "Production webhook signing secret (fallback)", required = false }
 
 [profiles.ci]
 # CI/CD Infrastructure secrets for deployment consistency
@@ -89,6 +89,18 @@ devenv shell -- dev:up
 devenv shell -- secretspec run -- go run ./services/issuance-gateway
 ```
 
+## Veriff Integration Switch Runbook
+
+The helper `devenv shell -- veriff:switch` ensures environment changes stay in sync:
+
+1. Picks the target environment and integration from `config/app-config.json`.
+2. Updates `activeVeriffIntegration` when needed and prints a sanitized summary (base URLs, webhook target, env vars).
+3. Reminds you to rotate the matching GCP secrets (`veriff-<integration>-api-key`, `veriff-<integration>-webhook-secret`).
+4. Shows the canonical webhook URL so Veriff Station can be updated immediately.
+5. Points to the follow-up command: `devenv shell -- gcp:deploy:issuance-gateway`.
+
+`gcp:deploy:issuance-gateway` refuses to deploy if the expected Secret Manager entries are missing, so you cannot accidentally ship a build without the right Veriff credentials.
+
 ## CI/CD Integration
 
 ### GitHub Actions Secrets
@@ -136,17 +148,19 @@ Services are deployed with secrets automatically injected from GCP Secret Manage
 
 ```bash
 gcloud run deploy cachet-issuance-gateway \
-  --set-env-vars VERIFF_ENVIRONMENT=production \
+  --set-env-vars CACHET_ENV=production,VERIFF_ENVIRONMENT=production,VERIFF_BASE_URL=https://api.veriff.com \
   --set-secrets CACHET_DB_URL=database-url:latest, \
                CACHET_JWT_SECRET=jwt-secret:latest, \
-               VERIFF_PROD_API_KEY=veriff-prod-api-key:latest, \
-               VERIFF_PROD_WEBHOOK_SECRET=veriff-prod-webhook-secret:latest
+               VERIFF_API_KEY=veriff-production-api-key:latest, \
+               VERIFF_WEBHOOK_SECRET=veriff-production-webhook-secret:latest
 
 # Staging example (remain on sandbox integration)
-gcloud run deploy cachet-issuance-gateway-staging \
-  --set-env-vars VERIFF_ENVIRONMENT=test \
-  --set-secrets VERIFF_TEST_API_KEY=veriff-test-api-key:latest, \
-               VERIFF_TEST_WEBHOOK_SECRET=veriff-test-webhook-secret:latest
+gcloud run deploy cachet-issuance-gateway \
+  --set-env-vars CACHET_ENV=staging,VERIFF_ENVIRONMENT=test,VERIFF_BASE_URL=https://stationapi.veriff.com \
+  --set-secrets CACHET_DB_URL=database-url:latest, \
+               CACHET_JWT_SECRET=jwt-secret:latest, \
+               VERIFF_API_KEY=veriff-test-api-key:latest, \
+               VERIFF_WEBHOOK_SECRET=veriff-test-webhook-secret:latest
 ```
 
 ## Secret Flow Diagram
