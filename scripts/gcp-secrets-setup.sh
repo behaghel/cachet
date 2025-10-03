@@ -2,7 +2,6 @@
 set -euo pipefail
 
     echo "🔐 Setting up Secret Manager with SecretSpec integration..."
-    set -euo pipefail
     
     PROJECT_ID=$(gcloud config get-value project)
     

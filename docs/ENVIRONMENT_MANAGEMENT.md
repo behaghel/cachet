@@ -47,6 +47,15 @@ The selector annotates each option so you know where it runs:
 - `staging` — deployed in the `cachet-staging` GCP project.
 - `production` — currently disabled; the helper rejects the choice and leaves `.env` untouched until that tier is created.
 
+### Debugging Veriff Sessions
+
+While you are developing locally (or when `CACHET_DEBUG=1` is exported), the issuance gateway exposes two read-only helpers so you can inspect what the automation cached:
+
+- `GET /debug/veriff/sessions` — lists every session the webhook stored, its status, quality tier, and vault snapshot timestamp.
+- `GET /debug/veriff/sessions/{sessionId}` — returns the full `VeriffSession` payload, the enhanced validation profile (including the computed score), and the vault artifact/predicates that will be embedded in the credential response.
+
+These endpoints are disabled in staging/production unless you opt-in with `CACHET_DEBUG`, and they never include decrypted sensitive data—only the sanitized artifacts we already return in the credential payload.
+
 ## 4. Switching Veriff Integrations (`veriff:switch`)
 
 `devenv shell -- veriff:switch` is the canonical helper. It

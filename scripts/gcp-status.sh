@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "📊 Checking GCP deployment status..."
-set -euo pipefail
 
 echo "🗄️  Cloud SQL Status:"
 gcloud sql instances list

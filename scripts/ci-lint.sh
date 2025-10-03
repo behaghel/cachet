@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🔍 Running golangci-lint on all services..."
-set -euo pipefail  # Exit on any error
 
 # Use absolute paths and single commands to avoid cd issues in CI
 echo "Linting verifier..."

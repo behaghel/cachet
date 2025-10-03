@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🔒 Running security scan..."
-set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
 
 # Install gosec if not already available
 if ! command -v gosec &> /dev/null; then

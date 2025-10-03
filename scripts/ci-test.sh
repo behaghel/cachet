@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🧪 Running tests with coverage..."
-set -euo pipefail  # Exit on any error
 
 mkdir -p coverage
 echo "Testing verifier..."

@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🚀 Deploying Issuance Gateway to Cloud Run with Veriff integration..."
-set -euo pipefail
 
 PROJECT_ID=$(gcloud config get-value project)
 if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then

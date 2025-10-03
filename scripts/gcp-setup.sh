@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🏗️  Setting up GCP project for Cachet deployment..."
-set -euo pipefail
 
 # Check if authenticated
 if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -n1 > /dev/null; then

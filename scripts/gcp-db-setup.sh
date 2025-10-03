@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🗄️  Setting up Cloud SQL database..."
-set -euo pipefail
 
 PROJECT_ID=$(gcloud config get-value project)
 INSTANCE_NAME="cachet-db"

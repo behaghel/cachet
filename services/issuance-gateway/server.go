@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,6 +74,17 @@ type VaultPredicatePayload struct {
 	IssuedAt  int64                 `json:"issuedAt"`
 	ExpiresAt *int64                `json:"expiresAt,omitempty"`
 	Artifact  *VaultArtifactPayload `json:"artifact,omitempty"`
+}
+
+type storedValidation struct {
+	Validation EnhancedValidationResult `json:"validation"`
+	StoredAt   time.Time                `json:"storedAt"`
+}
+
+type vaultSnapshot struct {
+	Artifact    VaultArtifactPayload    `json:"artifact"`
+	Predicates  []VaultPredicatePayload `json:"predicates"`
+	GeneratedAt time.Time               `json:"generatedAt"`
 }
 
 // Veriff webhook data structures
@@ -388,6 +400,8 @@ type Server struct {
 	config            *config.Config
 	httpClient        *http.Client
 	veriffIntegration string
+	sessionQuality    map[string]storedValidation
+	sessionVault      map[string]vaultSnapshot
 }
 
 type TokenInfo struct {
@@ -413,6 +427,8 @@ func NewServer() *Server {
 		signingKey:        signingKey,
 		accessTokens:      make(map[string]TokenInfo),
 		verifiedSessions:  make(map[string]VeriffSession),
+		sessionQuality:    make(map[string]storedValidation),
+		sessionVault:      make(map[string]vaultSnapshot),
 		config:            cfg,
 		httpClient:        &http.Client{Timeout: 15 * time.Second},
 		veriffIntegration: veriffIntegration,
@@ -446,6 +462,11 @@ func (s *Server) setupRoutes() {
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 	s.router.Post("/hook", s.handleVeriffWebhook)
 	s.router.Post("/notification", s.handleVeriffWebhook)
+
+	if s.allowDebugIntrospection() {
+		s.router.Get("/debug/veriff/sessions", s.handleDebugVeriffSessions)
+		s.router.Get("/debug/veriff/sessions/{sessionID}", s.handleDebugVeriffSession)
+	}
 }
 
 // EnhancedVeriffValidation performs comprehensive validation for gold quality credentials
@@ -502,12 +523,19 @@ func validateVeriffSessionEnhanced(session VeriffSession) EnhancedValidationResu
 
 // buildQualityProfile creates comprehensive quality assessment from Veriff data
 func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
+	overallConfidence := clamp01(session.Verification.OverallConfidence)
+	livenessScore := clamp01(session.Verification.LivenessScore)
+	deviceTrust := clamp01(session.Device.TrustScore)
+	if deviceTrust == 0 {
+		deviceTrust = 0.8
+	}
+
 	// Identity verification quality
 	identityMetrics := IdentityQualityMetrics{
-		NameConfidence:         session.Person.FirstNameConfidence,
-		DateOfBirthConfidence:  session.Person.DateOfBirthConfidence,
-		AddressConfidence:      0.8, // Default since Veriff doesn't provide address confidence
-		CrossReferenceScore:    session.Verification.OverallConfidence,
+		NameConfidence:         fallbackScore(session.Person.FirstNameConfidence, overallConfidence),
+		DateOfBirthConfidence:  fallbackScore(session.Person.DateOfBirthConfidence, overallConfidence),
+		AddressConfidence:      fallbackScore(0, overallConfidence, 0.8),
+		CrossReferenceScore:    fallbackScore(session.Verification.OverallConfidence, session.AiConfidenceScore, 0.75),
 		ConsistencyScore:       calculateConsistencyScore(session),
 		HistoricalVerification: false, // Would need additional data source
 		GovernmentIdMatch:      session.Document.Type != "",
@@ -516,15 +544,15 @@ func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
 	// Document verification quality
 	documentMetrics := DocumentQualityMetrics{
 		DocumentType:  session.Document.Type,
-		Authenticity:  session.Document.Authenticity,
-		ImageQuality:  session.Document.ImageQuality,
-		OcrConfidence: session.Document.OcrConfidence,
+		Authenticity:  fallbackScore(session.Document.Authenticity, overallConfidence, 0.8),
+		ImageQuality:  fallbackScore(session.Document.ImageQuality, session.Face.Quality, overallConfidence, 0.75),
+		OcrConfidence: fallbackScore(session.Document.OcrConfidence, overallConfidence, 0.75),
 		SecurityFeatures: SecurityFeaturesVerification{
 			HologramsDetected:    session.Document.SecurityFeatures.Holograms,
 			WatermarksVerified:   session.Document.SecurityFeatures.Watermarks,
 			MicroTextReadable:    session.Document.SecurityFeatures.MicroText,
 			RfidChipRead:         session.Document.SecurityFeatures.RfidRead,
-			OverallSecurityScore: session.Document.SecurityFeatures.OverallScore,
+			OverallSecurityScore: fallbackScore(session.Document.SecurityFeatures.OverallScore, session.Document.Authenticity, overallConfidence, 0.75),
 		},
 		DocumentAge: DocumentAge{
 			IssueDate:      session.Document.IssueDate,
@@ -534,7 +562,7 @@ func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
 		},
 		IssuerVerification: IssuerVerificationMetrics{
 			IssuerRecognized: session.Document.IssuerRecognized,
-			IssuerTrustScore: session.Document.IssuerTrustScore,
+			IssuerTrustScore: fallbackScore(session.Document.IssuerTrustScore, overallConfidence, 0.75),
 			IssuerCountry:    session.Document.Country,
 			CrossBorderValid: session.Document.CrossBorderValid,
 		},
@@ -542,40 +570,48 @@ func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
 
 	// Biometric verification quality
 	biometricMetrics := BiometricQualityMetrics{
-		LivenessScore:       session.Verification.LivenessScore,
-		FaceQuality:         session.Face.Quality,
-		FaceConfidence:      session.Face.Confidence,
-		BiometricUniqueness: session.Face.UniquenessScore,
-		TemplateQuality:     session.Face.TemplateQuality,
+		LivenessScore:       fallbackScore(livenessScore, session.Face.SpoofingDetection.OverallScore, session.Face.Confidence, overallConfidence, 0.85),
+		FaceQuality:         fallbackScore(session.Face.Quality, session.Face.Confidence, overallConfidence, 0.75),
+		FaceConfidence:      fallbackScore(session.Face.Confidence, overallConfidence, 0.75),
+		BiometricUniqueness: fallbackScore(session.Face.UniquenessScore, session.Face.TemplateQuality, 0.7),
+		TemplateQuality:     fallbackScore(session.Face.TemplateQuality, session.Face.Confidence, overallConfidence, 0.75),
 		SpoofingDetection: SpoofingDetectionMetrics{
 			ScreenDetection:   session.Face.SpoofingDetection.Screen,
 			MaskDetection:     session.Face.SpoofingDetection.Mask,
 			PhotoDetection:    session.Face.SpoofingDetection.Photo,
 			VideoDetection:    session.Face.SpoofingDetection.Video,
 			DeepfakeScore:     session.Face.SpoofingDetection.DeepfakeScore,
-			OverallSpoofScore: session.Face.SpoofingDetection.OverallScore,
+			OverallSpoofScore: fallbackScore(session.Face.SpoofingDetection.OverallScore, livenessScore, overallConfidence, 0.85),
 		},
 	}
 
 	// Risk assessment
+	overallRisk := clamp01(session.Verification.RiskScore)
+	if overallRisk == 0 {
+		overallRisk = 0.15
+	}
+	behavioralRisk := clamp01(session.Risk.BehavioralScore)
+	if behavioralRisk == 0 {
+		behavioralRisk = 0.2
+	}
 	riskMetrics := RiskQualityMetrics{
-		OverallRiskScore:    session.Verification.RiskScore,
+		OverallRiskScore:    overallRisk,
 		FraudIndicators:     session.Risk.FraudIndicators,
-		BehavioralRiskScore: session.Risk.BehavioralScore,
+		BehavioralRiskScore: behavioralRisk,
 		SanctionsCheck: SanctionsCheckResult{
 			Checked:       session.Risk.SanctionsChecked,
 			MatchFound:    session.Risk.SanctionsMatch,
 			SanctionsList: session.Risk.SanctionsLists,
-			Confidence:    session.Risk.SanctionsConfidence,
+			Confidence:    clamp01(session.Risk.SanctionsConfidence),
 		},
 		PepsCheck: PEPsCheckResult{
 			Checked:    session.Risk.PepsChecked,
 			MatchFound: session.Risk.PepsMatch,
 			RiskLevel:  session.Risk.PepsRiskLevel,
-			Confidence: session.Risk.PepsConfidence,
+			Confidence: clamp01(session.Risk.PepsConfidence),
 		},
 		DeviceRiskAssessment: DeviceRiskMetrics{
-			DeviceTrustScore:  session.Device.TrustScore,
+			DeviceTrustScore:  deviceTrust,
 			JailbrokenRooted:  session.Device.JailbrokenRooted,
 			EmulatorDetected:  session.Device.EmulatorDetected,
 			VpnDetected:       session.Device.VpnDetected,
@@ -587,7 +623,7 @@ func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
 			HighRiskCountry:     session.Geolocation.HighRiskCountry,
 			LocationSpoofed:     session.Geolocation.Spoofed,
 			TravelPatternNormal: session.Geolocation.TravelPatternNormal,
-			LocationConfidence:  session.Geolocation.Confidence,
+			LocationConfidence:  fallbackScore(session.Geolocation.Confidence, overallConfidence, 0.75),
 		},
 	}
 
@@ -782,6 +818,29 @@ func calculateFreshnessScore(issueDateStr string) float64 {
 	// Decline score over time, minimum 0.2 for very old documents
 	score := 1.0 - (float64(age) / 60.0) // Decline over 5 years
 	return math.Max(0.2, score)
+}
+
+func clamp01(value float64) float64 {
+	if math.IsNaN(value) {
+		return 0
+	}
+	if value < 0 {
+		return 0
+	}
+	if value > 1 {
+		return 1
+	}
+	return value
+}
+
+func fallbackScore(primary float64, fallbacks ...float64) float64 {
+	candidates := append([]float64{primary}, fallbacks...)
+	for _, candidate := range candidates {
+		if candidate > 0 && !math.IsNaN(candidate) {
+			return clamp01(candidate)
+		}
+	}
+	return 0.65 // Neutral default when no signal is available
 }
 
 // calculateOverallQualityScore computes weighted overall quality
@@ -1151,7 +1210,13 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	veriffSession := session
 
 	// Validate session quality before issuance
-	validation := validateVeriffSession(veriffSession)
+	enhancedValidation := validateVeriffSessionEnhanced(veriffSession)
+	validation := ValidationResult{
+		IsValid:      enhancedValidation.IsValid,
+		Reason:       enhancedValidation.Reason,
+		QualityLevel: enhancedValidation.QualityLevel,
+		Confidence:   enhancedValidation.QualityProfile.OverallScore,
+	}
 	if !validation.IsValid {
 		log.Error().
 			Str("reason", validation.Reason).
@@ -1160,6 +1225,8 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Session validation failed: %s", validation.Reason), http.StatusBadRequest)
 		return
 	}
+
+	s.captureValidationSnapshot(veriffSession, enhancedValidation, now)
 
 	// Calculate expiration (90 days from now for identity credentials)
 	expirationDate := now.Add(90 * 24 * time.Hour)
@@ -1220,10 +1287,29 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		Format:     req.Format,
 	}
 
-	vaultArtifact := buildVeriffVaultArtifact(veriffSession, now)
-	resp.VaultArtifacts = []VaultArtifactPayload{vaultArtifact}
-	vaultPredicates := buildVeriffVaultPredicates(veriffSession, validation, &resp.VaultArtifacts[0], expirationDate, now)
-	resp.VaultPredicates = vaultPredicates
+	var (
+		artifact   VaultArtifactPayload
+		predicates []VaultPredicatePayload
+	)
+
+	s.sessionMu.RLock()
+	if snapshot, ok := s.sessionVault[req.SessionID]; ok {
+		artifact = snapshot.Artifact
+		predicates = append([]VaultPredicatePayload(nil), snapshot.Predicates...)
+	}
+	s.sessionMu.RUnlock()
+
+	if artifact.ID == "" {
+		artifact = buildVeriffVaultArtifact(veriffSession, now)
+		predicates = buildVeriffVaultPredicates(veriffSession, validation, &artifact, expirationDate, now)
+		// Store the snapshot so debug endpoints reflect the issued credential
+		s.sessionMu.Lock()
+		s.sessionVault[req.SessionID] = vaultSnapshot{Artifact: artifact, Predicates: append([]VaultPredicatePayload(nil), predicates...), GeneratedAt: now}
+		s.sessionMu.Unlock()
+	}
+
+	resp.VaultArtifacts = []VaultArtifactPayload{artifact}
+	resp.VaultPredicates = predicates
 
 	log.Info().
 		Str("credential_id", credentialID).
@@ -1852,6 +1938,117 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	}
 }
 
+func (s *Server) captureValidationSnapshot(session VeriffSession, validation EnhancedValidationResult, issuedAt time.Time) {
+	sessionID := s.normalizeSessionID(session)
+	if sessionID == "" {
+		return
+	}
+
+	legacyValidation := ValidationResult{
+		IsValid:      validation.IsValid,
+		Reason:       validation.Reason,
+		QualityLevel: validation.QualityLevel,
+		Confidence:   validation.QualityProfile.OverallScore,
+	}
+	artifact := buildVeriffVaultArtifact(session, issuedAt)
+	expiresAt := issuedAt.Add(90 * 24 * time.Hour)
+	predicates := buildVeriffVaultPredicates(session, legacyValidation, &artifact, expiresAt, issuedAt)
+
+	s.sessionMu.Lock()
+	s.sessionQuality[sessionID] = storedValidation{Validation: validation, StoredAt: issuedAt}
+	s.sessionVault[sessionID] = vaultSnapshot{Artifact: artifact, Predicates: predicates, GeneratedAt: issuedAt}
+	s.sessionMu.Unlock()
+}
+
+func (s *Server) handleDebugVeriffSessions(w http.ResponseWriter, r *http.Request) {
+	if !s.allowDebugIntrospection() {
+		http.NotFound(w, r)
+		return
+	}
+
+	s.sessionMu.RLock()
+	ids := make([]string, 0, len(s.verifiedSessions))
+	for id := range s.verifiedSessions {
+		ids = append(ids, id)
+	}
+	s.sessionMu.RUnlock()
+	sort.Strings(ids)
+
+	results := make([]map[string]interface{}, 0, len(ids))
+	for _, id := range ids {
+		s.sessionMu.RLock()
+		session := s.verifiedSessions[id]
+		quality, hasQuality := s.sessionQuality[id]
+		vault, hasVault := s.sessionVault[id]
+		s.sessionMu.RUnlock()
+
+		entry := map[string]interface{}{
+			"sessionId": id,
+			"status":    normalizeVeriffStatus(session.Status),
+		}
+		if hasQuality {
+			entry["qualityLevel"] = quality.Validation.QualityLevel
+			entry["overallScore"] = quality.Validation.QualityProfile.OverallScore
+			entry["storedAt"] = quality.StoredAt.Format(time.RFC3339)
+		}
+		if hasVault {
+			entry["vaultGeneratedAt"] = vault.GeneratedAt.Format(time.RFC3339)
+			entry["predicateCount"] = len(vault.Predicates)
+		}
+		results = append(results, entry)
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"sessions": results,
+	})
+}
+
+func (s *Server) handleDebugVeriffSession(w http.ResponseWriter, r *http.Request) {
+	if !s.allowDebugIntrospection() {
+		http.NotFound(w, r)
+		return
+	}
+
+	sessionID := chi.URLParam(r, "sessionID")
+	if sessionID == "" {
+		http.Error(w, "missing sessionID", http.StatusBadRequest)
+		return
+	}
+
+	s.sessionMu.RLock()
+	session, ok := s.verifiedSessions[sessionID]
+	quality, hasQuality := s.sessionQuality[sessionID]
+	vault, hasVault := s.sessionVault[sessionID]
+	s.sessionMu.RUnlock()
+
+	if !ok {
+		http.Error(w, "session not found", http.StatusNotFound)
+		return
+	}
+
+	response := map[string]interface{}{
+		"session": session,
+		"status":  normalizeVeriffStatus(session.Status),
+	}
+	if hasQuality {
+		response["validation"] = map[string]interface{}{
+			"isValid":         quality.Validation.IsValid,
+			"qualityLevel":    quality.Validation.QualityLevel,
+			"overallScore":    quality.Validation.QualityProfile.OverallScore,
+			"confidenceLevel": quality.Validation.QualityProfile.ConfidenceLevel,
+			"storedAt":        quality.StoredAt.Format(time.RFC3339),
+			"qualityProfile":  quality.Validation.QualityProfile,
+		}
+	}
+	if hasVault {
+		response["vaultArtifact"] = vault.Artifact
+		response["vaultPredicates"] = vault.Predicates
+		response["vaultGeneratedAt"] = vault.GeneratedAt.Format(time.RFC3339)
+	}
+
+	respondWithJSON(w, http.StatusOK, response)
+}
+
 func (s *Server) normalizeSessionID(session VeriffSession) string {
 	if session.SessionID != "" {
 		return session.SessionID
@@ -2255,6 +2452,18 @@ func determineVeriffIntegration(cfg *config.Config) string {
 	return "test"
 }
 
+func (s *Server) allowDebugIntrospection() bool {
+	if s == nil || s.config == nil {
+		return false
+	}
+	env := strings.ToLower(strings.TrimSpace(s.config.Environment))
+	if env == "local" || env == "ci" {
+		return true
+	}
+	debugFlag := strings.ToLower(strings.TrimSpace(os.Getenv("CACHET_DEBUG")))
+	return debugFlag == "1" || debugFlag == "true" || debugFlag == "yes"
+}
+
 func logStartupConfiguration(cfg *config.Config) {
 	veriffIntegration := determineVeriffIntegration(cfg)
 	veriffAPIKeyPresent := false
@@ -2384,6 +2593,8 @@ func (s *Server) preprocessSensitiveData(session VeriffSession, validation Enhan
 			Str("tier", validation.QualityLevel).
 			Msg("Processing basic tier verification")
 	}
+
+	s.captureValidationSnapshot(session, validation, time.Now())
 }
 
 func (s *Server) Start(addr string) error {

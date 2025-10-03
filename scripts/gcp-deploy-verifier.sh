@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🚀 Deploying Verifier service to Cloud Run with SecretSpec integration..."
-set -euo pipefail
 
 PROJECT_ID=$(gcloud config get-value project)
 SERVICE_NAME="cachet-verifier"

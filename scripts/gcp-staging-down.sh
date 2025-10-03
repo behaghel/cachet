@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🔻 Suspending staging environment to minimize cost..."
-set -euo pipefail
 
 echo "⏸️  Setting Cloud SQL activation policy to NEVER (manual)..."
 gcloud sql instances patch cachet-db --activation-policy=NEVER --quiet

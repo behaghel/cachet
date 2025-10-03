@@ -2,7 +2,6 @@
 set -euo pipefail
 
 echo "🧪 Testing complete GCP deployment with SecretSpec..."
-set -euo pipefail
 
 SERVICE_URL=$(gcloud run services describe cachet-verifier --region=us-central1 --format='value(status.url)')
 
