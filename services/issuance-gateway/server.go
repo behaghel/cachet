@@ -657,17 +657,6 @@ func buildQualityProfile(session VeriffSession) CredentialQualityProfile {
 	}
 }
 
-// validateVeriffSession performs quality validation on Veriff session data (legacy support)
-func validateVeriffSession(session VeriffSession) ValidationResult {
-	enhanced := validateVeriffSessionEnhanced(session)
-	return ValidationResult{
-		IsValid:      enhanced.IsValid,
-		Reason:       enhanced.Reason,
-		QualityLevel: enhanced.QualityLevel,
-		Confidence:   enhanced.QualityProfile.OverallScore,
-	}
-}
-
 func buildVeriffVaultArtifact(session VeriffSession, issuedAt time.Time) VaultArtifactPayload {
 	artifactID := session.SessionID
 	if artifactID == "" {
