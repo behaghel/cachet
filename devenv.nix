@@ -316,8 +316,15 @@ in
     hooks = {
       # Go formatting and linting
       gofmt.enable = true;
-      # golangci-lint disabled at root level - runs per-service in lint:go script
-      # golangci-lint.enable = true;
+
+      golangci-lint = {
+        enable = true;
+        name = "golangci-lint";
+        entry = "./scripts/golangci-lint.sh";
+        files = "\\.go$";
+        language = "system";
+        pass_filenames = false;
+      };
 
       # Schema validation
       check-yaml.enable = true;
