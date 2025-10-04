@@ -32,10 +32,10 @@ fi
 
 echo "✅ No forbidden /healthz endpoints found"
 
-staged_go_files=$(git diff --cached --name-only -- '*.go' || true)
-if [ -n "$staged_go_files" ]; then
+readarray -t staged_go_files < <(git diff --cached --name-only -- '*.go' || true)
+if [ ${#staged_go_files[@]} -gt 0 ]; then
     echo "Running golangci-lint on staged Go files..."
-    ./scripts/golangci-lint.sh
+    ./scripts/golangci-lint.sh "${staged_go_files[@]}"
 else
     echo "Skipping golangci-lint (no staged Go changes)"
 fi

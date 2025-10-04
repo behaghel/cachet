@@ -183,6 +183,10 @@ in
     ./scripts/gcp-status.sh
   '';
 
+  scripts."gcp:staging:logs".exec = ''
+    ./scripts/gcp-staging-logs.sh
+  '';
+
   scripts."gcp:staging:down".exec = ''
     ./scripts/gcp-staging-down.sh
   '';
