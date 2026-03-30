@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -60,6 +61,13 @@ func InitOTel(ctx context.Context, serviceName, serviceVersion string) func() {
 			log.Error().Err(err).Msg("otel: shutdown failed")
 		}
 	}
+}
+
+// Meter returns a named OTEL meter for recording custom metrics.
+// Metrics are recorded via the global meter provider. When OTEL is not
+// configured, the default no-op provider is used — safe to call always.
+func Meter(name string) metric.Meter {
+	return otel.Meter(name)
 }
 
 // TracingMiddleware creates spans for incoming HTTP requests.

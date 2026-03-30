@@ -9,18 +9,12 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
+	"github.com/cachet-id/cachet/generated/go/models"
 )
 
-// TokenResponse is the OAuth2 token response.
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	Scope       string `json:"scope"`
-}
-
 // IssueToken creates a signed JWT access token.
-func IssueToken(signingKey *rsa.PrivateKey, clientID, scope string) (TokenResponse, error) {
+func IssueToken(signingKey *rsa.PrivateKey, clientID, scope string) (models.TokenResponse, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Hour)
 
@@ -36,12 +30,12 @@ func IssueToken(signingKey *rsa.PrivateKey, clientID, scope string) (TokenRespon
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	accessToken, err := token.SignedString(signingKey)
 	if err != nil {
-		return TokenResponse{}, fmt.Errorf("sign token: %w", err)
+		return models.TokenResponse{}, fmt.Errorf("sign token: %w", err)
 	}
 
-	return TokenResponse{
+	return models.TokenResponse{
 		AccessToken: accessToken,
-		TokenType:   "Bearer",
+		TokenType:   models.Bearer,
 		ExpiresIn:   3600,
 		Scope:       scope,
 	}, nil

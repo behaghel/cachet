@@ -3,9 +3,6 @@ package id.cachet.wallet.domain.model
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 
 @Serializable
 data class VerifiableCredential(
@@ -16,7 +13,7 @@ data class VerifiableCredential(
     val issuer: String,
     val issuanceDate: String,
     val expirationDate: String? = null,
-    val credentialSubject: Map<String, JsonElement>,
+    val credentialSubject: CredentialSubject,
     val credentialStatus: CredentialStatus? = null
 ) {
     fun isExpired(): Boolean {
@@ -28,7 +25,7 @@ data class VerifiableCredential(
         }
         return kotlinx.datetime.Clock.System.now() > expiryDate
     }
-    
+
     fun getIssuanceInstant(): Instant? {
         return try {
             Instant.parse(issuanceDate)
@@ -36,10 +33,8 @@ data class VerifiableCredential(
             null
         }
     }
-    
-    fun getSubjectId(): String? {
-        return credentialSubject["id"]?.jsonPrimitive?.contentOrNull
-    }
+
+    fun getSubjectId(): String = credentialSubject.id
 }
 
 @Serializable

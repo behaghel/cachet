@@ -18,6 +18,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Base URL for the issuance gateway — override per build type or via gradle property
+        buildConfigField("String", "CACHET_BASE_URL", "\"http://10.0.2.2:8090\"")
     }
 
     buildTypes {
@@ -38,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10"

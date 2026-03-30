@@ -2,8 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
-	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,9 +54,9 @@ func TestOAuthToken_Success(t *testing.T) {
 	s.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var resp oauth.TokenResponse
+	var resp models.TokenResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	assert.Equal(t, "Bearer", resp.TokenType)
+	assert.Equal(t, models.Bearer, resp.TokenType)
 	assert.NotEmpty(t, resp.AccessToken)
 	assert.Equal(t, 3600, resp.ExpiresIn)
 }
@@ -145,6 +148,62 @@ func TestVeriffWebhook_MissingSessionID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
+func testServerWithSecret(t *testing.T, secret string) *Server {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	return NewServerWithConfig(ServerConfig{
+		Common:        common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"},
+		SigningKey:    key,
+		Sessions:      veriff.NewInMemoryStore(),
+		WebhookSecret: secret,
+	})
+}
+
+func signBody(body []byte, secret string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func TestVeriffWebhook_HMAC_Valid(t *testing.T) {
+	s := testServerWithSecret(t, "test-secret")
+	session := veriff.Session{SessionID: "hmac-1", Status: "approved"}
+	session.Verification.OverallConfidence = 0.95
+	session.Verification.LivenessScore = 0.92
+	session.Document.Authenticity = 0.98
+	body, _ := json.Marshal(session)
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	req.Header.Set("X-HMAC-Signature", signBody(body, "test-secret"))
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestVeriffWebhook_HMAC_Missing(t *testing.T) {
+	s := testServerWithSecret(t, "test-secret")
+	body, _ := json.Marshal(veriff.Session{SessionID: "hmac-2", Status: "approved"})
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "missing_signature")
+}
+
+func TestVeriffWebhook_HMAC_Invalid(t *testing.T) {
+	s := testServerWithSecret(t, "test-secret")
+	body, _ := json.Marshal(veriff.Session{SessionID: "hmac-3", Status: "approved"})
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	req.Header.Set("X-HMAC-Signature", "deadbeef")
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid_signature")
+}
+
 func TestFullFlow_WebhookThenCredential(t *testing.T) {
 	s := testServer(t)
 
@@ -194,7 +253,7 @@ func getTestToken(t *testing.T, s *Server) string {
 	s.Router().ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
 
-	var resp oauth.TokenResponse
+	var resp models.TokenResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	return resp.AccessToken
 }
