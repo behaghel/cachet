@@ -10,11 +10,12 @@ in
   languages.go.enable = true;
   languages.javascript.enable = true;
   languages.javascript.package = pkgs.nodejs_20;
-  languages.java.enable = enableAndroid;    # Only needed for Android builds
-  languages.java.gradle.enable = enableAndroid;
+  languages.java.enable = true;            # Needed for Gradle/Kotlin mobile builds
+  languages.java.gradle.enable = true;
   claude.code.enable = true;
 
-  # Android development (conditional)
+  # Android SDK + emulator (optional, heavy — ~2GB)
+  # Enable with: export DEVENV_ENABLE_ANDROID=1
   android = lib.mkIf enableAndroid {
     enable = true;
     platforms.version = [ "34" ];

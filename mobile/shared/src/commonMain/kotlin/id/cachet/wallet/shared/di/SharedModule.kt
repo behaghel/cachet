@@ -7,6 +7,7 @@ import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import id.cachet.wallet.domain.repository.MockTransparencyLogRepository
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
+import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.network.KtorOpenID4VCIClient
 import id.cachet.wallet.network.OpenID4VCIClient
 import io.ktor.client.*
@@ -33,12 +34,11 @@ val sharedModule = module {
         }
     }
     
-    // Network clients
-    single<OpenID4VCIClient> { 
+    // Network clients — base URL from AppConfig (default: emulator localhost)
+    single<OpenID4VCIClient> {
         KtorOpenID4VCIClient(
             httpClient = get(),
-            // Use actual computer IP for physical devices, 10.0.2.2 for emulator  
-            baseUrl = "http://192.168.1.199:8090" // Local network IP for physical devices
+            baseUrl = AppConfig.baseUrl
         )
     }
     
