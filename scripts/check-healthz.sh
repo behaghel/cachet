@@ -7,8 +7,13 @@ set -euo pipefail
 
 echo "Checking for forbidden /healthz endpoints..."
 
-# Search for /healthz in Go files
-healthz_files=$(find . -name "*.go" -type f | xargs grep -l '"/healthz"' 2>/dev/null || true)
+# Search for /healthz in Go files (exclude module cache and generated code)
+healthz_files=$(find . -name "*.go" -type f \
+  -not -path "./.devenv/*" \
+  -not -path "./vendor/*" \
+  -not -path "*/go/pkg/mod/*" \
+  -not -path "./generated/*" \
+  | xargs grep -l '"/healthz"' 2>/dev/null || true)
 
 if [ -n "$healthz_files" ]; then
     echo "❌ ERROR: Found /healthz endpoints in Go files:"

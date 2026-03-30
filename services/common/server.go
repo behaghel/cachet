@@ -24,14 +24,21 @@ type ServerConfig struct {
 func NewRouter(cfg ServerConfig) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(RequestIDMiddleware)
+	r.Use(TracingMiddleware(cfg.Name))
 	r.Use(RequestLoggerMiddleware)
 	r.Use(chi.Middlewares{recoverMiddleware}...)
 	r.Get("/health", HealthHandler(cfg.Name, cfg.Version))
+	r.Get("/ready", ReadyHandler(cfg.Name, cfg.Version)) // add ReadinessChecks via ReadyHandler(name, ver, check1, check2...)
 	return r
 }
 
 // ListenAndServe starts the HTTP server with graceful shutdown on SIGTERM/SIGINT.
+// If OTEL_EXPORTER_OTLP_ENDPOINT is set, tracing is automatically enabled.
 func ListenAndServe(handler http.Handler, cfg ServerConfig) {
+	ctx := context.Background()
+	otelShutdown := InitOTel(ctx, cfg.Name, cfg.Version)
+	defer otelShutdown()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = cfg.Port
