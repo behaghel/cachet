@@ -2,300 +2,199 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
+	"github.com/cachet-id/cachet/services/common"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// Types are now defined in server.go
-
-func TestNewServer(t *testing.T) {
-	server := NewServer()
-	assert.NotNil(t, server)
-	assert.NotNil(t, server.router)
+func testServer(t *testing.T) *Server {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	return NewServerWithConfig(ServerConfig{
+		Common:     common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"},
+		SigningKey: key,
+		Sessions:   veriff.NewInMemoryStore(),
+	})
 }
 
 func TestHealthCheck(t *testing.T) {
-	server := NewServer()
-
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	s := testServer(t)
 	w := httptest.NewRecorder()
-
-	server.router.ServeHTTP(w, req)
-
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/health", nil))
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "ok", w.Body.String())
+	assert.Contains(t, w.Body.String(), `"status":"ok"`)
 }
 
-func TestOAuth2TokenEndpoint_Success(t *testing.T) {
-	server := NewServer()
-
-	tokenReq := TokenRequest{
-		GrantType: "client_credentials",
-		ClientID:  "test-wallet",
-		Scope:     "credential_issuance",
+func TestOAuthToken_Success(t *testing.T) {
+	s := testServer(t)
+	form := url.Values{
+		"grant_type": {"client_credentials"},
+		"client_id":  {"test-wallet"},
+		"scope":      {"credential_issuance"},
 	}
-
-	body, err := json.Marshal(tokenReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/oauth/token", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	s.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-
-	var tokenResp TokenResponse
-	err = json.Unmarshal(w.Body.Bytes(), &tokenResp)
-	require.NoError(t, err)
-
-	assert.Equal(t, "Bearer", tokenResp.TokenType)
-	assert.NotEmpty(t, tokenResp.AccessToken)
-	assert.Equal(t, 3600, tokenResp.ExpiresIn)
-	assert.Equal(t, "credential_issuance", tokenResp.Scope)
+	var resp oauth.TokenResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "Bearer", resp.TokenType)
+	assert.NotEmpty(t, resp.AccessToken)
+	assert.Equal(t, 3600, resp.ExpiresIn)
 }
 
-func TestOAuth2TokenEndpoint_InvalidGrantType(t *testing.T) {
-	server := NewServer()
-
-	tokenReq := TokenRequest{
-		GrantType: "invalid_grant",
-		ClientID:  "test-wallet",
-		Scope:     "credential_issuance",
-	}
-
-	body, err := json.Marshal(tokenReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/oauth/token", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+func TestOAuthToken_InvalidGrantType(t *testing.T) {
+	s := testServer(t)
+	form := url.Values{"grant_type": {"invalid"}, "client_id": {"x"}}
+	req := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
-
+	s.Router().ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestCredentialEndpoint_Success(t *testing.T) {
-	server := NewServer()
-
-	// First set up a Veriff session via webhook
-	veriffSession := VeriffSession{
-		SessionID: "test-session-456",
-		Status:    "approved",
-		Person: struct {
-			FirstName   string  `json:"firstName"`
-			LastName    string  `json:"lastName"`
-			DateOfBirth string  `json:"dateOfBirth"`
-			Confidence  float64 `json:"confidence,omitempty"`
-		}{
-			FirstName:   "Alice",
-			LastName:    "Johnson",
-			DateOfBirth: "1992-03-10",
-			Confidence:  0.97,
-		},
-		Document: struct {
-			Number       string  `json:"number"`
-			Type         string  `json:"type"`
-			Country      string  `json:"country"`
-			Authenticity float64 `json:"authenticity,omitempty"`
-		}{
-			Number:       "AB123456C",
-			Type:         "PASSPORT",
-			Country:      "GB",
-			Authenticity: 0.99,
-		},
-		Verification: struct {
-			LivenessScore     float64 `json:"liveness_score,omitempty"`
-			OverallConfidence float64 `json:"overall_confidence,omitempty"`
-			RiskScore         float64 `json:"risk_score,omitempty"`
-			Timestamp         string  `json:"timestamp,omitempty"`
-		}{
-			LivenessScore:     0.94,
-			OverallConfidence: 0.98,
-			RiskScore:         0.02,
-			Timestamp:         "2025-09-07T11:30:00Z",
-		},
-	}
-
-	// Send Veriff webhook
-	veriffBody, err := json.Marshal(veriffSession)
-	require.NoError(t, err)
-	veriffReq := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(veriffBody))
-	veriffReq.Header.Set("Content-Type", "application/json")
-	veriffW := httptest.NewRecorder()
-	server.router.ServeHTTP(veriffW, veriffReq)
-	require.Equal(t, http.StatusOK, veriffW.Code)
-
-	// Now get a token
-	tokenReq := TokenRequest{
-		GrantType: "client_credentials",
-		ClientID:  "test-wallet",
-		Scope:     "credential_issuance",
-	}
-
-	tokenBody, _ := json.Marshal(tokenReq)
-	tokenHttpReq := httptest.NewRequest(http.MethodPost, "/oauth/token", bytes.NewReader(tokenBody))
-	tokenHttpReq.Header.Set("Content-Type", "application/json")
-	tokenW := httptest.NewRecorder()
-	server.router.ServeHTTP(tokenW, tokenHttpReq)
-
-	var tokenResp TokenResponse
-	err = json.Unmarshal(tokenW.Body.Bytes(), &tokenResp)
-	require.NoError(t, err)
-
-	// Now request credential
-	credReq := CredentialRequest{
-		Format: "jwt_vc",
-		Types:  []string{"VerifiableCredential", "IdentityCredential"},
-	}
-
-	credBody, err := json.Marshal(credReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+tokenResp.AccessToken)
+func TestOAuthToken_MissingClientID(t *testing.T) {
+	s := testServer(t)
+	form := url.Values{"grant_type": {"client_credentials"}}
+	req := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var credResp CredentialResponse
-	err = json.Unmarshal(w.Body.Bytes(), &credResp)
-	require.NoError(t, err)
-
-	assert.Equal(t, "jwt_vc", credResp.Format)
-	assert.NotNil(t, credResp.Credential)
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestCredentialEndpoint_NoAuth(t *testing.T) {
-	server := NewServer()
-
-	credReq := CredentialRequest{
-		Format: "jwt_vc",
-		Types:  []string{"VerifiableCredential", "IdentityCredential"},
-	}
-
-	credBody, _ := json.Marshal(credReq)
-	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
-	req.Header.Set("Content-Type", "application/json")
+func TestCredential_NoAuth(t *testing.T) {
+	s := testServer(t)
+	body, _ := json.Marshal(map[string]interface{}{"format": "jwt_vc", "types": []string{"VerifiableCredential"}})
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
-
+	s.Router().ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestVeriffWebhook_Success(t *testing.T) {
-	server := NewServer()
+func TestCredential_InvalidFormat(t *testing.T) {
+	s := testServer(t)
+	token := getTestToken(t, s)
 
-	veriffSession := VeriffSession{
-		SessionID: "test-session-123",
-		Status:    "approved",
-		Person: struct {
-			FirstName   string  `json:"firstName"`
-			LastName    string  `json:"lastName"`
-			DateOfBirth string  `json:"dateOfBirth"`
-			Confidence  float64 `json:"confidence,omitempty"`
-		}{
-			FirstName:   "John",
-			LastName:    "Doe",
-			DateOfBirth: "1990-01-01",
-			Confidence:  0.95,
-		},
-		Document: struct {
-			Number       string  `json:"number"`
-			Type         string  `json:"type"`
-			Country      string  `json:"country"`
-			Authenticity float64 `json:"authenticity,omitempty"`
-		}{
-			Number:       "123456789",
-			Type:         "PASSPORT",
-			Country:      "US",
-			Authenticity: 0.98,
-		},
-		Verification: struct {
-			LivenessScore     float64 `json:"liveness_score,omitempty"`
-			OverallConfidence float64 `json:"overall_confidence,omitempty"`
-			RiskScore         float64 `json:"risk_score,omitempty"`
-			Timestamp         string  `json:"timestamp,omitempty"`
-		}{
-			LivenessScore:     0.92,
-			OverallConfidence: 0.96,
-			RiskScore:         0.05,
-			Timestamp:         "2025-09-06T21:00:00Z",
-		},
-	}
-
-	body, err := json.Marshal(veriffSession)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	body, _ := json.Marshal(map[string]interface{}{"format": "invalid", "types": []string{"VerifiableCredential"}})
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestVeriffWebhook_InvalidStatus(t *testing.T) {
-	server := NewServer()
+func TestVeriffWebhook_Approved(t *testing.T) {
+	s := testServer(t)
+	session := veriff.Session{SessionID: "s1", Status: "approved"}
+	session.Verification.OverallConfidence = 0.95
+	session.Verification.LivenessScore = 0.92
+	session.Document.Authenticity = 0.98
+	session.Verification.RiskScore = 0.02
 
-	veriffSession := VeriffSession{
-		SessionID: "test-session-123",
-		Status:    "declined",
-		Person: struct {
-			FirstName   string  `json:"firstName"`
-			LastName    string  `json:"lastName"`
-			DateOfBirth string  `json:"dateOfBirth"`
-			Confidence  float64 `json:"confidence,omitempty"`
-		}{
-			FirstName:   "Jane",
-			LastName:    "Smith",
-			DateOfBirth: "1985-05-15",
-			Confidence:  0.45, // Lower confidence for declined status
-		},
-		Document: struct {
-			Number       string  `json:"number"`
-			Type         string  `json:"type"`
-			Country      string  `json:"country"`
-			Authenticity float64 `json:"authenticity,omitempty"`
-		}{
-			Number:       "987654321",
-			Type:         "DRIVERS_LICENSE",
-			Country:      "CA",
-			Authenticity: 0.35, // Lower authenticity for declined status
-		},
-		Verification: struct {
-			LivenessScore     float64 `json:"liveness_score,omitempty"`
-			OverallConfidence float64 `json:"overall_confidence,omitempty"`
-			RiskScore         float64 `json:"risk_score,omitempty"`
-			Timestamp         string  `json:"timestamp,omitempty"`
-		}{
-			LivenessScore:     0.30, // Low liveness score
-			OverallConfidence: 0.25, // Low overall confidence
-			RiskScore:         0.85, // High risk score for declined status
-			Timestamp:         "2025-09-06T20:45:00Z",
-		},
-	}
-
-	body, err := json.Marshal(veriffSession)
-	require.NoError(t, err)
-
+	body, _ := json.Marshal(session)
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 
-	assert.Equal(t, http.StatusAccepted, w.Code) // Acknowledged but not processed
+	// Session should be stored
+	stored, ok := s.sessions.Get("s1")
+	assert.True(t, ok)
+	assert.Equal(t, "approved", stored.Status)
+}
+
+func TestVeriffWebhook_Declined(t *testing.T) {
+	s := testServer(t)
+	session := veriff.Session{SessionID: "s2", Status: "declined"}
+	body, _ := json.Marshal(session)
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusAccepted, w.Code)
+}
+
+func TestVeriffWebhook_MissingSessionID(t *testing.T) {
+	s := testServer(t)
+	body, _ := json.Marshal(veriff.Session{Status: "approved"})
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+
+	s.Router().ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestFullFlow_WebhookThenCredential(t *testing.T) {
+	s := testServer(t)
+
+	// 1. Webhook
+	session := veriff.Session{SessionID: "flow-1", Status: "approved"}
+	session.Person.DateOfBirth = "1992-03-10"
+	session.Person.Confidence = 0.97
+	session.Document.Country = "GB"
+	session.Document.Type = "PASSPORT"
+	session.Document.Authenticity = 0.99
+	session.Verification.OverallConfidence = 0.98
+	session.Verification.LivenessScore = 0.94
+	session.Verification.RiskScore = 0.02
+
+	webhookBody, _ := json.Marshal(session)
+	wh := httptest.NewRecorder()
+	s.Router().ServeHTTP(wh, httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(webhookBody)))
+	require.Equal(t, http.StatusOK, wh.Code)
+
+	// 2. Token
+	token := getTestToken(t, s)
+
+	// 3. Credential
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "jwt_vc",
+		"types":  []string{"VerifiableCredential", "IdentityCredential"},
+	})
+	credReq := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	credReq.Header.Set("Authorization", "Bearer "+token)
+	cw := httptest.NewRecorder()
+	s.Router().ServeHTTP(cw, credReq)
+
+	assert.Equal(t, http.StatusOK, cw.Code)
+	assert.Contains(t, cw.Body.String(), "VerifiableCredential")
+}
+
+func getTestToken(t *testing.T, s *Server) string {
+	t.Helper()
+	form := url.Values{
+		"grant_type": {"client_credentials"},
+		"client_id":  {"test"},
+		"scope":      {"credential_issuance"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp oauth.TokenResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	return resp.AccessToken
 }
