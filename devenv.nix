@@ -101,7 +101,23 @@ in
     (cd services/receipts-log && go test -v -race -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
     echo "Testing issuance-gateway..."
     (cd services/issuance-gateway && go test -v -race -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
-    echo "✅ All tests completed successfully with coverage"
+
+    # Coverage floor check (50% minimum, ratchet up over time)
+    FLOOR=50
+    FAIL=0
+    for f in coverage/*.out; do
+      svc=$(basename "$f" .out)
+      pct=$(go tool cover -func="$f" 2>/dev/null | tail -1 | grep -oP '[0-9]+\.[0-9]+' || echo "0")
+      int=''${pct%%.*}
+      if [ "$int" -lt "$FLOOR" ]; then
+        echo "❌ $svc coverage $pct% < $FLOOR% floor"
+        FAIL=1
+      else
+        echo "✅ $svc coverage $pct%"
+      fi
+    done
+    [ "$FAIL" -eq 0 ] || { echo "Coverage below floor"; exit 1; }
+    echo "✅ All tests completed with coverage above $FLOOR%"
   '';
   scripts."ci:lint".exec = ''
     echo "🔍 Running golangci-lint on all services..."
