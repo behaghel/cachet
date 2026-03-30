@@ -2,48 +2,50 @@
 
 > Goal: privacy‑preserving, standards‑based trust provider with holder‑controlled data, Veriff as foundational issuer, and clean paths for issuers/RPs to integrate.
 
+> **Implementation status key:** Items marked **(implemented)** exist in code today. Items marked **(planned)** are architectural targets not yet built. Items with no marker are partially implemented or in progress.
+
 ## Layered view
 
 ### Client layer
 
-- **Cachet Wallet (iOS/Android)**: holder keys in Secure
-  Enclave/StrongBox; passkeys for sign‑in; offline QR presentment;
-  consent receipts UI; Trust Contacts.
-- **RP SDKs**: Web (TS) & Mobile (Kotlin/Swift) for _Request Pack_
-  (OID4VP), badge rendering, explainability pane.
-- **Issuer Console**: onboard issuer DIDs, schemas, status lists.
+- **Cachet Wallet (Android)** **(implemented)**: KMM shared logic + Jetpack Compose UI;
+  credential vault (SQLDelight); OpenID4VCI issuance flow; consent receipts; quality display.
+  _iOS target declared but not built. Passkeys, offline QR, Trust Contacts are planned._
+- **RP SDKs** **(planned)**: Web (TS) & Mobile (Kotlin/Swift) for _Request Pack_
+  (OID4VP), badge rendering, explainability pane. _Stub directories exist._
+- **Issuer Console** **(planned)**: onboard issuer DIDs, schemas, status lists.
 
 ### Edge crypto & policy
 
-- **Local Proof Planner** (WASM): composes proofs per Pack using
+- **Local Proof Planner** **(planned)** (WASM): composes proofs per Pack using
   SD‑JWT/BBS+/ZK; chooses cheapest option; does not exfiltrate PII.
-- **Policy Cache**: signed Policy Manifest & Pack definitions (semver)
+- **Policy Cache** **(planned)**: signed Policy Manifest & Pack definitions (semver)
   stored locally.
 
 ### Core services (cloud)
 
-- **Issuance Gateway** (OID4VCI): Veriff → foundational ID+liveness
+- **Issuance Gateway** (OID4VCI) **(implemented)**: Veriff → foundational ID+liveness
   VC; pluggable issuers (justice ministries, platforms, payments).
-- **Presentation Verifier** (OID4VP): schema registry, proof
+- **Presentation Verifier** (OID4VP) **(stub)**: schema registry, proof
   verification, revocation & freshness checks; returns deterministic
-  **Badge**.
-- **Pack/Policy Registry**: signed, versioned Pack JSON; jurisdiction
-  variants; public fetch.
-- **Issuer Registry**: DID documents, schemas, revocation endpoints;
+  **Badge**. _Currently returns hardcoded stub responses._
+- **Pack/Policy Registry** **(implemented)**: signed, versioned Pack JSON; jurisdiction
+  variants; public fetch. _Serves static manifest._
+- **Issuer Registry** **(planned)**: DID documents, schemas, revocation endpoints;
   trust/approval status.
-- **Revocation & Status Lists**: StatusList2021 endpoints; short
-  soft‑disable windows for appeals.
-- **Consent Receipts**: sign receipts client‑side; store hash &
-  inclusion proof; RP gets a minimal copy (TTL ≤ 90d).
-- **Transparency Log**: append‑only Merkle log + STH API (see v0.4
-  design).
-- **Vouching Service**: reference capture, verification workflow;
+- **Revocation & Status Lists** **(planned)**: StatusList2021 endpoints; short
+  soft‑disable windows for appeals. _CredentialStatus type exists but no revocation service._
+- **Consent Receipts** **(implemented)**: sign receipts client‑side; store hash &
+  inclusion proof; RP gets a minimal copy (TTL ≤ 90d). _Backend is a stub; mobile has real logic._
+- **Transparency Log** **(stub)**: append‑only Merkle log + STH API (see v0.4
+  design). _Receipts-log returns hardcoded responses. Mobile has mock implementation._
+- **Vouching Service** **(planned)**: reference capture, verification workflow;
   emits count proofs via ZK circuits.
-- **Connector Hub**: marketplace/payment/device connectors; normalizes
+- **Connector Hub** **(planned)**: marketplace/payment/device connectors; normalizes
   platform stats → credential issuers.
-- **Telemetry (privacy‑preserving)**: aggregated metrics, no PII;
+- **Telemetry (privacy‑preserving)** **(planned)**: aggregated metrics, no PII;
   opt‑in debug traces.
-- **Ops & Governance**: key ceremony/HSM, oversight workflows, policy
+- **Ops & Governance** **(planned)**: key ceremony/HSM, oversight workflows, policy
   changelog signer.
 
 ### Secure compute
@@ -116,6 +118,8 @@
 2. Holder files appeal; Oversight workflow can re‑enable pending review.
 
 ## Security model
+
+> **Note:** The items below are architectural targets. Current implementation uses in-memory RSA key generation (not HSM), has no webhook signature verification, no rate limiting, and no replay protection. See `docs/REFACTORING_PLAN.md` Phase 3 for the security hardening plan.
 
 - **Keys**: device hardware‑backed; passkeys for account; recovery via split‑key (user device + recovery contact).
 - **Signers**: HSM‑backed for Registry, Log STH, and Issuance Gateway.

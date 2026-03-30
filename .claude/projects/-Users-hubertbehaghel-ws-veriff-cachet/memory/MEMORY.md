@@ -1,0 +1,10 @@
+- [Review process](review_process.md) — Global code review in 8 slices, user reviews after each assessment
+- [Slice 1 alignment](slice1_decisions.md) — Go architecture refactoring plan: shared scaffolding, generated types, devenv 2.x ports
+- [Slice 2 alignment](slice2_decisions.md) — Issuance gateway: OAuth form-encoded, remove token store, security fixes
+- [Slice 3 alignment](slice3_decisions.md) — Testing: compile-time guarantees, delete dead tests, add -race, domain unit tests
+- [Slice 4 alignment](slice4_decisions.md) — Schema: single uber spec, per-service derived, close generation loop
+- [Slice 5 alignment](slice5_decisions.md) — Observability: request-scoped logging, graceful shutdown, structured health, OTEL planned
+- [Slice 6 alignment](slice6_decisions.md) — DevEx: Dockerfiles not Nix containers, service list variable, fix scripts, CI cleanup
+- [Slice 7 alignment](slice7_decisions.md) — Mobile: delete duplicate models, config module, typed credentialSubject, persist repos
+- [Slice 8 alignment](slice8_decisions.md) — Synthesis: quality tier dedup, JSON casing, execution order, local tracking
+- [User profile](user_profile.md) — Senior engineer, values observability, compile-time guarantees, spec-first

@@ -53,7 +53,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage/verifier.out,./coverage/registry.out,./coverage/receipts.out
+          files: ./coverage/verifier.out,./coverage/registry.out,./coverage/receipts.out,./coverage/issuance.out
           flags: backend
           name: cachet-backend-coverage
           fail_ci_if_error: false
@@ -83,34 +83,7 @@ jobs:
           cp .env.ci .env
           echo "✅ Dummy secrets configured for SecretSpec compatibility"
 
-      # Debug: Check file structure before build
-      - name: Debug - Verify AndroidManifest.xml exists
-        shell: bash
-        run: |
-          echo "=== Debugging AndroidManifest.xml location ==="
-          echo "Current directory: $(pwd)"
-          echo "Mobile directory contents:"
-          ls -la mobile/
-          echo "AndroidApp directory contents:"
-          ls -la mobile/androidApp/
-          echo "Source directory contents:"
-          ls -la mobile/androidApp/src/
-          echo "Main directory contents:"
-          ls -la mobile/androidApp/src/main/
-          echo "Checking for AndroidManifest.xml:"
-          if [ -f "mobile/androidApp/src/main/AndroidManifest.xml" ]; then
-            echo "✅ AndroidManifest.xml exists"
-            ls -la mobile/androidApp/src/main/AndroidManifest.xml
-          else
-            echo "❌ AndroidManifest.xml NOT found"
-            find mobile/ -name "AndroidManifest.xml" -type f 2>/dev/null || echo "No AndroidManifest.xml files found anywhere"
-          fi
-          echo "Working directory for Gradle:"
-          cd mobile && pwd
-          echo "Relative path check:"
-          ls -la androidApp/src/main/AndroidManifest.xml || echo "Relative path also fails"
-
-      - name: Build Android APK  
+      - name: Build Android APK
         shell: bash
         run: devenv shell -- android:build
 
@@ -141,63 +114,11 @@ jobs:
       - name: Validate OpenAPI schema
         run: redocly lint schemas/openapi.yaml
 
-  # Build devenv containers (consistent with development)
-  build:
-    name: Build devenv Containers
-    runs-on: ubuntu-latest
-    needs: [backend]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup devenv environment
-        uses: ./.github/actions/setup-devenv
-        with:
-          cache-prefix: build
-          disk-threshold-gb: 6
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Setup CI secrets
-        shell: bash
-        run: |
-          echo "Setting up dummy secrets for CI..."
-          cp .env.ci .env
-          echo "✅ Dummy secrets configured for SecretSpec compatibility"
-
-      # Cache container builds
-      - name: Cache container builds
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/nix/eval-cache-v5
-            ~/.cache/devenv
-          key: ${{ runner.os }}-containers-${{ hashFiles('devenv.nix', 'devenv.lock') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-containers-${{ hashFiles('devenv.nix', 'devenv.lock') }}-
-            ${{ runner.os }}-containers-
-
-      - name: Build verifier container
-        shell: bash
-        run: devenv container build verifier
-
-      - name: Build registry container
-        shell: bash
-        run: devenv container build registry
-
-      - name: Build receipts container
-        shell: bash
-        run: devenv container build receipts
-
-      - name: Build issuance container
-        shell: bash
-        run: devenv container build issuance
-
   # Integration tests using devenv
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [backend]
 
     steps:
       - name: Checkout code
