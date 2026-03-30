@@ -159,12 +159,10 @@ fun VerifiableCredential.extractQuality(): CredentialQuality? {
         // Determine privacy support (for now, assume all credentials support selective disclosure)
         val privacySupport = listOf("selective_disclosure", "predicate_proofs")
         
-        // Calculate trust score based on multiple factors
-        val trustScore = (overallConfidence * 0.4) + 
-                        ((1.0 - riskScore) * 0.3) + 
-                        (livenessScore * 0.15) + 
-                        (documentAuthenticity * 0.15)
-        
+        // Trust score is the backend's overall confidence — no client-side recomputation.
+        // The backend determines quality tiers at issuance; we display them.
+        val trustScore = overallConfidence
+
         return CredentialQuality(
             verificationLevel = verificationLevel,
             overallConfidence = overallConfidence,

@@ -1,24 +1,19 @@
 package id.cachet.wallet.network
 
+import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.domain.model.VerifiableCredential
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
 interface OpenID4VCIClient {
     suspend fun requestToken(clientId: String, scope: String): TokenResponse
     suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
 }
-
-@Serializable
-data class TokenRequest(
-    @SerialName("grant_type") val grantType: String,
-    @SerialName("client_id") val clientId: String,
-    @SerialName("scope") val scope: String
-)
 
 @Serializable
 data class TokenResponse(
@@ -49,22 +44,20 @@ class OpenID4VCIException(message: String, cause: Throwable? = null) : Exception
 
 class KtorOpenID4VCIClient(
     private val httpClient: HttpClient,
-    private val baseUrl: String = "http://localhost:8090"
+    private val baseUrl: String = AppConfig.baseUrl
 ) : OpenID4VCIClient {
-    
+
     override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
         try {
-            val request = TokenRequest(
-                grantType = "client_credentials",
-                clientId = clientId,
-                scope = scope
+            val response: HttpResponse = httpClient.submitForm(
+                url = "$baseUrl/oauth/token",
+                formParameters = parameters {
+                    append("grant_type", "client_credentials")
+                    append("client_id", clientId)
+                    append("scope", scope)
+                }
             )
-            
-            val response: HttpResponse = httpClient.post("$baseUrl/oauth/token") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }
-            
+
             if (response.status.isSuccess()) {
                 return response.body<TokenResponse>()
             } else {
@@ -75,24 +68,21 @@ class KtorOpenID4VCIClient(
             throw OpenID4VCIException("Network error during token request", e)
         }
     }
-    
+
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
         types: List<String>
     ): CredentialResponse {
         try {
-            val request = CredentialRequest(
-                format = format,
-                types = types
-            )
-            
+            val request = CredentialRequest(format = format, types = types)
+
             val response: HttpResponse = httpClient.post("$baseUrl/credential") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
                 setBody(request)
             }
-            
+
             if (response.status.isSuccess()) {
                 return response.body<CredentialResponse>()
             } else if (response.status == HttpStatusCode.Unauthorized) {
