@@ -8,6 +8,19 @@ Welcome! This guide covers how to contribute to the Cachet trust provider platfo
 # Enter development environment
 devenv shell
 
+# Refresh direnv after .envrc updates
+direnv allow
+
+# Optional: force full use_devenv loading (instead of shim mode)
+export USE_DEVENV=1
+direnv reload
+
+# If needed, bootstrap local environment (secrets + context)
+dev:env:bootstrap
+
+# Diagnose slow/stuck devenv shell startup
+./scripts/diagnose-devenv-shell.sh
+
 # Start services and run Android app
 android:run
 

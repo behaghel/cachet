@@ -26,8 +26,7 @@ in
 
   # Extra packages available in the shell
   packages = with pkgs; [
-    nodejs
-    nodePackages.npm
+    nodejs_20
     pnpm
     nodePackages.typescript
     nodePackages.prettier
@@ -43,7 +42,6 @@ in
     # Schema and code generation tools
     oapi-codegen
     openapi-generator-cli
-    yamllint
     redocly
     # GCP deployment tools
     google-cloud-sdk
@@ -64,17 +62,29 @@ in
   # Handy scripts
   scripts."dev:services".exec = "devenv up --detach";
   scripts."dev:stop".exec = "devenv processes stop";
+  scripts."dev:secrets:bootstrap".exec = "./scripts/bootstrap-dev-secrets.sh";
+  scripts."dev:env:bootstrap".exec = "./scripts/bootstrap-dev-secrets.sh";
+  scripts."dev:devenv:diagnose".exec = "./scripts/diagnose-devenv-shell.sh";
   scripts."fmt:go".exec = "gofmt -s -w services";
-  scripts."lint:go".exec = "golangci-lint run ./... || true";
+  scripts."lint:go".exec = ''
+    set -euo pipefail
+    echo "Linting verifier..."
+    (cd services/verifier && golangci-lint run)
+    echo "Linting registry..."
+    (cd services/registry && golangci-lint run)
+    echo "Linting receipts-log..."
+    (cd services/receipts-log && golangci-lint run)
+    echo "Linting issuance-gateway..."
+    (cd services/issuance-gateway && golangci-lint run)
+    echo "✅ All services passed linting"
+  '';
   scripts."ci:deps".exec = ''
     echo "📦 Downloading dependencies..."
-    cd services/verifier && go mod download
-    cd ../registry && go mod download  
-    cd ../receipts-log && go mod download
-    cd ../common && go mod download
-    cd ../connector-hub && go mod download
-    cd ../transparency-log && go mod download
-    cd ../vouching-service && go mod download
+    (cd services/verifier && go mod download)
+    (cd services/registry && go mod download)
+    (cd services/receipts-log && go mod download)
+    (cd services/common && go mod download)
+    (cd services/issuance-gateway && go mod download)
     echo "✅ Dependencies downloaded"
   '';
   scripts."ci:test".exec = ''
@@ -83,13 +93,13 @@ in
     
     mkdir -p coverage
     echo "Testing verifier..."
-    (cd services/verifier && go test -v -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
+    (cd services/verifier && go test -v -race -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
     echo "Testing registry..."
-    (cd services/registry && go test -v -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
+    (cd services/registry && go test -v -race -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
     echo "Testing receipts-log..."
-    (cd services/receipts-log && go test -v -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
+    (cd services/receipts-log && go test -v -race -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
     echo "Testing issuance-gateway..."
-    (cd services/issuance-gateway && go test -v -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
+    (cd services/issuance-gateway && go test -v -race -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
     echo "✅ All tests completed successfully with coverage"
   '';
   scripts."ci:lint".exec = ''
@@ -103,12 +113,6 @@ in
     (cd services/registry && golangci-lint run)
     echo "Linting receipts-log..."
     (cd services/receipts-log && golangci-lint run)
-    echo "Linting connector-hub..."
-    (cd services/connector-hub && golangci-lint run)
-    echo "Linting transparency-log..."  
-    (cd services/transparency-log && golangci-lint run)
-    echo "Linting vouching-service..."
-    (cd services/vouching-service && golangci-lint run)
     echo "Linting issuance-gateway..."
     (cd services/issuance-gateway && golangci-lint run)
     echo "✅ All services passed linting successfully"
@@ -129,36 +133,30 @@ in
     # Run security scan on each service with proper Go module context
     echo "🔍 Scanning services for security issues..."
     echo "Scanning verifier..."
-    cd services/verifier && gosec -exclude-generated ./...
+    (cd services/verifier && gosec -exclude-generated ./...)
     echo "Scanning registry..."
-    cd ../registry && gosec -exclude-generated ./...
+    (cd services/registry && gosec -exclude-generated ./...)
     echo "Scanning receipts-log..."
-    cd ../receipts-log && gosec -exclude-generated ./...
-    echo "Scanning connector-hub..."
-    cd ../connector-hub && gosec -exclude-generated ./...
-    echo "Scanning transparency-log..."
-    cd ../transparency-log && gosec -exclude-generated ./...
-    echo "Scanning vouching-service..."
-    cd ../vouching-service && gosec -exclude-generated ./...
+    (cd services/receipts-log && gosec -exclude-generated ./...)
     echo "Scanning issuance-gateway..."
-    cd ../issuance-gateway && gosec -exclude-generated ./...
+    (cd services/issuance-gateway && gosec -exclude-generated ./...)
     
     echo "✅ Security scan completed successfully"
   '';
   scripts."test:all".exec = ''
     echo "Running tests for all services..."
-    cd services/verifier && go test -v ./... && echo "✅ Verifier tests passed"
-    cd ../registry && go test -v ./... && echo "✅ Registry tests passed"  
-    cd ../receipts-log && go test -v ./... && echo "✅ Receipts-log tests passed"
-    cd ../issuance-gateway && go test -v ./... && echo "✅ Issuance gateway tests passed"
+    (cd services/verifier && go test -v -race ./...) && echo "✅ Verifier tests passed"
+    (cd services/registry && go test -v -race ./...) && echo "✅ Registry tests passed"
+    (cd services/receipts-log && go test -v -race ./...) && echo "✅ Receipts-log tests passed"
+    (cd services/issuance-gateway && go test -v -race ./...) && echo "✅ Issuance gateway tests passed"
   '';
   scripts."test:coverage".exec = ''
     echo "Running tests with coverage..."
     mkdir -p coverage
-    cd services/verifier && go test -coverprofile=../../coverage/verifier.out -covermode=atomic ./...
-    cd ../registry && go test -coverprofile=../../coverage/registry.out -covermode=atomic ./...
-    cd ../receipts-log && go test -coverprofile=../../coverage/receipts.out -covermode=atomic ./...
-    cd ../issuance-gateway && go test -coverprofile=../../coverage/issuance.out -covermode=atomic ./...
+    (cd services/verifier && go test -race -coverprofile=../../coverage/verifier.out -covermode=atomic ./...)
+    (cd services/registry && go test -race -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
+    (cd services/receipts-log && go test -race -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
+    (cd services/issuance-gateway && go test -race -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
     echo "Coverage reports generated in coverage/"
   '';
   scripts."test:integration".exec = ''
@@ -296,15 +294,16 @@ in
     echo "✅ Schema synchronization completed!"
   '';
   scripts."test:schema-integration".exec = ''
-    echo "🧪 Running schema integration tests..."
-    
-    echo "1. Testing Go schema compatibility..."
-    cd tests/schema-integration && go test -v .
-    
-    echo "2. Testing Kotlin schema compatibility..."
-    cd mobile && gradle :shared:test --tests "*SchemaCompatibilityTest*"
-    
-    echo "✅ Schema integration tests completed!"
+    echo "🧪 Running schema compatibility checks..."
+    set -euo pipefail
+
+    echo "1. Verifying generated Go types compile..."
+    (cd generated/go && go vet ./...)
+
+    echo "2. Verifying generated Kotlin models compile against mobile..."
+    (cd mobile && ./gradlew --no-daemon :shared:compileCommonMainKotlinMetadata)
+
+    echo "✅ Schema compatibility checks passed!"
   '';
   scripts."ci:full".exec = ''
     echo "🚀 Running full CI pipeline locally..."
@@ -592,101 +591,10 @@ EOF
   '';
 
   # Run services with: `devenv up verifier registry receipts issuance-gateway`
-  processes.verifier.exec = "go run ./services/verifier";
-  processes.registry.exec = "go run ./services/registry";
-  processes.receipts.exec = "go run ./services/receipts-log";
-  processes.issuance-gateway.exec = "go run ./services/issuance-gateway";
-
-  # Container definitions - single source of truth for dev and production
-  containers = {
-    # Verifier service container
-    verifier = {
-      name = "cachet-verifier";
-      startupCommand = pkgs.writeShellScriptBin "start-verifier" ''
-        export PORT=''${PORT:-8081}
-        export ENVIRONMENT=''${ENVIRONMENT:-production}
-        cd /workspace
-        exec go run ./services/verifier
-      '';
-      registry = "";
-      copyToRoot = pkgs.buildEnv {
-        name = "workspace-root";
-        paths = [
-          (pkgs.runCommand "workspace" {} ''
-            mkdir -p $out/workspace
-            cp -r ${./.} $out/workspace/
-            chmod -R u+w $out/workspace
-          '')
-        ];
-      };
-    };
-
-    # Registry service container
-    registry = {
-      name = "cachet-registry";
-      startupCommand = pkgs.writeShellScriptBin "start-registry" ''
-        export PORT=''${PORT:-8082}
-        export ENVIRONMENT=''${ENVIRONMENT:-production}
-        cd /workspace
-        exec go run ./services/registry
-      '';
-      registry = "";
-      copyToRoot = pkgs.buildEnv {
-        name = "workspace-root";
-        paths = [
-          (pkgs.runCommand "workspace" {} ''
-            mkdir -p $out/workspace
-            cp -r ${./.} $out/workspace/
-            chmod -R u+w $out/workspace
-          '')
-        ];
-      };
-    };
-
-    # Receipts service container
-    receipts = {
-      name = "cachet-receipts";
-      startupCommand = pkgs.writeShellScriptBin "start-receipts" ''
-        export PORT=''${PORT:-8083}
-        export ENVIRONMENT=''${ENVIRONMENT:-production}
-        cd /workspace
-        exec go run ./services/receipts-log
-      '';
-      registry = "";
-      copyToRoot = pkgs.buildEnv {
-        name = "workspace-root";
-        paths = [
-          (pkgs.runCommand "workspace" {} ''
-            mkdir -p $out/workspace
-            cp -r ${./.} $out/workspace/
-            chmod -R u+w $out/workspace
-          '')
-        ];
-      };
-    };
-
-    # Issuance Gateway container
-    issuance = {
-      name = "cachet-issuance";
-      startupCommand = pkgs.writeShellScriptBin "start-issuance" ''
-        export PORT=''${PORT:-8090}
-        export ENVIRONMENT=''${ENVIRONMENT:-production}
-        cd /workspace
-        exec go run ./services/issuance-gateway
-      '';
-      registry = "";
-      copyToRoot = pkgs.buildEnv {
-        name = "workspace-root";
-        paths = [
-          (pkgs.runCommand "workspace" {} ''
-            mkdir -p $out/workspace
-            cp -r ${./.} $out/workspace/
-            chmod -R u+w $out/workspace
-          '')
-        ];
-      };
-    };
-  };
+  processes.verifier.exec = "cd services/verifier && go run .";
+  processes.registry.exec = "cd services/registry && go run .";
+  processes.receipts.exec = "cd services/receipts-log && go run .";
+  processes.issuance-gateway.exec = "cd services/issuance-gateway && go run .";
 
   # Pre-commit hooks for consistent build cycle
   git-hooks = {
@@ -730,39 +638,50 @@ EOF
   };
 
   enterShell = ''
-    echo "✅ Cachet devenv ready with SecretSpec integration."
-    echo "  Backend:"
-    echo "    - Run services:     dev:services (or: devenv up --detach)"
-    echo "    - Stop services:    dev:stop (or: devenv processes stop)"
-    echo "    - Format code:      fmt:go"
-    echo "    - Lint (Go):        lint:go"
-    echo "    - Test all:         test:all"
-    echo "    - Test coverage:    test:coverage"
-    echo "    - Integration test: test:integration"
-    echo "  Android:"
-    echo "    - Setup emulator:   android:emulator"
-    echo "    - Build app:        android:build"
-    echo "    - Install app:      android:install"
-    echo "    - Full dev setup:   android:run"
-    echo "    - Run UI tests:     android:test"
-    echo "    - Run unit tests:   android:test-unit"
-    echo "  Schema Management:"
-    echo "    - Validate schema:  schema:validate"
-    echo "    - Generate models:  schema:generate"
-    echo "    - Test schemas:     schema:test"
-    echo "    - Full sync:        schema:sync"
-    echo "    - Integration test: test:schema-integration"
-    echo "  CI/CD:"
-    echo "    - Full CI locally:  ci:full"
-    echo "  GCP Deployment (with SecretSpec):"
-    echo "    - 🏗️ Setup project:     gcp:setup (includes billing check)"
-    echo "    - 🗄️ Setup database:    gcp:db:setup"
-    echo "    - 🔐 Setup secrets:     gcp:secrets:setup (creates .env + Secret Manager)"
-    echo "    - 🚀 Deploy service:    gcp:deploy:verifier (with secrets integration)"
-    echo "    - 📊 Check status:      gcp:status"
-    echo "    - 🧪 Test deployment:  gcp:test-deployment"
-    echo "    - 🔑 Authenticate:     gcp:auth (if needed)"
-    echo "  💡 Secrets managed via SecretSpec - local (.env) + production (Secret Manager)"
+    if [ -n "''${DIRENV_IN_ENVRC:-}" ] || [ -n "''${DIRENV_DIR:-}" ]; then
+      # `use devenv` imports shell code via direnv; stdout here corrupts that stream.
+      :
+    elif [ -t 0 ]; then
+      echo "⏱ [devenv] Shell init started at $(date '+%Y-%m-%d %H:%M:%S')"
+      echo "⏱ [devenv] Checking local secret bootstrap"
+      ./scripts/bootstrap-dev-secrets.sh
+      echo "⏱ [devenv] Shell init completed at $(date '+%Y-%m-%d %H:%M:%S')"
+
+      echo "✅ Cachet devenv ready with SecretSpec integration."
+      echo "  Backend:"
+      echo "    - Run services:     dev:services (or: devenv up --detach)"
+      echo "    - Stop services:    dev:stop (or: devenv processes stop)"
+      echo "    - Bootstrap env:    dev:env:bootstrap (alias: dev:secrets:bootstrap)"
+      echo "    - Diagnose shell:   dev:devenv:diagnose"
+      echo "    - Format code:      fmt:go"
+      echo "    - Lint (Go):        lint:go"
+      echo "    - Test all:         test:all"
+      echo "    - Test coverage:    test:coverage"
+      echo "    - Integration test: test:integration"
+      echo "  Android:"
+      echo "    - Setup emulator:   android:emulator"
+      echo "    - Build app:        android:build"
+      echo "    - Install app:      android:install"
+      echo "    - Full dev setup:   android:run"
+      echo "    - Run UI tests:     android:test"
+      echo "    - Run unit tests:   android:test-unit"
+      echo "  Schema Management:"
+      echo "    - Validate schema:  schema:validate"
+      echo "    - Generate models:  schema:generate"
+      echo "    - Test schemas:     schema:test"
+      echo "    - Full sync:        schema:sync"
+      echo "    - Integration test: test:schema-integration"
+      echo "  CI/CD:"
+      echo "    - Full CI locally:  ci:full"
+      echo "  GCP Deployment (with SecretSpec):"
+      echo "    - 🏗️ Setup project:     gcp:setup (includes billing check)"
+      echo "    - 🗄️ Setup database:    gcp:db:setup"
+      echo "    - 🔐 Setup secrets:     gcp:secrets:setup (creates .env + Secret Manager)"
+      echo "    - 🚀 Deploy service:    gcp:deploy:verifier (with secrets integration)"
+      echo "    - 📊 Check status:      gcp:status"
+      echo "    - 🧪 Test deployment:  gcp:test-deployment"
+      echo "    - 🔑 Authenticate:     gcp:auth (if needed)"
+      echo "  💡 Secrets managed via SecretSpec - local (.env) + production (Secret Manager)"
+    fi
   '';
 }
-

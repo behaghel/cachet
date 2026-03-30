@@ -8,8 +8,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
 interface OpenID4VCIClient {
     suspend fun requestToken(clientId: String, scope: String): TokenResponse
     suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
@@ -54,11 +52,6 @@ class KtorOpenID4VCIClient(
     private val baseUrl: String = "http://localhost:8090"
 ) : OpenID4VCIClient {
     
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
-    
     override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
         try {
             val request = TokenRequest(
@@ -66,10 +59,6 @@ class KtorOpenID4VCIClient(
                 clientId = clientId,
                 scope = scope
             )
-            
-            val jsonString = json.encodeToString(TokenRequest.serializer(), request)
-            println("DEBUG: Sending token request: grant_type=${request.grantType}, client_id=${request.clientId}, scope=${request.scope}")
-            println("DEBUG: JSON payload: $jsonString")
             
             val response: HttpResponse = httpClient.post("$baseUrl/oauth/token") {
                 contentType(ContentType.Application.Json)
