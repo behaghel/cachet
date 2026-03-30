@@ -2,11 +2,11 @@ package main
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog/log"
+
+	"github.com/cachet-id/cachet/services/common"
 )
 
 const policyManifest = `id: policy.cachet.manifest
@@ -18,54 +18,18 @@ type Server struct {
 	router *chi.Mux
 }
 
-func NewServer() *Server {
-	s := &Server{
-		router: chi.NewRouter(),
-	}
-	s.setupMiddleware()
-	s.setupRoutes()
+func NewServer(cfg common.ServerConfig) *Server {
+	s := &Server{router: common.NewRouter(cfg)}
+	s.router.Get("/policy/manifest", s.handlePolicyManifest)
 	return s
 }
 
-func (s *Server) setupMiddleware() {
-	s.router.Use(middleware.RequestID)
-	s.router.Use(middleware.RealIP)
-	s.router.Use(middleware.Logger)
-	s.router.Use(middleware.Recoverer)
-}
-
-func (s *Server) setupRoutes() {
-	// Note: /healthz is reserved by Cloud Run infrastructure - use /health instead
-	s.router.Get("/health", s.handleHealth)
-	s.router.Get("/policy/manifest", s.handlePolicyManifest)
-}
-
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	log.Debug().Msg("Health check requested")
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte("ok")); err != nil {
-		log.Error().Err(err).Msg("Failed to write health check response")
-	}
-}
+func (s *Server) Router() *chi.Mux { return s.router }
 
 func (s *Server) handlePolicyManifest(w http.ResponseWriter, r *http.Request) {
-	log.Info().Msg("Policy manifest requested")
+	log.Ctx(r.Context()).Info().Msg("policy manifest requested")
 	w.Header().Set("Content-Type", "text/yaml")
 	if _, err := w.Write([]byte(policyManifest)); err != nil {
-		log.Error().Err(err).Msg("Failed to write policy manifest response")
+		log.Ctx(r.Context()).Error().Err(err).Msg("write failed")
 	}
-}
-
-func (s *Server) Start(addr string) error {
-	log.Info().Str("addr", addr).Msg("Registry server starting")
-
-	server := &http.Server{
-		Addr:         addr,
-		Handler:      s.router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
-	return server.ListenAndServe()
 }

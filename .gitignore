@@ -156,3 +156,9 @@ $RECYCLE.BIN/
 .fuse_hidden*
 .directory
 .Trash-*
+
+# Go service binaries (built by go build)
+services/verifier/verifier
+services/registry/registry
+services/receipts-log/receipts-log
+services/issuance-gateway/issuance-gateway
