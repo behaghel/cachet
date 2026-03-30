@@ -1,12 +1,6 @@
 package id.cachet.wallet.domain.model
 
 import kotlinx.serialization.Serializable
-import kotlinx.datetime.Instant
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.contentOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 
@@ -19,7 +13,7 @@ enum class VerificationLevel(val displayName: String, val emoji: String) {
     STANDARD("Standard Verification", "🔵"),
     PREMIUM("Premium Verification", "🟡"),
     GOLD("Gold Verification", "🏆");
-    
+
     companion object {
         fun fromString(value: String?): VerificationLevel {
             return when (value?.lowercase()) {
@@ -57,17 +51,16 @@ data class CredentialQuality(
             freshness <= 30.days -> "Recent (${freshness.inWholeDays} days)"
             else -> "Aged (${freshness.inWholeDays} days)"
         }
-        
+
         return "${verificationLevel.emoji} ${verificationLevel.displayName} • 🔒 Privacy Ready • ⏰ $freshnessText"
     }
-    
+
     /**
      * Gets quality indicators as a list of display items
      */
     fun getQualityIndicators(): List<QualityIndicator> {
         val indicators = mutableListOf<QualityIndicator>()
-        
-        // Verification level indicator
+
         indicators.add(
             QualityIndicator(
                 icon = verificationLevel.emoji,
@@ -76,8 +69,7 @@ data class CredentialQuality(
                 score = overallConfidence
             )
         )
-        
-        // Privacy support indicator
+
         if (privacySupport.isNotEmpty()) {
             indicators.add(
                 QualityIndicator(
@@ -88,11 +80,10 @@ data class CredentialQuality(
                 )
             )
         }
-        
-        // Freshness indicator
+
         val freshnessIcon = when {
             freshness <= 7.days -> "🟢"
-            freshness <= 30.days -> "🟡" 
+            freshness <= 30.days -> "🟡"
             else -> "🟠"
         }
         indicators.add(
@@ -103,8 +94,7 @@ data class CredentialQuality(
                 score = maxOf(0.0, 1.0 - (freshness.inWholeDays / 90.0))
             )
         )
-        
-        // Risk assessment (if available)
+
         if (riskScore > 0) {
             val riskIcon = when {
                 riskScore < 0.1 -> "🟢"
@@ -120,7 +110,7 @@ data class CredentialQuality(
                 )
             )
         }
-        
+
         return indicators
     }
 }
@@ -137,30 +127,23 @@ data class QualityIndicator(
 )
 
 /**
- * Extension functions for VerifiableCredential to extract quality information
+ * Extract quality information from credential using typed fields.
+ * The backend determines quality tiers at issuance; we display them.
  */
 fun VerifiableCredential.extractQuality(): CredentialQuality? {
     try {
-        // Extract verification level
-        val verificationLevel = credentialSubject["verificationLevel"]?.jsonPrimitive?.contentOrNull
-            ?.let { VerificationLevel.fromString(it) } ?: VerificationLevel.BASIC
-        
-        // Extract verification metrics
-        val metricsObj = credentialSubject["verificationMetrics"]?.jsonObject
-        val overallConfidence = metricsObj?.get("overallConfidence")?.jsonPrimitive?.doubleOrNull ?: 0.85
-        val riskScore = metricsObj?.get("riskScore")?.jsonPrimitive?.doubleOrNull ?: 0.0
-        val livenessScore = metricsObj?.get("livenessScore")?.jsonPrimitive?.doubleOrNull ?: 0.0
-        val documentAuthenticity = metricsObj?.get("documentAuthenticity")?.jsonPrimitive?.doubleOrNull ?: 0.0
-        
-        // Calculate freshness
+        val verificationLevel = VerificationLevel.fromString(credentialSubject.verificationLevel)
+
+        val metrics = credentialSubject.verificationMetrics
+        val overallConfidence = metrics?.overallConfidence ?: 0.85
+        val riskScore = metrics?.riskScore ?: 0.0
+        val livenessScore = metrics?.livenessScore ?: 0.0
+        val documentAuthenticity = metrics?.documentAuthenticity ?: 0.0
+
         val issuanceInstant = getIssuanceInstant() ?: kotlinx.datetime.Clock.System.now()
         val freshness = kotlinx.datetime.Clock.System.now() - issuanceInstant
-        
-        // Determine privacy support (for now, assume all credentials support selective disclosure)
+
         val privacySupport = listOf("selective_disclosure", "predicate_proofs")
-        
-        // Trust score is the backend's overall confidence — no client-side recomputation.
-        // The backend determines quality tiers at issuance; we display them.
         val trustScore = overallConfidence
 
         return CredentialQuality(
@@ -174,10 +157,9 @@ fun VerifiableCredential.extractQuality(): CredentialQuality? {
             documentAuthenticity = documentAuthenticity
         )
     } catch (e: Exception) {
-        // Return basic quality if parsing fails
         val issuanceInstant = getIssuanceInstant() ?: kotlinx.datetime.Clock.System.now()
         val freshness = kotlinx.datetime.Clock.System.now() - issuanceInstant
-        
+
         return CredentialQuality(
             verificationLevel = VerificationLevel.BASIC,
             overallConfidence = 0.75,
@@ -201,7 +183,7 @@ fun VerifiableCredential.getQualityBadge(): String {
  */
 fun VerifiableCredential.meetsQualityThreshold(): Boolean {
     val quality = extractQuality() ?: return false
-    return quality.overallConfidence >= 0.8 && 
+    return quality.overallConfidence >= 0.8 &&
            quality.riskScore <= 0.3 &&
            quality.freshness <= 90.days
 }

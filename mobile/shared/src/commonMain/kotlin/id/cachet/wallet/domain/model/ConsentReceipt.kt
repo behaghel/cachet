@@ -3,6 +3,9 @@ package id.cachet.wallet.domain.model
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
+// Note: InclusionProof is defined in this file for consent receipt use (Phase 2B).
+// TransparencyLog.kt has a separate InclusionProof for log-level operations.
+
 /**
  * Represents a consent receipt that proves user gave informed consent
  * for their credential data to be processed in a specific way
@@ -152,10 +155,9 @@ data class InclusionProof(
  */
 fun VerifiableCredential.getAvailablePredicates(): List<AvailablePredicate> {
     val predicates = mutableListOf<AvailablePredicate>()
-    
+
     // Age predicates
-    val personalData = credentialSubject["personalData"]
-    if (personalData != null) {
+    if (credentialSubject.personalData != null) {
         predicates.add(
             AvailablePredicate(
                 id = "age_gte_18",
@@ -165,16 +167,15 @@ fun VerifiableCredential.getAvailablePredicates(): List<AvailablePredicate> {
         )
         predicates.add(
             AvailablePredicate(
-                id = "age_gte_21", 
+                id = "age_gte_21",
                 description = "Age is 21 or older",
                 canProve = true
             )
         )
     }
-    
+
     // Identity verification predicates
-    val verified = credentialSubject["verified"]
-    if (verified != null) {
+    if (credentialSubject.verified == true) {
         predicates.add(
             AvailablePredicate(
                 id = "identity_verified",
@@ -184,13 +185,13 @@ fun VerifiableCredential.getAvailablePredicates(): List<AvailablePredicate> {
         )
         predicates.add(
             AvailablePredicate(
-                id = "liveness_verified", 
+                id = "liveness_verified",
                 description = "Liveness check passed (not a photo)",
                 canProve = true
             )
         )
     }
-    
+
     return predicates
 }
 

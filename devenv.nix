@@ -274,10 +274,15 @@ in
 
     for tag in issuance-gateway verifier registry receipts-log; do
       echo "  Extracting $tag..."
-      # Use yq to filter paths that contain the tag, keeping components intact
-      yq eval "
-        .paths |= with_entries(select(.value[].tags // [] | any(. == \"$tag\")))
-      " schemas/openapi.yaml > "api/openapi.$tag.yaml"
+      # Convert YAML→JSON, filter paths with jq (robust syntax), convert back to YAML
+      yq -o=json schemas/openapi.yaml | \
+        jq --arg tag "$tag" '
+          .paths |= with_entries(
+            select(.value | to_entries | any(
+              .value.tags // [] | any(. == $tag)
+            ))
+          )
+        ' | yq -P > "api/openapi.$tag.yaml"
     done
 
     echo "✅ Per-service specs generated in api/"

@@ -29,3 +29,42 @@ UPDATE credentials SET is_revoked = 1 WHERE local_id = ?;
 
 deleteCredential:
 DELETE FROM credentials WHERE local_id = ?;
+
+-- Consent receipts
+CREATE TABLE consent_receipts (
+    id TEXT PRIMARY KEY NOT NULL,
+    timestamp INTEGER NOT NULL,
+    purpose TEXT NOT NULL,
+    predicates_json TEXT NOT NULL,
+    rp_identifier TEXT NOT NULL,
+    rp_display_name TEXT NOT NULL,
+    consent_json TEXT NOT NULL,
+    credential_id TEXT NOT NULL,
+    receipt_hash TEXT,
+    signature TEXT,
+    salt TEXT,
+    transparency_log_json TEXT
+);
+
+CREATE INDEX idx_receipts_rp ON consent_receipts(rp_identifier);
+CREATE INDEX idx_receipts_credential ON consent_receipts(credential_id);
+CREATE INDEX idx_receipts_timestamp ON consent_receipts(timestamp);
+
+insertReceipt:
+INSERT INTO consent_receipts (id, timestamp, purpose, predicates_json, rp_identifier, rp_display_name, consent_json, credential_id, receipt_hash, signature, salt, transparency_log_json)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getReceiptById:
+SELECT * FROM consent_receipts WHERE id = ?;
+
+getAllReceipts:
+SELECT * FROM consent_receipts ORDER BY timestamp DESC;
+
+getReceiptsByRP:
+SELECT * FROM consent_receipts WHERE rp_identifier = ? ORDER BY timestamp DESC;
+
+getReceiptsByCredential:
+SELECT * FROM consent_receipts WHERE credential_id = ? ORDER BY timestamp DESC;
+
+deleteReceipt:
+DELETE FROM consent_receipts WHERE id = ?;

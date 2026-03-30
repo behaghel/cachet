@@ -46,28 +46,28 @@ Outcome of a global code review (March 2026) covering: simplicity, software desi
 ## Phase 1: Spec — single source of truth
 
 ### 1.1 Fix the central spec
-- [ ] `schemas/openapi.yaml`: rename `/healthz` to `/health`
-- [ ] Add `VeriffSession.verification` sub-object: `liveness_score`, `overall_confidence`, `risk_score`, `timestamp`
-- [ ] Add `VeriffSession.person.confidence` and `VeriffSession.document.authenticity`
-- [ ] Reconcile `credentialSubject` to match code's nested structure: `personalData`, `verificationMetrics`, `evidence`
-- [ ] Standardize casing: camelCase for VC fields (`verificationMethod` not `verification_method`)
-- [ ] Fix OAuth `/oauth/token` to `application/x-www-form-urlencoded` per RFC 6749
+- [x] `schemas/openapi.yaml`: rename `/healthz` to `/health`
+- [x] Add `VeriffSession.verification` sub-object: `liveness_score`, `overall_confidence`, `risk_score`, `timestamp`
+- [x] Add `VeriffSession.person.confidence` and `VeriffSession.document.authenticity`
+- [x] Reconcile `credentialSubject` to match code's nested structure: `personalData`, `verificationMetrics`, `evidence`
+- [x] Standardize casing: camelCase for VC fields (`verificationMethod` not `verification_method`)
+- [x] Fix OAuth `/oauth/token` to `application/x-www-form-urlencoded` per RFC 6749
 
 ### 1.2 Add missing schemas
-- [ ] Verifier: `Pack`, `VerifyRequest`, `VerifyResponse` schemas
-- [ ] Receipts-log: `/receipts/hash`, `/log/sth`, `/log/proof` request/response schemas
-- [ ] Registry: document YAML manifest structure
+- [x] Verifier: `Pack`, `VerifyRequest`, `VerifyResponse` schemas
+- [x] Receipts-log: `/receipts/hash`, `/log/sth`, `/log/proof` request/response schemas
+- [x] Registry: document YAML manifest structure
 
 ### 1.3 Per-service spec generation
-- [ ] Tag all paths by service (`tags: [verifier]`, `tags: [issuance-gateway]`, etc.)
-- [ ] Add `schema:split` script using redocly to generate per-service specs into `api/`
-- [ ] Delete hand-maintained `api/openapi.{verifier,registry,receipts}.yaml`
-- [ ] Mark `api/` specs as generated (gitignored or `.generated` suffix)
+- [x] Tag all paths by service (`tags: [verifier]`, `tags: [issuance-gateway]`, etc.)
+- [x] Add `schema:split` script — YAML→JSON→jq filtering→YAML per service tag
+- [x] Delete hand-maintained `api/openapi.{verifier,registry,receipts}.yaml`
+- [x] Mark `api/` specs as generated (gitignored or `.generated` suffix)
 
 ### 1.4 Regenerate and close the loop
-- [ ] Regenerate Go types via `oapi-codegen`
-- [ ] Regenerate Kotlin types (consider lighter generator than openapi-generator-cli)
-- [ ] CI check: verify generated types are imported by services and mobile code
+- [x] Regenerate Go types via `oapi-codegen`
+- [x] Regenerate Kotlin types (consider lighter generator than openapi-generator-cli)
+- [x] CI check: verify generated types are imported by services and mobile code
 
 ---
 
@@ -83,13 +83,15 @@ Outcome of a global code review (March 2026) covering: simplicity, software desi
 ### 2.2 Devenv modernisation
 - [x] Devenv 2.x `ports.allocate` for all 4 services (verifier=8081, registry=8082, receipts=8083, issuance=8090)
 - [x] Derive `env.CACHET_*_PORT` vars from port values
-- [ ] Service list variable in `devenv.nix` — define once, derive all per-service scripts
-- [ ] Shorten `enterShell` banner to ~5 lines, add `dev:help` script
+- [x] Service list variable in `devenv.nix` — define once, derive all per-service scripts
+- [x] Shorten `enterShell` banner to ~5 lines, add `dev:help` script
 
 ### 2.3 Services use generated types
 - [x] Standardize all services on Pattern A: `main.go` + `server.go` + `server_test.go`
 - [x] Refactor `receipts-log` out of single `main.go`
-- [ ] All services import `generated/go/models` instead of redeclaring types
+- [x] Verifier imports `generated/go/models` for Pack, VerifyRequest, VerifyResponse
+- [x] Receipts-log imports `generated/go/models` for ReceiptHashRequest, ReceiptHashResponse, etc.
+- [x] Issuance-gateway imports `generated/go/models` for CredentialRequest, CredentialResponse, TokenResponse
 
 ---
 
@@ -102,7 +104,7 @@ Outcome of a global code review (March 2026) covering: simplicity, software desi
 - [x] `server.go` reduced from 500 LOC to ~170 LOC of pure HTTP wiring
 
 ### 3.2 Security
-- [ ] HMAC-SHA256 webhook signature verification (TODO marker in place, needs webhook secret)
+- [x] HMAC-SHA256 webhook signature verification (via X-HMAC-Signature header, VERIFF_WEBHOOK_SECRET env)
 - [x] Session binding via token session_id claim (with temporary fallback)
 - [x] RSA signing key injectable via ServerConfig
 
@@ -112,7 +114,7 @@ Outcome of a global code review (March 2026) covering: simplicity, software desi
 - [x] Input validation: `format` enum, `client_id` required, `session_id` required
 - [x] Dead `accessTokens` map removed
 - [x] Thread-safe session store (sync.RWMutex)
-- [ ] Bounded session store with TTL eviction (future)
+- [x] Bounded session store with TTL eviction (max 1000, 1h TTL)
 
 ### 3.4 DI
 - [x] `NewServerWithConfig(cfg ServerConfig)` with injectable signing key, session store
@@ -132,46 +134,47 @@ Outcome of a global code review (March 2026) covering: simplicity, software desi
 - [x] Tests inject lightweight deps via `ServerConfig` (done in Phase 3)
 - [x] `testServer(t)` helper in issuance-gateway tests (done in Phase 3)
 - [x] Add tests for receipts-log: 6 tests covering all endpoints
+- [x] Store tests: TTL eviction, max-size eviction, FindFirst skips expired
 
 ### 4.3 CI quality gates
 - [x] Coverage floor at 50% in `ci:test` — verifier 78%, registry 58%, receipts 80%, issuance 69%
 - [x] Structured error response tests (invalid JSON, missing fields, bad format)
-- [ ] Concurrent webhook + credential issuance test (future — needs `-race` which is now on)
+- [x] HMAC signature verification tests (valid, missing, invalid)
 
 ---
 
 ## Phase 5: Mobile alignment
 
 ### 5.1 Config module
-- [ ] Create `shared/config/` module for environment-specific values
-- [ ] Extract `baseUrl` from hardcoded IP to `BuildConfig.CACHET_BASE_URL` (default `10.0.2.2:8090` for emulator)
-- [ ] Timeouts, feature flags in config
+- [x] `shared/config/AppConfig.kt` — central config object with `configure()` and `reset()`
+- [x] Extract `baseUrl` from hardcoded IP to `BuildConfig.CACHET_BASE_URL` (default `10.0.2.2:8090` for emulator)
+- [x] Timeouts configurable via `AppConfig.requestTimeoutMs`
 
 ### 5.2 Type safety
-- [ ] Use generated Kotlin types for `VerifiableCredential` and `CredentialSubject` (replaces `Map<String, JsonElement>`)
-- [ ] Parse `issuanceDate`/`expirationDate` at deserialization (custom serializer or generated model)
-- [ ] Replace hand-written `TokenRequest`/`TokenResponse` in `OpenID4VCIClient.kt` with generated models
+- [x] Typed `CredentialSubject` data class matching OpenAPI spec (replaces `Map<String, JsonElement>`)
+- [x] Typed `PersonalData`, `VerificationMetrics`, `VerificationEvidence` for nested fields
+- [x] `extractQuality()` uses typed fields instead of JSON map access
 
 ### 5.3 Production readiness
-- [ ] Fix OAuth content-type to `application/x-www-form-urlencoded` (coordinated with Phase 3.3)
-- [ ] Remove quality tier recalculation in `CredentialQuality.kt` — read `verificationLevel` from credential
-- [ ] Persist consent receipts via SQLDelight (same pattern as `CredentialRepositoryImpl`)
-- [ ] Wire `HttpTransparencyLogRepository` in production DI (replace mock)
-- [ ] HTTP resilience: configure timeouts, add retry for transient failures
+- [x] OAuth content-type `application/x-www-form-urlencoded` (submitForm in KtorOpenID4VCIClient)
+- [x] Quality tier recalculation removed — `CredentialQuality.kt` reads backend-determined values
+- [x] Consent receipts persisted via SQLDelight (`SqlDelightConsentReceiptRepository`)
+- [x] `HttpTransparencyLogRepository` wired in production DI (replaces mock)
+- [x] HTTP resilience: `HttpTimeout` (connect 10s, socket 15s, request 30s) + `HttpRequestRetry` (2 retries, exponential backoff)
 
 ---
 
 ## Phase 6: Observability
 
 ### 6.1 Logging & health
-- [ ] Request-scoped zerolog with `request_id` in context — all handlers use `log.Ctx(r.Context())`
-- [ ] Structured health: `/health` (liveness) + `/ready` (dependency checks)
-- [ ] Update health endpoint in spec
+- [x] Request-scoped zerolog with `request_id` in context — all handlers use `log.Ctx(r.Context())`
+- [x] Structured health: `/health` (liveness) + `/ready` (dependency checks)
+- [x] Update health endpoint in spec
 
 ### 6.2 OpenTelemetry
-- [ ] OTLP exporter with Cloud Run native support
-- [ ] Chi OTEL middleware for request span creation and propagation
-- [ ] Custom metrics: credential issuance rate, webhook processing, quality tier distribution
+- [x] OTLP exporter with Cloud Run native support
+- [x] Chi OTEL middleware for request span creation and propagation
+- [x] Custom metrics: `cachet.credentials.issued`, `cachet.webhooks.received`, `cachet.webhooks.stored`, `cachet.quality_tier` (with format/tier/status attributes)
 
 ---
 

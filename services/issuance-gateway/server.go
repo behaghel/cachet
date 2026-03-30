@@ -1,15 +1,22 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
+	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
@@ -18,9 +25,10 @@ import (
 
 // ServerConfig holds injectable dependencies for the issuance gateway.
 type ServerConfig struct {
-	Common     common.ServerConfig
-	SigningKey *rsa.PrivateKey
-	Sessions   veriff.SessionStore
+	Common        common.ServerConfig
+	SigningKey    *rsa.PrivateKey
+	Sessions      veriff.SessionStore
+	WebhookSecret string // HMAC-SHA256 secret for Veriff webhook signature verification
 }
 
 // DefaultServerConfig creates a config with generated key and in-memory store.
@@ -41,9 +49,10 @@ func DefaultServerConfig() ServerConfig {
 }
 
 type Server struct {
-	router     *chi.Mux
-	signingKey *rsa.PrivateKey
-	sessions   veriff.SessionStore
+	router        *chi.Mux
+	signingKey    *rsa.PrivateKey
+	sessions      veriff.SessionStore
+	webhookSecret string
 }
 
 func NewServer() *Server {
@@ -52,9 +61,10 @@ func NewServer() *Server {
 
 func NewServerWithConfig(cfg ServerConfig) *Server {
 	s := &Server{
-		router:     common.NewRouter(cfg.Common),
-		signingKey: cfg.SigningKey,
-		sessions:   cfg.Sessions,
+		router:        common.NewRouter(cfg.Common),
+		signingKey:    cfg.SigningKey,
+		sessions:      cfg.Sessions,
+		webhookSecret: cfg.WebhookSecret,
 	}
 
 	s.router.Post("/oauth/token", s.handleOAuthToken)
@@ -103,10 +113,7 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var req struct {
-		Format string   `json:"format"`
-		Types  []string `json:"types"`
-	}
+	var req models.CredentialRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
 		return
@@ -114,7 +121,7 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 
 	// Validate format
 	switch req.Format {
-	case "jwt_vc", "vc+sd-jwt", "ldp_vc":
+	case models.JwtVc, models.VcSdJwt, models.LdpVc:
 	default:
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Unsupported credential format")
 		return
@@ -146,15 +153,40 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp := credential.Build(session, validation, req.Types, req.Format)
-	log.Ctx(r.Context()).Info().Str("credential_id", resp.Credential.ID).Msg("credential issued")
+	resp := credential.Build(session, validation, req.Types, string(req.Format))
+
+	credentialsIssued.Add(r.Context(), 1, metric.WithAttributes(attribute.String("format", string(req.Format))))
+	qualityTierGauge.Add(r.Context(), 1, metric.WithAttributes(attribute.String("tier", validation.QualityLevel)))
+
+	log.Ctx(r.Context()).Info().Str("credential_id", resp.Credential.Id).Msg("credential issued")
 	common.WriteJSON(w, r, http.StatusOK, resp)
 }
 
 func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
-	// TODO: add HMAC-SHA256 signature verification once webhook secret is configured
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Failed to read request body")
+		return
+	}
+
+	// Verify HMAC-SHA256 signature when webhook secret is configured
+	if s.webhookSecret != "" {
+		sig := r.Header.Get("X-HMAC-Signature")
+		if sig == "" {
+			common.WriteError(w, r, http.StatusUnauthorized, "missing_signature", "Missing X-HMAC-Signature header")
+			return
+		}
+		mac := hmac.New(sha256.New, []byte(s.webhookSecret))
+		mac.Write(body)
+		expected := hex.EncodeToString(mac.Sum(nil))
+		if !hmac.Equal([]byte(sig), []byte(expected)) {
+			common.WriteError(w, r, http.StatusUnauthorized, "invalid_signature", "Webhook signature verification failed")
+			return
+		}
+	}
+
 	var session veriff.Session
-	if err := json.NewDecoder(r.Body).Decode(&session); err != nil {
+	if err := json.Unmarshal(body, &session); err != nil {
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
 		return
 	}
@@ -165,6 +197,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger := log.Ctx(r.Context())
+	webhooksReceived.Add(r.Context(), 1, metric.WithAttributes(attribute.String("status", session.Status)))
 	logger.Info().Str("session_id", session.SessionID).Str("status", session.Status).Msg("webhook received")
 
 	if session.Status != "approved" {
@@ -180,6 +213,7 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.sessions.Put(session)
+	webhooksStored.Add(r.Context(), 1, metric.WithAttributes(attribute.String("quality_level", validation.QualityLevel)))
 	logger.Info().
 		Str("session_id", session.SessionID).
 		Str("quality_level", validation.QualityLevel).

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestHealthCheck(t *testing.T) {
 
 func TestSubmitHash_Success(t *testing.T) {
 	s := NewServer(testCfg)
-	body, _ := json.Marshal(submitRequest{ReceiptHash: "urn:sha256:abc123"})
+	body, _ := json.Marshal(models.ReceiptHashRequest{ReceiptHash: "urn:sha256:abc123"})
 	req := httptest.NewRequest(http.MethodPost, "/receipts/hash", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 
