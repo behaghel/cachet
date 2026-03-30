@@ -4,9 +4,9 @@ info:
   title: Cachet Trust Provider API
   description: |
     OpenAPI specification for Cachet trust provider services.
-    This schema ensures compatibility between Go backend and Kotlin/mobile 
-    frontend.
-  version: 1.0.0
+    This schema is the single source of truth for all service contracts.
+    Per-service specs are derived mechanically via tags.
+  version: 1.1.0
   contact:
     name: Cachet Team
     url: https://cachet.id
@@ -16,19 +16,38 @@ info:
 
 servers:
   - url: http://localhost:8090
-    description: Local development server
+    description: Issuance Gateway (local)
+  - url: http://localhost:8081
+    description: Verifier (local)
+  - url: http://localhost:8082
+    description: Registry (local)
+  - url: http://localhost:8083
+    description: Receipts Log (local)
+
+tags:
+  - name: issuance-gateway
+    description: OpenID4VCI credential issuance and Veriff integration
+  - name: verifier
+    description: Trust Pack verification
+  - name: registry
+    description: Policy and pack registry
+  - name: receipts-log
+    description: Consent receipts and transparency log
 
 paths:
+  # ── Issuance Gateway ──────────────────────────────────────────────
+
   /oauth/token:
     post:
       summary: Request OAuth2 access token
-      description: OAuth2 client credentials flow for obtaining access tokens
+      description: OAuth2 client credentials flow per RFC 6749
       operationId: requestToken
+      tags: [issuance-gateway]
       security: []
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: "#/components/schemas/TokenRequest"
       responses:
@@ -50,6 +69,7 @@ paths:
       summary: Request verifiable credential
       description: Issue a verifiable credential using OpenID4VCI protocol
       operationId: requestCredential
+      tags: [issuance-gateway]
       security:
         - bearerAuth: []
       requestBody:
@@ -82,8 +102,9 @@ paths:
     post:
       summary: Veriff webhook endpoint
       description: Receives verification status updates from Veriff
-      security: []
       operationId: handleVeriffWebhook
+      tags: [issuance-gateway]
+      security: []
       requestBody:
         required: true
         content:
@@ -92,15 +113,151 @@ paths:
               $ref: "#/components/schemas/VeriffSession"
       responses:
         "200":
-          description: Webhook processed successfully
+          description: Webhook processed — session approved and stored
         "202":
-          description: Webhook acknowledged but not processed
+          description: >-
+            Webhook acknowledged — session not approved
+            or failed quality validation
 
-  /healthz:
+  # ── Verifier ───────────────────────────────────────────────────────
+
+  /packs:
+    get:
+      summary: List available Trust Packs
+      description: Returns all registered Trust Pack definitions
+      operationId: listPacks
+      tags: [verifier]
+      security: []
+      responses:
+        "200":
+          description: List of available Trust Packs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pack"
+
+  /presentations/verify:
+    post:
+      summary: Verify a credential presentation
+      description: Verifies a credential bundle against a registered policy
+      operationId: verifyPresentation
+      tags: [verifier]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Registry ───────────────────────────────────────────────────────
+
+  /policy/manifest:
+    get:
+      summary: Get policy manifest
+      description: Returns the signed policy manifest in YAML format
+      operationId: getPolicyManifest
+      tags: [registry]
+      security: []
+      responses:
+        "200":
+          description: Policy manifest
+          content:
+            text/yaml:
+              schema:
+                type: string
+                description: |
+                  YAML document with fields: id, version, issuedAt, signingDid.
+                  Example:
+                    id: policy.cachet.manifest
+                    version: 0.1.0
+                    issuedAt: 2025-08-31T00:00:00Z
+                    signingDid: did:web:cachet.id#keys-1
+
+  # ── Receipts Log ───────────────────────────────────────────────────
+
+  /receipts/hash:
+    post:
+      summary: Submit consent receipt hash
+      description: Submits a salted hash of a consent receipt for anchoring
+      operationId: submitReceiptHash
+      tags: [receipts-log]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiptHashRequest"
+      responses:
+        "200":
+          description: Receipt hash accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptHashResponse"
+
+  /log/sth:
+    get:
+      summary: Get signed tree head
+      description: Returns the current signed tree head of the transparency log
+      operationId: getSignedTreeHead
+      tags: [receipts-log]
+      security: []
+      responses:
+        "200":
+          description: Current signed tree head
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedTreeHead"
+
+  /log/proof:
+    get:
+      summary: Get inclusion proof
+      description: Returns an inclusion proof for a receipt hash
+      operationId: getInclusionProof
+      tags: [receipts-log]
+      security: []
+      parameters:
+        - name: hash
+          in: query
+          description: Receipt hash to prove inclusion for
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Inclusion proof result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InclusionProof"
+
+  # ── Health (all services) ──────────────────────────────────────────
+
+  /health:
     get:
       summary: Health check endpoint
-      description: Returns service health status
+      description: >-
+        Returns service health status.
+        All services expose this endpoint.
       operationId: healthCheck
+      tags: [issuance-gateway, verifier, registry, receipts-log]
       security: []
       responses:
         "200":
@@ -119,9 +276,11 @@ components:
       bearerFormat: JWT
 
   schemas:
-    # OAuth2 / OpenID4VCI Types
+    # ── OAuth2 / OpenID4VCI ────────────────────────────────────────
+
     TokenRequest:
       type: object
+      description: OAuth2 client credentials request per RFC 6749
       required: [grant_type, client_id, scope]
       properties:
         grant_type:
@@ -136,7 +295,6 @@ components:
           type: string
           description: Requested scope
           example: "credential_issuance"
-      additionalProperties: false
 
     TokenResponse:
       type: object
@@ -145,11 +303,9 @@ components:
         access_token:
           type: string
           description: JWT access token
-          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
         token_type:
           type: string
           enum: [Bearer]
-          description: Token type
         expires_in:
           type: integer
           description: Token expiration time in seconds
@@ -157,8 +313,6 @@ components:
         scope:
           type: string
           description: Granted scope
-          example: "credential_issuance"
-      additionalProperties: false
 
     CredentialRequest:
       type: object
@@ -179,7 +333,6 @@ components:
           type: object
           description: Cryptographic proof (optional)
           additionalProperties: true
-      additionalProperties: false
 
     CredentialResponse:
       type: object
@@ -191,9 +344,9 @@ components:
           type: string
           description: Credential format used
           example: "jwt_vc"
-      additionalProperties: false
 
-    # W3C Verifiable Credentials Types
+    # ── W3C Verifiable Credentials ─────────────────────────────────
+
     VerifiableCredential:
       type: object
       required: [id, "@context", type, issuer, issuanceDate, credentialSubject]
@@ -201,13 +354,13 @@ components:
         id:
           type: string
           description: Unique credential identifier
-          pattern: "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-          example: "urn:uuid:3fc541a8-103c-4f9c-8d54-9a7a72aed350"
+          pattern: >-
+            ^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-
+            [0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
         "@context":
           type: array
           items:
             type: string
-          description: JSON-LD context
           minItems: 1
           example:
             - "https://www.w3.org/2018/credentials/v1"
@@ -216,7 +369,6 @@ components:
           type: array
           items:
             type: string
-          description: Credential types
           minItems: 1
           example: ["VerifiableCredential", "IdentityCredential"]
         issuer:
@@ -227,39 +379,82 @@ components:
         issuanceDate:
           type: string
           format: date-time
-          description: When the credential was issued
-          example: "2025-09-01T21:27:40+02:00"
         expirationDate:
           type: string
           format: date-time
           nullable: true
-          description: When the credential expires (optional)
-          example: "2026-09-01T21:27:40+02:00"
         credentialSubject:
-          type: object
-          description: Claims about the subject
-          required: [id]
-          properties:
-            id:
-              type: string
-              description: Subject DID
-              example: "did:example:holder"
-            verified:
-              type: boolean
-              description: Whether identity is verified
-              example: true
-            verification_method:
-              type: string
-              description: Verification method used
-              example: "veriff"
-            verification_level:
-              type: string
-              description: Level of verification performed
-              example: "identity_document_liveness"
-          additionalProperties: true
+          $ref: "#/components/schemas/CredentialSubject"
         credentialStatus:
           $ref: "#/components/schemas/CredentialStatus"
-      additionalProperties: false
+
+    CredentialSubject:
+      type: object
+      description: Claims about the credential subject
+      required: [id]
+      properties:
+        id:
+          type: string
+          description: Subject DID
+          example: "did:example:holder"
+        personalData:
+          type: object
+          description: Personal data (selective disclosure ready)
+          properties:
+            age:
+              type: integer
+              description: Subject's age in years
+            nationality:
+              type: string
+              description: ISO country code
+            documentType:
+              type: string
+              description: Type of identity document
+        verificationLevel:
+          type: string
+          description: Level of verification achieved
+          enum: [basic, standard, premium, gold]
+        verified:
+          type: boolean
+          description: Whether identity is verified
+        verificationMethod:
+          type: string
+          description: Verification method used
+          example: "veriff"
+        verificationMetrics:
+          type: object
+          description: Quality metrics from verification
+          properties:
+            overallConfidence:
+              type: number
+              format: double
+            livenessScore:
+              type: number
+              format: double
+            documentAuthenticity:
+              type: number
+              format: double
+            riskScore:
+              type: number
+              format: double
+            sessionTimestamp:
+              type: string
+              format: date-time
+        evidence:
+          type: array
+          description: Verification evidence for audit trail
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              sessionId:
+                type: string
+              verifier:
+                type: string
+              status:
+                type: string
+      additionalProperties: true
 
     CredentialStatus:
       type: object
@@ -269,15 +464,12 @@ components:
           type: string
           format: uri
           description: Status list entry URI
-          example: "https://cachet.id/status/1#1e99bbcd-5be8-4bf4-9dff-88cf13fb25b8"
         type:
           type: string
-          description: Status mechanism type
           enum: [StatusList2021Entry]
-          example: "StatusList2021Entry"
-      additionalProperties: false
 
-    # Veriff Integration Types
+    # ── Veriff Integration ─────────────────────────────────────────
+
     VeriffSession:
       type: object
       required: [session_id, status]
@@ -288,42 +480,148 @@ components:
           example: "veriff-session-1234567890"
         status:
           type: string
-          description: Verification status
           enum: [approved, declined, expired, abandoned]
-          example: "approved"
         person:
           type: object
           properties:
             firstName:
               type: string
-              example: "John"
             lastName:
               type: string
-              example: "Doe"
             dateOfBirth:
               type: string
               format: date
-              example: "1990-01-15"
+            confidence:
+              type: number
+              format: double
+              description: Person identity confidence score
         document:
           type: object
           properties:
             number:
               type: string
-              description: Document number
-              example: "P123456789"
             type:
               type: string
-              description: Document type
               enum: [passport, driver_license, national_id]
-              example: "passport"
             country:
               type: string
               description: ISO country code
               pattern: "^[A-Z]{2}$"
-              example: "US"
-      additionalProperties: false
+            authenticity:
+              type: number
+              format: double
+              description: Document authenticity score
+        verification:
+          type: object
+          description: Verification quality metrics
+          properties:
+            livenessScore:
+              type: number
+              format: double
+              description: Liveness check score (0.0-1.0)
+            overallConfidence:
+              type: number
+              format: double
+              description: Overall verification confidence (0.0-1.0)
+            riskScore:
+              type: number
+              format: double
+              description: Risk score (0.0-1.0, higher is riskier)
+            timestamp:
+              type: string
+              format: date-time
+              description: When verification was performed
 
-    # Error Response
+    # ── Verifier ───────────────────────────────────────────────────
+
+    Pack:
+      type: object
+      required: [id, version, name]
+      properties:
+        id:
+          type: string
+          description: Pack identifier with version suffix
+          example: "pack.childcare.readiness@0.1.0"
+        version:
+          type: string
+          description: Semantic version
+          example: "0.1.0"
+        name:
+          type: string
+          description: Human-readable pack name
+          example: "Childcare Readiness"
+
+    VerifyRequest:
+      type: object
+      required: [policyId, bundle]
+      properties:
+        policyId:
+          type: string
+          description: Policy identifier to verify against
+          example: "pack.childcare.readiness@0.1.0"
+        bundle:
+          type: object
+          description: Credential presentation bundle
+          additionalProperties: true
+
+    VerifyResponse:
+      type: object
+      required: [badge, predicates, freshness]
+      properties:
+        badge:
+          type: string
+          description: Verification badge result
+          example: "Childcare Ready"
+        predicates:
+          type: array
+          items:
+            type: string
+          description: Predicates that were proven
+          example: ["age.ge.18", "identity.verified"]
+        freshness:
+          type: string
+          description: Freshness status of the credentials
+          enum: [ok, stale, expired]
+
+    # ── Receipts Log ───────────────────────────────────────────────
+
+    ReceiptHashRequest:
+      type: object
+      required: [receiptHash]
+      properties:
+        receiptHash:
+          type: string
+          description: SHA-256 hash of the consent receipt
+
+    ReceiptHashResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        hash:
+          type: string
+        anchored:
+          type: boolean
+
+    SignedTreeHead:
+      type: object
+      properties:
+        treeSize:
+          type: integer
+        rootHash:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    InclusionProof:
+      type: object
+      properties:
+        included:
+          type: boolean
+
+    # ── Error ──────────────────────────────────────────────────────
+
     Error:
       type: object
       required: [error, message]
@@ -335,11 +633,7 @@ components:
         message:
           type: string
           description: Human-readable error description
-          example: "Invalid or missing grant_type parameter"
         details:
           type: object
           description: Additional error details
           additionalProperties: true
-      additionalProperties: false
-# Test comment
-# Test pre-commit hooks

@@ -1,6 +1,13 @@
 inputs:
+  # Pin to stable NixOS release for reliable binary cache hits.
+  # Rolling/unstable channels often lack cached binaries, forcing source builds.
+  nixpkgs:
+    url: github:NixOS/nixpkgs/nixos-25.11
   git-hooks:
     url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
   mk-shell-bin:
     url: github:rrbutani/nix-mk-shell-bin
   nix2container:

@@ -6,11 +6,12 @@ let
 in
 {
     
-    # Languages / toolchains
-    languages.go.enable = true;
+  # Languages / toolchains
+  languages.go.enable = true;
   languages.javascript.enable = true;
-  languages.java.enable = true;
-  languages.java.gradle.enable = enableAndroid;  # Only needed for Android
+  languages.javascript.package = pkgs.nodejs_20;
+  languages.java.enable = enableAndroid;    # Only needed for Android builds
+  languages.java.gradle.enable = enableAndroid;
   claude.code.enable = true;
 
   # Android development (conditional)
@@ -24,29 +25,29 @@ in
     systemImages.enable = true;
   };
 
-  # Extra packages available in the shell
+  # Packages needed for daily development.
+  # GCP tools (gcloud, terraform) are NOT included — install them
+  # separately or add when needed. docker/docker-compose are system-level.
   packages = with pkgs; [
-    nodejs_20
+    # Node extras (Node itself comes from languages.javascript)
     pnpm
-    nodePackages.typescript
     nodePackages.prettier
-    yamllint
-    git
+
+    # Go tooling
     golangci-lint
     gosec
-    jq
-    openssl
-    just
-    docker
-    docker-compose
-    # Schema and code generation tools
     oapi-codegen
+
+    # Schema & code generation
     openapi-generator-cli
     redocly
-    # GCP deployment tools
-    google-cloud-sdk
-    terraform
-    # SecretSpec binary
+    yamllint
+    yq-go
+
+    # General utilities
+    git
+    jq
+    openssl
     secretspec
   ];
 
@@ -230,6 +231,22 @@ in
     redocly lint schemas/openapi.yaml
     echo "✅ Schema validation passed!"
   '';
+  scripts."schema:split".exec = ''
+    echo "🔀 Splitting spec by service tags..."
+    set -euo pipefail
+    mkdir -p api
+
+    for tag in issuance-gateway verifier registry receipts-log; do
+      echo "  Extracting $tag..."
+      # Use yq to filter paths that contain the tag, keeping components intact
+      yq eval "
+        .paths |= with_entries(select(.value[].tags // [] | any(. == \"$tag\")))
+      " schemas/openapi.yaml > "api/openapi.$tag.yaml"
+    done
+
+    echo "✅ Per-service specs generated in api/"
+  '';
+
   scripts."schema:generate".exec = ''
     echo "🔧 Generating code from OpenAPI schema..."
     
@@ -332,6 +349,10 @@ in
 
   # GCP deployment scripts
   scripts."gcp:auth".exec = ''
+    if ! command -v gcloud &> /dev/null; then
+      echo "❌ gcloud CLI not found. Install it: https://cloud.google.com/sdk/docs/install"
+      exit 1
+    fi
     echo "🔐 Authenticating with Google Cloud..."
     gcloud auth login
     echo "✅ Successfully authenticated with GCP"
