@@ -27,6 +27,14 @@ const (
 	StatusList2021Entry CredentialStatusType = "StatusList2021Entry"
 )
 
+// Defines values for CredentialSubjectVerificationLevel.
+const (
+	Basic    CredentialSubjectVerificationLevel = "basic"
+	Gold     CredentialSubjectVerificationLevel = "gold"
+	Premium  CredentialSubjectVerificationLevel = "premium"
+	Standard CredentialSubjectVerificationLevel = "standard"
+)
+
 // Defines values for TokenRequestGrantType.
 const (
 	ClientCredentials TokenRequestGrantType = "client_credentials"
@@ -46,10 +54,17 @@ const (
 
 // Defines values for VeriffSessionStatus.
 const (
-	Abandoned VeriffSessionStatus = "abandoned"
-	Approved  VeriffSessionStatus = "approved"
-	Declined  VeriffSessionStatus = "declined"
-	Expired   VeriffSessionStatus = "expired"
+	VeriffSessionStatusAbandoned VeriffSessionStatus = "abandoned"
+	VeriffSessionStatusApproved  VeriffSessionStatus = "approved"
+	VeriffSessionStatusDeclined  VeriffSessionStatus = "declined"
+	VeriffSessionStatusExpired   VeriffSessionStatus = "expired"
+)
+
+// Defines values for VerifyResponseFreshness.
+const (
+	VerifyResponseFreshnessExpired VerifyResponseFreshness = "expired"
+	VerifyResponseFreshnessOk      VerifyResponseFreshness = "ok"
+	VerifyResponseFreshnessStale   VerifyResponseFreshness = "stale"
 )
 
 // CredentialRequest defines model for CredentialRequest.
@@ -78,14 +93,60 @@ type CredentialResponse struct {
 // CredentialStatus defines model for CredentialStatus.
 type CredentialStatus struct {
 	// Id Status list entry URI
-	Id string `json:"id"`
-
-	// Type Status mechanism type
+	Id   string               `json:"id"`
 	Type CredentialStatusType `json:"type"`
 }
 
-// CredentialStatusType Status mechanism type
+// CredentialStatusType defines model for CredentialStatus.Type.
 type CredentialStatusType string
+
+// CredentialSubject Claims about the credential subject
+type CredentialSubject struct {
+	// Evidence Verification evidence for audit trail
+	Evidence *[]struct {
+		SessionId *string `json:"sessionId,omitempty"`
+		Status    *string `json:"status,omitempty"`
+		Type      *string `json:"type,omitempty"`
+		Verifier  *string `json:"verifier,omitempty"`
+	} `json:"evidence,omitempty"`
+
+	// Id Subject DID
+	Id string `json:"id"`
+
+	// PersonalData Personal data (selective disclosure ready)
+	PersonalData *struct {
+		// Age Subject's age in years
+		Age *int `json:"age,omitempty"`
+
+		// DocumentType Type of identity document
+		DocumentType *string `json:"documentType,omitempty"`
+
+		// Nationality ISO country code
+		Nationality *string `json:"nationality,omitempty"`
+	} `json:"personalData,omitempty"`
+
+	// VerificationLevel Level of verification achieved
+	VerificationLevel *CredentialSubjectVerificationLevel `json:"verificationLevel,omitempty"`
+
+	// VerificationMethod Verification method used
+	VerificationMethod *string `json:"verificationMethod,omitempty"`
+
+	// VerificationMetrics Quality metrics from verification
+	VerificationMetrics *struct {
+		DocumentAuthenticity *float64   `json:"documentAuthenticity,omitempty"`
+		LivenessScore        *float64   `json:"livenessScore,omitempty"`
+		OverallConfidence    *float64   `json:"overallConfidence,omitempty"`
+		RiskScore            *float64   `json:"riskScore,omitempty"`
+		SessionTimestamp     *time.Time `json:"sessionTimestamp,omitempty"`
+	} `json:"verificationMetrics,omitempty"`
+
+	// Verified Whether identity is verified
+	Verified             *bool                  `json:"verified,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// CredentialSubjectVerificationLevel Level of verification achieved
+type CredentialSubjectVerificationLevel string
 
 // Error defines model for Error.
 type Error struct {
@@ -99,7 +160,44 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// TokenRequest defines model for TokenRequest.
+// InclusionProof defines model for InclusionProof.
+type InclusionProof struct {
+	Included *bool `json:"included,omitempty"`
+}
+
+// Pack defines model for Pack.
+type Pack struct {
+	// Id Pack identifier with version suffix
+	Id string `json:"id"`
+
+	// Name Human-readable pack name
+	Name string `json:"name"`
+
+	// Version Semantic version
+	Version string `json:"version"`
+}
+
+// ReceiptHashRequest defines model for ReceiptHashRequest.
+type ReceiptHashRequest struct {
+	// ReceiptHash SHA-256 hash of the consent receipt
+	ReceiptHash string `json:"receiptHash"`
+}
+
+// ReceiptHashResponse defines model for ReceiptHashResponse.
+type ReceiptHashResponse struct {
+	Accepted *bool   `json:"accepted,omitempty"`
+	Anchored *bool   `json:"anchored,omitempty"`
+	Hash     *string `json:"hash,omitempty"`
+}
+
+// SignedTreeHead defines model for SignedTreeHead.
+type SignedTreeHead struct {
+	RootHash  *string    `json:"rootHash,omitempty"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+	TreeSize  *int       `json:"treeSize,omitempty"`
+}
+
+// TokenRequest OAuth2 client credentials request per RFC 6749
 type TokenRequest struct {
 	// ClientId Client identifier
 	ClientId string `json:"client_id"`
@@ -123,119 +221,152 @@ type TokenResponse struct {
 	ExpiresIn int `json:"expires_in"`
 
 	// Scope Granted scope
-	Scope string `json:"scope"`
-
-	// TokenType Token type
+	Scope     string                 `json:"scope"`
 	TokenType TokenResponseTokenType `json:"token_type"`
 }
 
-// TokenResponseTokenType Token type
+// TokenResponseTokenType defines model for TokenResponse.TokenType.
 type TokenResponseTokenType string
 
 // VeriffSession defines model for VeriffSession.
 type VeriffSession struct {
 	Document *struct {
+		// Authenticity Document authenticity score
+		Authenticity *float64 `json:"authenticity,omitempty"`
+
 		// Country ISO country code
-		Country *string `json:"country,omitempty"`
-
-		// Number Document number
-		Number *string `json:"number,omitempty"`
-
-		// Type Document type
-		Type *VeriffSessionDocumentType `json:"type,omitempty"`
+		Country *string                    `json:"country,omitempty"`
+		Number  *string                    `json:"number,omitempty"`
+		Type    *VeriffSessionDocumentType `json:"type,omitempty"`
 	} `json:"document,omitempty"`
 	Person *struct {
+		// Confidence Person identity confidence score
+		Confidence  *float64            `json:"confidence,omitempty"`
 		DateOfBirth *openapi_types.Date `json:"dateOfBirth,omitempty"`
 		FirstName   *string             `json:"firstName,omitempty"`
 		LastName    *string             `json:"lastName,omitempty"`
 	} `json:"person,omitempty"`
 
 	// SessionId Veriff session identifier
-	SessionId string `json:"session_id"`
+	SessionId string              `json:"session_id"`
+	Status    VeriffSessionStatus `json:"status"`
 
-	// Status Verification status
-	Status VeriffSessionStatus `json:"status"`
+	// Verification Verification quality metrics
+	Verification *struct {
+		// LivenessScore Liveness check score (0.0-1.0)
+		LivenessScore *float64 `json:"livenessScore,omitempty"`
+
+		// OverallConfidence Overall verification confidence (0.0-1.0)
+		OverallConfidence *float64 `json:"overallConfidence,omitempty"`
+
+		// RiskScore Risk score (0.0-1.0, higher is riskier)
+		RiskScore *float64 `json:"riskScore,omitempty"`
+
+		// Timestamp When verification was performed
+		Timestamp *time.Time `json:"timestamp,omitempty"`
+	} `json:"verification,omitempty"`
 }
 
-// VeriffSessionDocumentType Document type
+// VeriffSessionDocumentType defines model for VeriffSession.Document.Type.
 type VeriffSessionDocumentType string
 
-// VeriffSessionStatus Verification status
+// VeriffSessionStatus defines model for VeriffSession.Status.
 type VeriffSessionStatus string
 
 // VerifiableCredential defines model for VerifiableCredential.
 type VerifiableCredential struct {
-	// Context JSON-LD context
 	Context          []string          `json:"@context"`
 	CredentialStatus *CredentialStatus `json:"credentialStatus,omitempty"`
 
-	// CredentialSubject Claims about the subject
-	CredentialSubject VerifiableCredential_CredentialSubject `json:"credentialSubject"`
-
-	// ExpirationDate When the credential expires (optional)
-	ExpirationDate *time.Time `json:"expirationDate"`
+	// CredentialSubject Claims about the credential subject
+	CredentialSubject CredentialSubject `json:"credentialSubject"`
+	ExpirationDate    *time.Time        `json:"expirationDate"`
 
 	// Id Unique credential identifier
-	Id string `json:"id"`
-
-	// IssuanceDate When the credential was issued
+	Id           string    `json:"id"`
 	IssuanceDate time.Time `json:"issuanceDate"`
 
 	// Issuer Credential issuer DID
-	Issuer string `json:"issuer"`
-
-	// Type Credential types
-	Type []string `json:"type"`
+	Issuer string   `json:"issuer"`
+	Type   []string `json:"type"`
 }
 
-// VerifiableCredential_CredentialSubject Claims about the subject
-type VerifiableCredential_CredentialSubject struct {
-	// Id Subject DID
-	Id string `json:"id"`
+// VerifyRequest defines model for VerifyRequest.
+type VerifyRequest struct {
+	// Bundle Credential presentation bundle
+	Bundle map[string]interface{} `json:"bundle"`
 
-	// VerificationLevel Level of verification performed
-	VerificationLevel *string `json:"verification_level,omitempty"`
+	// PolicyId Policy identifier to verify against
+	PolicyId string `json:"policyId"`
+}
 
-	// VerificationMethod Verification method used
-	VerificationMethod *string `json:"verification_method,omitempty"`
+// VerifyResponse defines model for VerifyResponse.
+type VerifyResponse struct {
+	// Badge Verification badge result
+	Badge string `json:"badge"`
 
-	// Verified Whether identity is verified
-	Verified             *bool                  `json:"verified,omitempty"`
-	AdditionalProperties map[string]interface{} `json:"-"`
+	// Freshness Freshness status of the credentials
+	Freshness VerifyResponseFreshness `json:"freshness"`
+
+	// Predicates Predicates that were proven
+	Predicates []string `json:"predicates"`
+}
+
+// VerifyResponseFreshness Freshness status of the credentials
+type VerifyResponseFreshness string
+
+// GetInclusionProofParams defines parameters for GetInclusionProof.
+type GetInclusionProofParams struct {
+	// Hash Receipt hash to prove inclusion for
+	Hash *string `form:"hash,omitempty" json:"hash,omitempty"`
 }
 
 // RequestCredentialJSONRequestBody defines body for RequestCredential for application/json ContentType.
 type RequestCredentialJSONRequestBody = CredentialRequest
 
-// RequestTokenJSONRequestBody defines body for RequestToken for application/json ContentType.
-type RequestTokenJSONRequestBody = TokenRequest
+// RequestTokenFormdataRequestBody defines body for RequestToken for application/x-www-form-urlencoded ContentType.
+type RequestTokenFormdataRequestBody = TokenRequest
+
+// VerifyPresentationJSONRequestBody defines body for VerifyPresentation for application/json ContentType.
+type VerifyPresentationJSONRequestBody = VerifyRequest
+
+// SubmitReceiptHashJSONRequestBody defines body for SubmitReceiptHash for application/json ContentType.
+type SubmitReceiptHashJSONRequestBody = ReceiptHashRequest
 
 // HandleVeriffWebhookJSONRequestBody defines body for HandleVeriffWebhook for application/json ContentType.
 type HandleVeriffWebhookJSONRequestBody = VeriffSession
 
-// Getter for additional properties for VerifiableCredential_CredentialSubject. Returns the specified
+// Getter for additional properties for CredentialSubject. Returns the specified
 // element and whether it was found
-func (a VerifiableCredential_CredentialSubject) Get(fieldName string) (value interface{}, found bool) {
+func (a CredentialSubject) Get(fieldName string) (value interface{}, found bool) {
 	if a.AdditionalProperties != nil {
 		value, found = a.AdditionalProperties[fieldName]
 	}
 	return
 }
 
-// Setter for additional properties for VerifiableCredential_CredentialSubject
-func (a *VerifiableCredential_CredentialSubject) Set(fieldName string, value interface{}) {
+// Setter for additional properties for CredentialSubject
+func (a *CredentialSubject) Set(fieldName string, value interface{}) {
 	if a.AdditionalProperties == nil {
 		a.AdditionalProperties = make(map[string]interface{})
 	}
 	a.AdditionalProperties[fieldName] = value
 }
 
-// Override default JSON handling for VerifiableCredential_CredentialSubject to handle AdditionalProperties
-func (a *VerifiableCredential_CredentialSubject) UnmarshalJSON(b []byte) error {
+// Override default JSON handling for CredentialSubject to handle AdditionalProperties
+func (a *CredentialSubject) UnmarshalJSON(b []byte) error {
 	object := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
+	}
+
+	if raw, found := object["evidence"]; found {
+		err = json.Unmarshal(raw, &a.Evidence)
+		if err != nil {
+			return fmt.Errorf("error reading 'evidence': %w", err)
+		}
+		delete(object, "evidence")
 	}
 
 	if raw, found := object["id"]; found {
@@ -246,20 +377,36 @@ func (a *VerifiableCredential_CredentialSubject) UnmarshalJSON(b []byte) error {
 		delete(object, "id")
 	}
 
-	if raw, found := object["verification_level"]; found {
-		err = json.Unmarshal(raw, &a.VerificationLevel)
+	if raw, found := object["personalData"]; found {
+		err = json.Unmarshal(raw, &a.PersonalData)
 		if err != nil {
-			return fmt.Errorf("error reading 'verification_level': %w", err)
+			return fmt.Errorf("error reading 'personalData': %w", err)
 		}
-		delete(object, "verification_level")
+		delete(object, "personalData")
 	}
 
-	if raw, found := object["verification_method"]; found {
+	if raw, found := object["verificationLevel"]; found {
+		err = json.Unmarshal(raw, &a.VerificationLevel)
+		if err != nil {
+			return fmt.Errorf("error reading 'verificationLevel': %w", err)
+		}
+		delete(object, "verificationLevel")
+	}
+
+	if raw, found := object["verificationMethod"]; found {
 		err = json.Unmarshal(raw, &a.VerificationMethod)
 		if err != nil {
-			return fmt.Errorf("error reading 'verification_method': %w", err)
+			return fmt.Errorf("error reading 'verificationMethod': %w", err)
 		}
-		delete(object, "verification_method")
+		delete(object, "verificationMethod")
+	}
+
+	if raw, found := object["verificationMetrics"]; found {
+		err = json.Unmarshal(raw, &a.VerificationMetrics)
+		if err != nil {
+			return fmt.Errorf("error reading 'verificationMetrics': %w", err)
+		}
+		delete(object, "verificationMetrics")
 	}
 
 	if raw, found := object["verified"]; found {
@@ -284,27 +431,48 @@ func (a *VerifiableCredential_CredentialSubject) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Override default JSON handling for VerifiableCredential_CredentialSubject to handle AdditionalProperties
-func (a VerifiableCredential_CredentialSubject) MarshalJSON() ([]byte, error) {
+// Override default JSON handling for CredentialSubject to handle AdditionalProperties
+func (a CredentialSubject) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	if a.Evidence != nil {
+		object["evidence"], err = json.Marshal(a.Evidence)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'evidence': %w", err)
+		}
+	}
 
 	object["id"], err = json.Marshal(a.Id)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'id': %w", err)
 	}
 
-	if a.VerificationLevel != nil {
-		object["verification_level"], err = json.Marshal(a.VerificationLevel)
+	if a.PersonalData != nil {
+		object["personalData"], err = json.Marshal(a.PersonalData)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'verification_level': %w", err)
+			return nil, fmt.Errorf("error marshaling 'personalData': %w", err)
+		}
+	}
+
+	if a.VerificationLevel != nil {
+		object["verificationLevel"], err = json.Marshal(a.VerificationLevel)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'verificationLevel': %w", err)
 		}
 	}
 
 	if a.VerificationMethod != nil {
-		object["verification_method"], err = json.Marshal(a.VerificationMethod)
+		object["verificationMethod"], err = json.Marshal(a.VerificationMethod)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'verification_method': %w", err)
+			return nil, fmt.Errorf("error marshaling 'verificationMethod': %w", err)
+		}
+	}
+
+	if a.VerificationMetrics != nil {
+		object["verificationMetrics"], err = json.Marshal(a.VerificationMetrics)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'verificationMetrics': %w", err)
 		}
 	}
 

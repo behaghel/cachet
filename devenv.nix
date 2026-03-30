@@ -3,6 +3,10 @@
 let
   # Enable Android only when DEVENV_ENABLE_ANDROID is set
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
+
+  # Service list — single source of truth for all per-service scripts
+  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" ];
+  forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
 in
 {
     
@@ -67,26 +71,54 @@ in
   scripts."dev:secrets:bootstrap".exec = "./scripts/bootstrap-dev-secrets.sh";
   scripts."dev:env:bootstrap".exec = "./scripts/bootstrap-dev-secrets.sh";
   scripts."dev:devenv:diagnose".exec = "./scripts/diagnose-devenv-shell.sh";
+  scripts."dev:help".exec = ''
+    echo "Cachet Development Commands"
+    echo "==========================="
+    echo ""
+    echo "Backend:"
+    echo "  dev:services        Start all services (devenv up)"
+    echo "  dev:stop            Stop all services"
+    echo "  fmt:go              Format Go code"
+    echo "  lint:go             Lint all Go services"
+    echo "  test:all            Run all tests with -race"
+    echo "  test:coverage       Run tests with coverage reports"
+    echo "  test:integration    Health check all running services"
+    echo ""
+    echo "Schema:"
+    echo "  schema:validate     Lint OpenAPI spec"
+    echo "  schema:generate     Regenerate Go + Kotlin types"
+    echo "  schema:split        Generate per-service specs from uber spec"
+    echo "  schema:sync         Full schema sync (validate + generate + test)"
+    echo ""
+    echo "CI:"
+    echo "  ci:full             Run full CI pipeline locally"
+    echo "  ci:test             Tests with coverage + floor check"
+    echo "  ci:lint             Lint all services"
+    echo "  ci:security         Security scan (gosec)"
+    echo ""
+    echo "Android (requires DEVENV_ENABLE_ANDROID=1):"
+    echo "  android:build       Build APK"
+    echo "  android:emulator    Create + start emulator"
+    echo "  android:test-unit   Run unit tests"
+    echo ""
+    echo "GCP (requires gcloud CLI):"
+    echo "  gcp:setup           Setup GCP project"
+    echo "  gcp:deploy:verifier Deploy to Cloud Run"
+    echo "  gcp:status          Check deployment status"
+  '';
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = ''
     set -euo pipefail
-    echo "Linting verifier..."
-    (cd services/verifier && golangci-lint run)
-    echo "Linting registry..."
-    (cd services/registry && golangci-lint run)
-    echo "Linting receipts-log..."
-    (cd services/receipts-log && golangci-lint run)
-    echo "Linting issuance-gateway..."
-    (cd services/issuance-gateway && golangci-lint run)
+    ${forEachService (svc: ''
+    echo "Linting ${svc}..."
+    (cd services/${svc} && golangci-lint run)
+    '')}
     echo "✅ All services passed linting"
   '';
   scripts."ci:deps".exec = ''
     echo "📦 Downloading dependencies..."
-    (cd services/verifier && go mod download)
-    (cd services/registry && go mod download)
-    (cd services/receipts-log && go mod download)
     (cd services/common && go mod download)
-    (cd services/issuance-gateway && go mod download)
+    ${forEachService (svc: "(cd services/${svc} && go mod download)")}
     echo "✅ Dependencies downloaded"
   '';
   scripts."ci:test".exec = ''
@@ -122,18 +154,12 @@ in
   '';
   scripts."ci:lint".exec = ''
     echo "🔍 Running golangci-lint on all services..."
-    set -euo pipefail  # Exit on any error
-    
-    # Use absolute paths and single commands to avoid cd issues in CI
-    echo "Linting verifier..."
-    (cd services/verifier && golangci-lint run)
-    echo "Linting registry..."
-    (cd services/registry && golangci-lint run)
-    echo "Linting receipts-log..."
-    (cd services/receipts-log && golangci-lint run)
-    echo "Linting issuance-gateway..."
-    (cd services/issuance-gateway && golangci-lint run)
-    echo "✅ All services passed linting successfully"
+    set -euo pipefail
+    ${forEachService (svc: ''
+    echo "Linting ${svc}..."
+    (cd services/${svc} && golangci-lint run)
+    '')}
+    echo "✅ All services passed linting"
   '';
   scripts."ci:security".exec = ''
     echo "🔒 Running security scan..."
@@ -150,23 +176,16 @@ in
     
     # Run security scan on each service with proper Go module context
     echo "🔍 Scanning services for security issues..."
-    echo "Scanning verifier..."
-    (cd services/verifier && gosec -exclude-generated ./...)
-    echo "Scanning registry..."
-    (cd services/registry && gosec -exclude-generated ./...)
-    echo "Scanning receipts-log..."
-    (cd services/receipts-log && gosec -exclude-generated ./...)
-    echo "Scanning issuance-gateway..."
-    (cd services/issuance-gateway && gosec -exclude-generated ./...)
+    ${forEachService (svc: ''
+    echo "Scanning ${svc}..."
+    (cd services/${svc} && gosec -exclude-generated ./...)
+    '')}
     
     echo "✅ Security scan completed successfully"
   '';
   scripts."test:all".exec = ''
     echo "Running tests for all services..."
-    (cd services/verifier && go test -v -race ./...) && echo "✅ Verifier tests passed"
-    (cd services/registry && go test -v -race ./...) && echo "✅ Registry tests passed"
-    (cd services/receipts-log && go test -v -race ./...) && echo "✅ Receipts-log tests passed"
-    (cd services/issuance-gateway && go test -v -race ./...) && echo "✅ Issuance gateway tests passed"
+    ${forEachService (svc: ''(cd services/${svc} && go test -v -race ./...) && echo "✅ ${svc} tests passed"'')}
   '';
   scripts."test:coverage".exec = ''
     echo "Running tests with coverage..."
@@ -699,41 +718,9 @@ EOF
       ./scripts/bootstrap-dev-secrets.sh
       echo "⏱ [devenv] Shell init completed at $(date '+%Y-%m-%d %H:%M:%S')"
 
-      echo "✅ Cachet devenv ready with SecretSpec integration."
-      echo "  Backend:"
-      echo "    - Run services:     dev:services (or: devenv up --detach)"
-      echo "    - Stop services:    dev:stop (or: devenv processes stop)"
-      echo "    - Bootstrap env:    dev:env:bootstrap (alias: dev:secrets:bootstrap)"
-      echo "    - Diagnose shell:   dev:devenv:diagnose"
-      echo "    - Format code:      fmt:go"
-      echo "    - Lint (Go):        lint:go"
-      echo "    - Test all:         test:all"
-      echo "    - Test coverage:    test:coverage"
-      echo "    - Integration test: test:integration"
-      echo "  Android:"
-      echo "    - Setup emulator:   android:emulator"
-      echo "    - Build app:        android:build"
-      echo "    - Install app:      android:install"
-      echo "    - Full dev setup:   android:run"
-      echo "    - Run UI tests:     android:test"
-      echo "    - Run unit tests:   android:test-unit"
-      echo "  Schema Management:"
-      echo "    - Validate schema:  schema:validate"
-      echo "    - Generate models:  schema:generate"
-      echo "    - Test schemas:     schema:test"
-      echo "    - Full sync:        schema:sync"
-      echo "    - Integration test: test:schema-integration"
-      echo "  CI/CD:"
-      echo "    - Full CI locally:  ci:full"
-      echo "  GCP Deployment (with SecretSpec):"
-      echo "    - 🏗️ Setup project:     gcp:setup (includes billing check)"
-      echo "    - 🗄️ Setup database:    gcp:db:setup"
-      echo "    - 🔐 Setup secrets:     gcp:secrets:setup (creates .env + Secret Manager)"
-      echo "    - 🚀 Deploy service:    gcp:deploy:verifier (with secrets integration)"
-      echo "    - 📊 Check status:      gcp:status"
-      echo "    - 🧪 Test deployment:  gcp:test-deployment"
-      echo "    - 🔑 Authenticate:     gcp:auth (if needed)"
-      echo "  💡 Secrets managed via SecretSpec - local (.env) + production (Secret Manager)"
+      echo "✅ Cachet devenv ready. Run dev:help for commands."
+      echo "   dev:services — start all   |  test:all — run tests"
+      echo "   dev:stop — stop all        |  ci:full  — full CI locally"
     fi
   '';
 }
