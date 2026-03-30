@@ -63,6 +63,9 @@ mobile/*/.externalNativeBuild/
 # Generated content (these should be committed after generation)
 # generated/
 
+# Per-service API specs (generated from schemas/openapi.yaml via schema:split)
+api/openapi.*.yaml
+
 # DevEnv
 .devenv/
 .devenv*

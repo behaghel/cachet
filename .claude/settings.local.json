@@ -64,7 +64,10 @@
       "Bash(find /Users/hubertbehaghel/ws/veriff/cachet/generated/kotlin -name *.kt -type f)",
       "Bash(find /Users/hubertbehaghel/ws/veriff/cachet/services -name \"*.go\" -type f -exec wc -l {} +)",
       "Bash(go list:*)",
-      "Bash(find /Users/hubertbehaghel/ws/veriff/cachet -type f \\\\\\( -name \"*.go\" -o -name \"*.kt\" \\\\\\) ! -path \"*/.devenv/*\" ! -path \"*/generated/*\" -exec wc -l {} +)"
+      "Bash(find /Users/hubertbehaghel/ws/veriff/cachet -type f \\\\\\( -name \"*.go\" -o -name \"*.kt\" \\\\\\) ! -path \"*/.devenv/*\" ! -path \"*/generated/*\" -exec wc -l {} +)",
+      "Bash(yamllint schemas/openapi.yaml)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\(''schemas/openapi.yaml''\\)\\); print\\(''YAML syntax OK''\\)\")",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
