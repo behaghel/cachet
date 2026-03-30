@@ -7,36 +7,39 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cachet-id/cachet/services/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var testCfg = common.ServerConfig{Name: "verifier-test", Version: "0.0.1", Port: "0"}
+
 func TestNewServer(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 	assert.NotNil(t, server)
 	assert.NotNil(t, server.router)
 	assert.Len(t, server.packs, 2)
 }
 
 func TestHealthCheck(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "ok", w.Body.String())
+	assert.Contains(t, w.Body.String(), `"status":"ok"`)
 }
 
 func TestListPacks(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 
 	req := httptest.NewRequest(http.MethodGet, "/packs", nil)
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
@@ -51,7 +54,7 @@ func TestListPacks(t *testing.T) {
 }
 
 func TestVerifyPresentation_Success(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 
 	reqBody := VerifyRequest{
 		PolicyID: "test.policy",
@@ -65,7 +68,7 @@ func TestVerifyPresentation_Success(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
@@ -81,25 +84,25 @@ func TestVerifyPresentation_Success(t *testing.T) {
 }
 
 func TestVerifyPresentation_InvalidJSON(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 
 	req := httptest.NewRequest(http.MethodPost, "/presentations/verify", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Invalid request body")
+	assert.Contains(t, w.Body.String(), "invalid_request")
 }
 
 func TestRouteNotFound(t *testing.T) {
-	server := NewServer()
+	server := NewServer(testCfg)
 
 	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
 	w := httptest.NewRecorder()
 
-	server.router.ServeHTTP(w, req)
+	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }

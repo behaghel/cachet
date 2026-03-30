@@ -1,26 +1,16 @@
 package main
 
-import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"os"
-)
+import "github.com/cachet-id/cachet/services/common"
 
 func main() {
-	// Configure structured logging
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	if os.Getenv("ENVIRONMENT") == "development" {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	}
+	common.InitLogging()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8090"
+	cfg := common.ServerConfig{
+		Name:    "issuance-gateway",
+		Version: "0.1.0",
+		Port:    "8090",
 	}
 
 	server := NewServer()
-	log.Info().Str("port", port).Msg("Starting issuance gateway service")
-	if err := server.Start(":" + port); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
-	}
+	common.ListenAndServe(server.router, cfg)
 }

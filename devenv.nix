@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   # Enable Android only when DEVENV_ENABLE_ANDROID is set
@@ -51,11 +51,11 @@ in
     secretspec
   ];
 
-  # Useful env vars (used by docs and examples)
-  env.CACHET_VERIFIER_PORT = "8081";
-  env.CACHET_REGISTRY_PORT = "8082";
-  env.CACHET_RECEIPTS_PORT = "8083";
-  env.CACHET_ISSUANCE_PORT = "8090";
+  # Port env vars derived from process port allocation (single source of truth)
+  env.CACHET_VERIFIER_PORT = toString config.processes.verifier.ports.http.value;
+  env.CACHET_REGISTRY_PORT = toString config.processes.registry.ports.http.value;
+  env.CACHET_RECEIPTS_PORT = toString config.processes.receipts.ports.http.value;
+  env.CACHET_ISSUANCE_PORT = toString config.processes.issuance-gateway.ports.http.value;
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -165,10 +165,10 @@ in
     devenv up --detach
     sleep 5
     # Note: Using /health instead of /healthz - Cloud Run intercepts /healthz requests
-    curl -f http://localhost:8081/health && echo "✅ Verifier healthy"
-    curl -f http://localhost:8082/health && echo "✅ Registry healthy" 
-    curl -f http://localhost:8083/health && echo "✅ Receipts healthy"
-    curl -f http://localhost:8090/health && echo "✅ Issuance gateway healthy"
+    curl -f http://localhost:$CACHET_VERIFIER_PORT/health && echo "✅ Verifier healthy"
+    curl -f http://localhost:$CACHET_REGISTRY_PORT/health && echo "✅ Registry healthy"
+    curl -f http://localhost:$CACHET_RECEIPTS_PORT/health && echo "✅ Receipts healthy"
+    curl -f http://localhost:$CACHET_ISSUANCE_PORT/health && echo "✅ Issuance gateway healthy"
     devenv processes stop
   '';
   scripts."android:emulator".exec = ''
@@ -611,11 +611,25 @@ EOF
     echo "   • Service deployed and functional"
   '';
 
-  # Run services with: `devenv up verifier registry receipts issuance-gateway`
-  processes.verifier.exec = "cd services/verifier && go run .";
-  processes.registry.exec = "cd services/registry && go run .";
-  processes.receipts.exec = "cd services/receipts-log && go run .";
-  processes.issuance-gateway.exec = "cd services/issuance-gateway && go run .";
+  # Service processes with automatic port allocation.
+  # Ports default to the values below; devenv finds a free port if taken.
+  # Use `devenv up` to start all, or `devenv up verifier` for one.
+  processes.verifier = {
+    ports.http.allocate = 8081;
+    exec = "cd services/verifier && PORT=${toString config.processes.verifier.ports.http.value} go run .";
+  };
+  processes.registry = {
+    ports.http.allocate = 8082;
+    exec = "cd services/registry && PORT=${toString config.processes.registry.ports.http.value} go run .";
+  };
+  processes.receipts = {
+    ports.http.allocate = 8083;
+    exec = "cd services/receipts-log && PORT=${toString config.processes.receipts.ports.http.value} go run .";
+  };
+  processes.issuance-gateway = {
+    ports.http.allocate = 8090;
+    exec = "cd services/issuance-gateway && PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
+  };
 
   # Pre-commit hooks for consistent build cycle
   git-hooks = {

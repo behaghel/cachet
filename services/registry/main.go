@@ -1,26 +1,16 @@
 package main
 
-import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"os"
-)
+import "github.com/cachet-id/cachet/services/common"
 
 func main() {
-	// Configure structured logging
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	if os.Getenv("ENVIRONMENT") == "development" {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	common.InitLogging()
+
+	cfg := common.ServerConfig{
+		Name:    "registry",
+		Version: "0.1.0",
+		Port:    "8082",
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8082"
-	}
-
-	server := NewServer()
-	log.Info().Str("port", port).Msg("Starting registry service")
-	if err := server.Start(":" + port); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
-	}
+	server := NewServer(cfg)
+	common.ListenAndServe(server.Router(), cfg)
 }
