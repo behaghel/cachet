@@ -224,6 +224,10 @@ in
   '';
   scripts."android:build".exec = ''
     echo "Building Android app..."
+    # Avoid Gradle "conflicting SDK paths" error: only ANDROID_HOME should be set
+    unset ANDROID_SDK_ROOT
+    # Generate local.properties from devenv's ANDROID_HOME (avoids stale committed paths)
+    echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
