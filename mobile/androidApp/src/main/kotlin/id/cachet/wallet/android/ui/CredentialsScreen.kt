@@ -232,26 +232,35 @@ fun CredentialCard(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                credential.credential.credentialSubject.forEach { (key, value) ->
-                    if (key != "id" && key != "verificationMetrics" && key != "evidence") { 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = formatClaimKey(key),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                text = formatClaimValue(value.toString()),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                val subject = credential.credential.credentialSubject
+                val claims = buildList {
+                    subject.personalData?.let { pd ->
+                        pd.age?.let { add("Age" to it.toString()) }
+                        pd.nationality?.let { add("Nationality" to it) }
+                        pd.documentType?.let { add("Document Type" to it) }
+                    }
+                    subject.verificationLevel?.let { add("Verification Level" to it) }
+                    subject.verified?.let { add("Verified" to if (it) "Yes" else "No") }
+                    subject.verificationMethod?.let { add("Verification Method" to it) }
+                }
+                claims.forEach { (label, value) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -316,23 +325,3 @@ private fun formatDate(instant: kotlinx.datetime.Instant): String {
     return "${localDateTime.date}"
 }
 
-private fun formatClaimKey(key: String): String {
-    return key.replace("_", " ")
-        .split(" ")
-        .joinToString(" ") { it.capitalize() }
-}
-
-private fun formatClaimValue(value: String): String {
-    return when {
-        value.startsWith("{") && value.endsWith("}") -> {
-            // Handle JSON objects - extract key info
-            if (value.contains("age")) "Age verified"
-            else if (value.contains("nationality")) "Document verified"  
-            else "Verified"
-        }
-        value.equals("true", ignoreCase = true) -> "✓ Verified"
-        value.equals("false", ignoreCase = true) -> "✗ Not verified"
-        value.length > 50 -> value.take(47) + "..."
-        else -> value
-    }
-}
