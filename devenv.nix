@@ -136,11 +136,13 @@ in
     (cd services/issuance-gateway && go test -v -race -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
 
     # Coverage floor check (50% minimum, ratchet up over time)
+    # Note: go tool cover -func must run from the service module directory
+    # so that Go can resolve module paths in the coverage profile.
     FLOOR=50
     FAIL=0
-    for f in coverage/*.out; do
-      svc=$(basename "$f" .out)
-      pct=$(go tool cover -func="$f" 2>/dev/null | tail -1 | grep -oP '[0-9]+\.[0-9]+' || echo "0")
+    check_cov() {
+      local svc="$1" svc_dir="$2" cov_file="$3"
+      pct=$( (cd "services/$svc_dir" && go tool cover -func="../../coverage/$cov_file") 2>/dev/null | tail -1 | grep -oE '[0-9]+\.[0-9]+' || echo "0")
       int=''${pct%%.*}
       if [ "$int" -lt "$FLOOR" ]; then
         echo "❌ $svc coverage $pct% < $FLOOR% floor"
@@ -148,7 +150,11 @@ in
       else
         echo "✅ $svc coverage $pct%"
       fi
-    done
+    }
+    check_cov verifier verifier verifier.out
+    check_cov registry registry registry.out
+    check_cov receipts receipts-log receipts.out
+    check_cov issuance issuance-gateway issuance.out
     [ "$FAIL" -eq 0 ] || { echo "Coverage below floor"; exit 1; }
     echo "✅ All tests completed with coverage above $FLOOR%"
   '';

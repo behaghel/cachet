@@ -53,6 +53,7 @@ yarn-error.log*
 
 # Android
 mobile/*/build/
+mobile/.gradle/
 mobile/*/.gradle/
 mobile/*/local.properties
 mobile/*/.cxx/
