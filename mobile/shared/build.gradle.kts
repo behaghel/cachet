@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
-    id("app.cash.sqldelight") version "2.0.1"
+    id("app.cash.sqldelight") version "2.3.2"
     id("com.android.library")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
@@ -24,18 +24,18 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
                 implementation("io.ktor:ktor-client-core:2.3.7")
                 implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
                 implementation("io.ktor:ktor-client-logging:2.3.7")
-                implementation("app.cash.sqldelight:runtime:2.0.1")
-                implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
+                implementation("app.cash.sqldelight:runtime:2.3.2")
+                implementation("app.cash.sqldelight:coroutines-extensions:2.3.2")
                 implementation("io.insert-koin:koin-core:3.5.3")
-                implementation("com.russhwolf:multiplatform-settings:1.1.1")
-                implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
+                implementation("com.russhwolf:multiplatform-settings:1.3.0")
+                implementation("com.russhwolf:multiplatform-settings-coroutines:1.3.0")
             }
         }
         val commonTest by getting {
@@ -46,14 +46,14 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-android:2.3.7")
-                implementation("app.cash.sqldelight:android-driver:2.0.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+                implementation("app.cash.sqldelight:android-driver:2.3.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
             }
         }
         val iosMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-ios:2.3.7")
-                implementation("app.cash.sqldelight:native-driver:2.0.1")
+                implementation("app.cash.sqldelight:native-driver:2.3.2")
             }
         }
     }
