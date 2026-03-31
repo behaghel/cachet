@@ -52,6 +52,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Android
+local.properties
 mobile/*/build/
 mobile/.gradle/
 mobile/*/.gradle/

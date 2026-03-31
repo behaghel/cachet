@@ -86,8 +86,6 @@ jobs:
       - name: Build Android APK
         shell: bash
         run: devenv shell -- android:build
-        env:
-          ANDROID_SDK_ROOT: ""
 
       # Note: Skipping unit tests temporarily due to compilation issues - will fix separately
       # - name: Run Android tests
