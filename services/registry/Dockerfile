@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.22 AS build
+FROM golang:1.25 AS build
 WORKDIR /app
 # Copy go mod and sum files first for better layer caching
 COPY go.mod go.sum ./

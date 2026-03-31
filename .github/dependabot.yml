@@ -1,17 +1,25 @@
 version: 2
 updates:
-  # Go dependencies
+  # Go dependencies — grouped so one PR covers all modules
+  - package-ecosystem: "gomod"
+    directory: "/services/common"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
+
   - package-ecosystem: "gomod"
     directory: "/services/verifier"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "chore(deps)"
-      include: "scope"
-    reviewers:
-      - "cachet-team"
-    assignees:
-      - "cachet-team"
+    groups:
+      go-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "gomod"
     directory: "/services/registry"
@@ -19,6 +27,9 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "gomod"
     directory: "/services/receipts-log"
@@ -26,6 +37,9 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "gomod"
     directory: "/services/issuance-gateway"
@@ -33,8 +47,21 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
 
-  # Gradle dependencies (Android)
+  - package-ecosystem: "gomod"
+    directory: "/generated/go"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-deps:
+        patterns: ["*"]
+
+  # Gradle dependencies (Android) — grouped, major bumps separate
   - package-ecosystem: "gradle"
     directory: "/mobile"
     schedule:
@@ -42,40 +69,62 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
+    groups:
+      mobile-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      mobile-major:
+        patterns: ["*"]
+        update-types: ["major"]
 
-  # Docker dependencies
+  # Docker base images — grouped into one PR
   - package-ecosystem: "docker"
     directory: "/services/verifier"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-base:
+        patterns: ["*"]
 
   - package-ecosystem: "docker"
     directory: "/services/registry"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-base:
+        patterns: ["*"]
 
   - package-ecosystem: "docker"
     directory: "/services/receipts-log"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-base:
+        patterns: ["*"]
 
   - package-ecosystem: "docker"
     directory: "/services/issuance-gateway"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-base:
+        patterns: ["*"]
 
-  # GitHub Actions
+  # GitHub Actions — grouped into one PR
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      ci-actions:
+        patterns: ["*"]
