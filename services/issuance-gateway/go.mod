@@ -3,10 +3,10 @@ module github.com/cachet-id/cachet/services/issuance-gateway
 go 1.25.7
 
 require (
-	github.com/go-chi/chi/v5 v5.0.12
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.5
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/rs/zerolog v1.32.0
+	github.com/rs/zerolog v1.35.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
@@ -36,7 +36,7 @@ require (
 	github.com/cachet-id/cachet/generated/go/models v0.0.0
 	github.com/cachet-id/cachet/services/common v0.0.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oapi-codegen/runtime v1.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

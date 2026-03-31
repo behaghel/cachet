@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
@@ -51,7 +51,7 @@ jobs:
           echo "✅ All backend CI steps completed successfully"
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage/verifier.out,./coverage/registry.out,./coverage/receipts.out,./coverage/issuance.out
           flags: backend
@@ -65,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
@@ -99,10 +99,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '18'
 
@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
