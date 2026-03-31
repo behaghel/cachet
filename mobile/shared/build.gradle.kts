@@ -33,7 +33,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-logging:2.3.7")
                 implementation("app.cash.sqldelight:runtime:2.0.1")
                 implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
-                implementation("io.insert-koin:koin-core:3.5.3")
+                implementation("io.insert-koin:koin-core:4.2.0")
                 implementation("com.russhwolf:multiplatform-settings:1.1.1")
                 implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
             }
