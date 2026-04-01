@@ -215,11 +215,30 @@ in
   '';
   scripts."android:emulator".exec = ''
     echo "Creating Android emulator..."
-    avdmanager create avd --force --name cachet-emulator --package 'system-images;android-34;google_apis_playstore;x86_64' || true
+    # Select ABI based on host architecture
+    HOST_ARCH=$(uname -m)
+    if [ "$HOST_ARCH" = "arm64" ] || [ "$HOST_ARCH" = "aarch64" ]; then
+      ABI="arm64-v8a"
+    else
+      ABI="x86_64"
+    fi
+    echo "Host architecture: $HOST_ARCH → using ABI: $ABI"
+    avdmanager create avd --force --name cachet-emulator --package "system-images;android-34;google_apis_playstore;$ABI" || true
+    # Ensure the .android dir exists (avoids .ini file warnings)
+    mkdir -p "$HOME/.android"
+    touch "$HOME/.android/emu-update-last-check.ini"
+
     echo "Starting Android emulator..."
-    emulator @cachet-emulator -no-audio -no-window &
+    # Headless in CI, windowed for local dev
+    WINDOW_FLAG=""
+    if [ -n "''${CI:-}" ] || [ -z "''${DISPLAY:-}''${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
+      WINDOW_FLAG="-no-window"
+    fi
+    emulator @cachet-emulator -no-audio -no-snapshot-load -metrics-collection $WINDOW_FLAG &
     echo "Waiting for emulator to boot..."
     adb wait-for-device
+    # wait-for-device returns as soon as adb connects; wait for full boot
+    adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done' 2>/dev/null
     echo "✅ Android emulator ready"
   '';
   scripts."android:build".exec = ''
@@ -231,18 +250,43 @@ in
     cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
   '';
   scripts."android:install".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+
     echo "Installing app on emulator..."
-    cd mobile && gradle :androidApp:installDebug
+    unset ANDROID_SDK_ROOT
+    echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+    # Uninstall previous version if signatures differ (common after re-signing)
+    $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
+    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
+
+    echo "Launching Cachet Wallet..."
+    if $ADB shell am start -n id.cachet.wallet.android/.MainActivity 2>&1 | grep -q "Error\|Exception"; then
+      echo "❌ Failed to launch app. Is the emulator running? (android:emulator)"
+      exit 1
+    fi
+    # Verify the activity is in the foreground
+    sleep 1
+    if $ADB shell "dumpsys activity activities 2>/dev/null | grep -q 'id.cachet.wallet.android'"; then
+      echo "✅ App installed and launched"
+    else
+      echo "⚠️ App installed but may not have launched. Check the emulator screen."
+    fi
   '';
   scripts."android:run".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+
     echo "🚀 Starting full development environment..."
     echo "1. Starting backend services..."
     devenv up --detach
     sleep 3
     echo "2. Building and installing Android app..."
-    cd mobile && gradle :androidApp:installDebug
+    unset ANDROID_SDK_ROOT
+    echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
     echo "3. Launching app..."
-    adb shell am start -n id.cachet.wallet.android/.MainActivity
+    $ADB shell am start -n id.cachet.wallet.android/.MainActivity
     echo "✅ Done! Backend running, app installed and launched."
     echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
   '';
