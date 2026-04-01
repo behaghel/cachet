@@ -30,7 +30,8 @@ import kotlinx.datetime.toLocalDateTime
 fun CredentialsScreen(
     credentials: List<StoredCredential>,
     onStartVerification: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onVerifyCredential: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -68,7 +69,10 @@ fun CredentialsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(credentials) { credential ->
-                CredentialCard(credential = credential)
+                CredentialCard(
+                    credential = credential,
+                    onVerify = { onVerifyCredential(credential.localId) }
+                )
             }
         }
     }
@@ -77,7 +81,8 @@ fun CredentialsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CredentialCard(
-    credential: StoredCredential
+    credential: StoredCredential,
+    onVerify: () -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val quality = remember { credential.credential.extractQuality() }
@@ -261,6 +266,18 @@ fun CredentialCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                if (!credential.isRevoked) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = onVerify,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.VerifiedUser, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Verify with Trust Pack")
                     }
                 }
             }
