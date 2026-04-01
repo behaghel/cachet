@@ -1,6 +1,10 @@
 package main
 
-import "github.com/cachet-id/cachet/services/common"
+import (
+	"os"
+
+	"github.com/cachet-id/cachet/services/common"
+)
 
 func main() {
 	common.InitLogging()
@@ -11,6 +15,11 @@ func main() {
 		Port:    "8081",
 	}
 
-	server := NewServer(cfg)
+	registryURL := os.Getenv("CACHET_REGISTRY_URL")
+	if registryURL == "" {
+		registryURL = "http://localhost:8082"
+	}
+
+	server := NewServer(cfg, registryURL)
 	common.ListenAndServe(server.Router(), cfg)
 }
