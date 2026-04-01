@@ -24,7 +24,7 @@ import kotlinx.serialization.Contextual
  * 
  *
  * @param id Status list entry URI
- * @param type Status mechanism type
+ * @param type 
  */
 @Serializable
 
@@ -34,14 +34,13 @@ data class CredentialStatus (
     @Contextual @SerialName(value = "id")
     val id: java.net.URI,
 
-    /* Status mechanism type */
     @SerialName(value = "type")
     val type: CredentialStatus.Type
 
 ) {
 
     /**
-     * Status mechanism type
+     * 
      *
      * Values: StatusList2021Entry
      */

@@ -29,7 +29,7 @@ class IssuanceUseCaseTest {
         assertTrue(result.isSuccess)
         val storedCredential = result.getOrNull()
         assertNotNull(storedCredential)
-        assertEquals("did:web:cachet.id", storedCredential.credential.issuer)
+        assertEquals("did:veriff:production", storedCredential.credential.issuer)
         assertTrue(storedCredential.credential.type.contains("IdentityCredential"))
         
         // Verify credential was stored in repository
@@ -158,7 +158,7 @@ private class MockOpenID4VCIClient : OpenID4VCIClient {
             id = "urn:uuid:mock-credential-${System.currentTimeMillis()}",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = Clock.System.now(),
             credentialSubject = mapOf(
                 "id" to "did:example:holder",
@@ -205,7 +205,7 @@ private class FailingOpenID4VCIClient(
             id = "urn:uuid:mock-credential",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = Clock.System.now(),
             credentialSubject = mapOf("id" to "did:example:holder")
         )

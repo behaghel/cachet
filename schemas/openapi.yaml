@@ -189,6 +189,51 @@ paths:
                     issuedAt: 2025-08-31T00:00:00Z
                     signingDid: did:web:cachet.id#keys-1
 
+  /registry/packs:
+    get:
+      summary: List available Trust Pack definitions
+      description: Returns all registered Trust Pack definitions with metadata
+      operationId: listPackDefinitions
+      tags: [registry]
+      security: []
+      responses:
+        "200":
+          description: List of pack definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PackDefinition"
+
+  /registry/packs/{packId}:
+    get:
+      summary: Get a specific Trust Pack definition
+      description: Returns the full pack definition including predicates
+      operationId: getPackDefinition
+      tags: [registry]
+      security: []
+      parameters:
+        - name: packId
+          in: path
+          required: true
+          description: Pack identifier (e.g., pack.childcare.readiness.es)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pack definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackDefinition"
+        "404":
+          description: Pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   # ── Receipts Log ───────────────────────────────────────────────────
 
   /receipts/hash:
@@ -375,7 +420,7 @@ components:
           type: string
           description: Credential issuer DID
           pattern: "^did:"
-          example: "did:web:cachet.id"
+          example: "did:veriff:production"
         issuanceDate:
           type: string
           format: date-time
@@ -540,8 +585,8 @@ components:
       properties:
         id:
           type: string
-          description: Pack identifier with version suffix
-          example: "pack.childcare.readiness@0.1.0"
+          description: Pack identifier
+          example: "pack.childcare.readiness.es"
         version:
           type: string
           description: Semantic version
@@ -549,7 +594,7 @@ components:
         name:
           type: string
           description: Human-readable pack name
-          example: "Childcare Readiness"
+          example: "Childcare Readiness (Spain)"
 
     VerifyRequest:
       type: object
@@ -557,31 +602,166 @@ components:
       properties:
         policyId:
           type: string
-          description: Policy identifier to verify against
-          example: "pack.childcare.readiness@0.1.0"
+          description: Pack identifier to verify against
+          example: "pack.childcare.readiness.es"
         bundle:
           type: object
           description: Credential presentation bundle
-          additionalProperties: true
+          required: [credentials]
+          properties:
+            credentials:
+              type: array
+              description: Verifiable credentials to evaluate
+              items:
+                $ref: "#/components/schemas/VerifiableCredential"
 
     VerifyResponse:
       type: object
-      required: [badge, predicates, freshness]
+      required: [badge, predicates, freshness, predicateResults, summary]
       properties:
         badge:
           type: string
-          description: Verification badge result
-          example: "Childcare Ready"
+          description: Badge label if granted, empty string otherwise
+          example: "Childcare‑Ready (ES)"
         predicates:
           type: array
           items:
             type: string
-          description: Predicates that were proven
+          description: Predicate IDs that were satisfied
           example: ["age.ge.18", "identity.verified"]
         freshness:
           type: string
           description: Freshness status of the credentials
           enum: [ok, stale, expired]
+        predicateResults:
+          type: array
+          description: Per-predicate evaluation results
+          items:
+            $ref: "#/components/schemas/PredicateResult"
+        summary:
+          $ref: "#/components/schemas/VerificationSummary"
+
+    PredicateResult:
+      type: object
+      required: [predicateId, status]
+      properties:
+        predicateId:
+          type: string
+          description: Predicate identifier from the pack definition
+          example: "age.ge.18"
+        status:
+          type: string
+          description: Evaluation outcome
+          enum: [satisfied, failed, not_evaluable, no_credential]
+        reason:
+          type: string
+          description: Human-readable reason (for non-satisfied statuses)
+          example: "proof type vc-bbs not yet supported"
+
+    VerificationSummary:
+      type: object
+      required: [requiredSatisfied, requiredTotal, badgeGranted]
+      properties:
+        requiredSatisfied:
+          type: integer
+          description: Number of required predicates that were satisfied
+        requiredTotal:
+          type: integer
+          description: Total number of required predicates
+        optionalSatisfied:
+          type: integer
+          description: Number of optional predicates that were satisfied
+        optionalTotal:
+          type: integer
+          description: Total number of optional predicates
+        badgeGranted:
+          type: boolean
+          description: Whether the badge was granted (all required predicates satisfied)
+
+    # ── Registry Pack Definitions ──────────────────────────────────
+
+    PackDefinition:
+      type: object
+      required: [id, version, name, purpose, predicates, badge]
+      properties:
+        id:
+          type: string
+          description: Pack identifier
+          example: "pack.childcare.readiness.es"
+        version:
+          type: string
+          description: Semantic version
+          example: "0.1.0"
+        name:
+          type: string
+          description: Human-readable pack name
+          example: "Childcare Readiness (Spain)"
+        purpose:
+          type: string
+          description: Purpose of the pack
+          example: "Assess suitability for paid childcare work in private homes"
+        jurisdictions:
+          type: array
+          items:
+            type: string
+          description: Applicable jurisdictions (ISO country codes)
+          example: ["ES"]
+        badge:
+          $ref: "#/components/schemas/BadgeDefinition"
+        predicates:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredicateDefinition"
+
+    BadgeDefinition:
+      type: object
+      required: [label, ttl]
+      properties:
+        label:
+          type: string
+          description: Badge display label
+          example: "Childcare‑Ready (ES)"
+        ttl:
+          type: string
+          description: Badge time-to-live (ISO 8601 duration)
+          example: "P90D"
+        jurisdiction:
+          type: string
+          description: Badge jurisdiction
+          example: "ES"
+
+    PredicateDefinition:
+      type: object
+      required: [id, claim, operator, value, issuersAccepted, proofType]
+      properties:
+        id:
+          type: string
+          description: Predicate identifier
+          example: "age.ge.18"
+        claim:
+          type: string
+          description: Claim field name in the credential subject
+          example: "age"
+        operator:
+          type: string
+          description: Comparison operator
+          enum: [">=", ">", "<=", "<", "==", "boolean"]
+        value:
+          description: Expected value (type depends on operator)
+        issuersAccepted:
+          type: array
+          items:
+            type: string
+          description: DID patterns of accepted issuers (supports * wildcard)
+          example: ["did:veriff:*"]
+        proofType:
+          type: string
+          description: Required proof type
+          enum: [sd-jwt, vc-bbs, zk-snark]
+        required:
+          type: boolean
+          description: Whether this predicate is required for badge granting
+          default: true
 
     # ── Receipts Log ───────────────────────────────────────────────
 

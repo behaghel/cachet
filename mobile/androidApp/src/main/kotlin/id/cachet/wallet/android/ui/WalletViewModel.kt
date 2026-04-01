@@ -5,29 +5,33 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
+import id.cachet.wallet.domain.usecase.VerificationResult
+import id.cachet.wallet.domain.usecase.VerificationUseCase
+import id.cachet.wallet.network.PackSummary
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class WalletViewModel(
-    private val issuanceUseCase: IssuanceUseCase
+    private val issuanceUseCase: IssuanceUseCase,
+    private val verificationUseCase: VerificationUseCase
 ) : ViewModel() {
-    
+
     companion object {
         private const val TAG = "WalletViewModel"
     }
-    
+
     private val _uiState = MutableStateFlow<WalletUiState>(WalletUiState.Loading)
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
-    
+
     init {
         loadCredentials()
     }
-    
+
     fun loadCredentials() {
         viewModelScope.launch {
             Log.d(TAG, "Loading credentials...")
             _uiState.value = WalletUiState.Loading
-            
+
             issuanceUseCase.getStoredCredentials()
                 .onSuccess { credentials ->
                     Log.d(TAG, "Loaded ${credentials.size} credentials")
@@ -45,32 +49,27 @@ class WalletViewModel(
                 }
         }
     }
-    
+
     fun startVeriffVerification() {
         viewModelScope.launch {
             Log.d(TAG, "Starting Veriff verification...")
             _uiState.value = WalletUiState.VerificationInProgress
-            
-            // Simulate Veriff flow completion and credential issuance
-            // In real implementation, this would be triggered by Veriff callback
             simulateCredentialIssuance()
         }
     }
-    
+
     private fun simulateCredentialIssuance() {
         viewModelScope.launch {
             try {
                 Log.d(TAG, "Starting credential issuance simulation...")
-                // Simulate delay for verification process
                 kotlinx.coroutines.delay(3000)
-                
+
                 Log.d(TAG, "Requesting credential from backend...")
                 issuanceUseCase.requestCredential(
                     clientId = "cachet-android-wallet",
                     credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
                 ).onSuccess { credential ->
                     Log.d(TAG, "Credential issued successfully: ${credential.localId}")
-                    // Reload credentials to show the new one
                     loadCredentials()
                 }.onFailure { exception ->
                     Log.e(TAG, "Credential issuance failed", exception)
@@ -86,13 +85,52 @@ class WalletViewModel(
             }
         }
     }
-    
+
+    fun showPackSelection(credentialId: String) {
+        viewModelScope.launch {
+            Log.d(TAG, "Loading packs for credential $credentialId...")
+            _uiState.value = WalletUiState.LoadingPacks
+
+            verificationUseCase.getAvailablePacks()
+                .onSuccess { packs ->
+                    Log.d(TAG, "Loaded ${packs.size} packs")
+                    _uiState.value = WalletUiState.PackSelection(
+                        credentialId = credentialId,
+                        packs = packs
+                    )
+                }
+                .onFailure { exception ->
+                    Log.e(TAG, "Failed to load packs", exception)
+                    _uiState.value = WalletUiState.Error(
+                        "Failed to load Trust Packs: ${exception.message}"
+                    )
+                }
+        }
+    }
+
+    fun verifyAgainstPack(credentialId: String, packId: String) {
+        viewModelScope.launch {
+            Log.d(TAG, "Verifying credential $credentialId against pack $packId...")
+            _uiState.value = WalletUiState.Verifying
+
+            verificationUseCase.verifyCredential(credentialId, packId)
+                .onSuccess { result ->
+                    Log.d(TAG, "Verification complete: badge=${result.badge}, granted=${result.summary?.badgeGranted}")
+                    _uiState.value = WalletUiState.VerificationComplete(result)
+                }
+                .onFailure { exception ->
+                    Log.e(TAG, "Verification failed", exception)
+                    _uiState.value = WalletUiState.Error(
+                        "Verification failed: ${exception.message}"
+                    )
+                }
+        }
+    }
+
     fun revokeCredential(localId: String) {
         viewModelScope.launch {
             issuanceUseCase.revokeCredential(localId)
-                .onSuccess {
-                    loadCredentials() // Refresh the list
-                }
+                .onSuccess { loadCredentials() }
                 .onFailure { exception ->
                     _uiState.value = WalletUiState.Error(
                         "Failed to revoke credential: ${exception.message}"
@@ -106,6 +144,10 @@ sealed class WalletUiState {
     object Loading : WalletUiState()
     object Empty : WalletUiState()
     object VerificationInProgress : WalletUiState()
+    object LoadingPacks : WalletUiState()
+    object Verifying : WalletUiState()
     data class HasCredentials(val credentials: List<StoredCredential>) : WalletUiState()
+    data class PackSelection(val credentialId: String, val packs: List<PackSummary>) : WalletUiState()
+    data class VerificationComplete(val result: VerificationResult) : WalletUiState()
     data class Error(val message: String) : WalletUiState()
 }

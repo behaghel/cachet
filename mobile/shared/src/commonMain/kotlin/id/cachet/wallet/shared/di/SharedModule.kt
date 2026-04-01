@@ -7,10 +7,13 @@ import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import id.cachet.wallet.domain.repository.HttpTransparencyLogRepository
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
+import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
+import id.cachet.wallet.network.KtorVerifierClient
 import id.cachet.wallet.network.OpenID4VCIClient
+import id.cachet.wallet.network.VerifierClient
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -45,11 +48,17 @@ val sharedModule = module {
         }
     }
 
-    // Network clients — base URL from AppConfig (default: emulator localhost)
+    // Network clients — base URLs from AppConfig (default: emulator localhost)
     single<OpenID4VCIClient> {
         KtorOpenID4VCIClient(
             httpClient = get(),
             baseUrl = AppConfig.baseUrl
+        )
+    }
+    single<VerifierClient> {
+        KtorVerifierClient(
+            httpClient = get(),
+            baseUrl = AppConfig.verifierUrl
         )
     }
 
@@ -77,6 +86,14 @@ val sharedModule = module {
             credentialRepository = get(),
             consentReceiptRepository = get(),
             transparencyLogRepository = get()
+        )
+    }
+
+    single {
+        VerificationUseCase(
+            credentialRepository = get(),
+            verifierClient = get(),
+            consentUseCase = get()
         )
     }
 }

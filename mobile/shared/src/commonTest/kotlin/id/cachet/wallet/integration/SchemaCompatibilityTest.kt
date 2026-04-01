@@ -59,7 +59,7 @@ class SchemaCompatibilityTest {
                 "https://cachet.id/contexts/identity/v1"
             ],
             "type": ["VerifiableCredential", "IdentityCredential"],
-            "issuer": "did:web:cachet.id",
+            "issuer": "did:veriff:production",
             "issuanceDate": "2025-09-01T21:27:40+02:00",
             "credentialSubject": {
                 "id": "did:example:holder",
@@ -82,7 +82,7 @@ class SchemaCompatibilityTest {
         assertEquals("https://www.w3.org/2018/credentials/v1", credential.context[0])
         assertEquals(2, credential.type.size)
         assertEquals("VerifiableCredential", credential.type[0])
-        assertEquals("did:web:cachet.id", credential.issuer)
+        assertEquals("did:veriff:production", credential.issuer)
         assertEquals("2025-09-01T21:27:40+02:00", credential.issuanceDate)
 
         // Validate credentialSubject as JsonElement
@@ -103,7 +103,7 @@ class SchemaCompatibilityTest {
                 "id": "urn:uuid:test-credential-id",
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiableCredential"],
-                "issuer": "did:web:cachet.id",
+                "issuer": "did:veriff:production",
                 "issuanceDate": "2025-09-01T21:27:40Z",
                 "credentialSubject": {
                     "id": "did:example:subject"
@@ -117,7 +117,7 @@ class SchemaCompatibilityTest {
 
         assertEquals("jwt_vc", response.format)
         assertEquals("urn:uuid:test-credential-id", response.credential.id)
-        assertEquals("did:web:cachet.id", response.credential.issuer)
+        assertEquals("did:veriff:production", response.credential.issuer)
     }
 
     @Test
@@ -128,7 +128,7 @@ class SchemaCompatibilityTest {
             "id": "urn:uuid:minimal-credential",
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential"],
-            "issuer": "did:web:cachet.id",
+            "issuer": "did:veriff:production",
             "issuanceDate": "2025-09-01T21:27:40Z",
             "credentialSubject": {
                 "id": "did:example:subject"
@@ -149,7 +149,7 @@ class SchemaCompatibilityTest {
             id = "urn:uuid:test",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = listOf("VerifiableCredential"),
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = "2025-09-01T21:27:40Z",
             expirationDate = "2026-09-01T21:27:40Z",
             credentialSubject = mapOf("id" to JsonPrimitive("did:example:subject")),
@@ -170,7 +170,7 @@ class SchemaCompatibilityTest {
             id = "urn:uuid:test",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = listOf("VerifiableCredential"),
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = "invalid-date-format",
             expirationDate = "also-invalid",
             credentialSubject = mapOf("id" to JsonPrimitive("did:example:subject")),
@@ -193,7 +193,7 @@ class SchemaCompatibilityTest {
             "id": "urn:uuid:test",
             "context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential"],
-            "issuer": "did:web:cachet.id"
+            "issuer": "did:veriff:production"
         }
         """.trimIndent()
 
@@ -211,7 +211,7 @@ class SchemaCompatibilityTest {
             "id": "urn:uuid:test",
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential"],
-            "issuer": "did:web:cachet.id",
+            "issuer": "did:veriff:production",
             "issuanceDate": "2025-09-01T21:27:40Z",
             "credentialSubject": {
                 "id": "did:example:subject"

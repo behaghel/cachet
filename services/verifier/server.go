@@ -9,20 +9,19 @@ import (
 
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
+	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 )
 
 type Server struct {
-	router *chi.Mux
-	packs  []models.Pack
+	router     *chi.Mux
+	packClient *pack.Client
 }
 
-func NewServer(cfg common.ServerConfig) *Server {
+func NewServer(cfg common.ServerConfig, registryURL string) *Server {
 	s := &Server{
-		router: common.NewRouter(cfg),
-		packs: []models.Pack{
-			{Id: "pack.childcare.readiness@0.1.0", Version: "0.1.0", Name: "Childcare Readiness"},
-			{Id: "pack.safe.seller@0.1.0", Version: "0.1.0", Name: "Safe Seller"},
-		},
+		router:     common.NewRouter(cfg),
+		packClient: pack.NewClient(registryURL),
 	}
 	s.router.Get("/packs", s.handleListPacks)
 	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
@@ -32,8 +31,14 @@ func NewServer(cfg common.ServerConfig) *Server {
 func (s *Server) Router() *chi.Mux { return s.router }
 
 func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
-	log.Ctx(r.Context()).Info().Int("pack_count", len(s.packs)).Msg("listing packs")
-	common.WriteJSON(w, r, http.StatusOK, s.packs)
+	summaries, err := s.packClient.ListSummary()
+	if err != nil {
+		log.Ctx(r.Context()).Error().Err(err).Msg("failed to fetch packs from registry")
+		common.WriteError(w, r, http.StatusBadGateway, "registry_error", "Failed to fetch packs from registry")
+		return
+	}
+	log.Ctx(r.Context()).Info().Int("pack_count", len(summaries)).Msg("listing packs")
+	common.WriteJSON(w, r, http.StatusOK, summaries)
 }
 
 func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request) {
@@ -45,11 +50,40 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 
 	log.Ctx(r.Context()).Info().Str("policy_id", req.PolicyId).Msg("verifying presentation")
 
-	// Stub implementation
+	// Fetch pack definition from registry
+	packDef, err := s.packClient.GetPack(req.PolicyId)
+	if err != nil {
+		log.Ctx(r.Context()).Warn().Err(err).Str("policy_id", req.PolicyId).Msg("pack not found")
+		common.WriteError(w, r, http.StatusBadRequest, "unknown_pack", "Pack not found: "+req.PolicyId)
+		return
+	}
+
+	// Evaluate predicates
+	results, summary := eval.Evaluate(packDef, req.Bundle.Credentials)
+
+	// Check freshness
+	freshness := eval.CheckFreshness(req.Bundle.Credentials)
+
+	// Build satisfied predicate IDs list
+	var satisfied []string
+	for _, res := range results {
+		if res.Status == models.Satisfied {
+			satisfied = append(satisfied, res.PredicateId)
+		}
+	}
+
+	// Determine badge
+	badge := ""
+	if summary.BadgeGranted {
+		badge = packDef.Badge.Label
+	}
+
 	resp := models.VerifyResponse{
-		Badge:      "Demo Badge (stub)",
-		Predicates: []string{"age.ge.18", "identity.verified"},
-		Freshness:  models.VerifyResponseFreshnessOk,
+		Badge:            badge,
+		Predicates:       satisfied,
+		Freshness:        freshness,
+		PredicateResults: results,
+		Summary:          summary,
 	}
 	common.WriteJSON(w, r, http.StatusOK, resp)
 }

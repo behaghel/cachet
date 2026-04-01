@@ -27,7 +27,7 @@ func Build(session veriff.Session, validation veriff.ValidationResult, types []s
 		},
 		Id:             fmt.Sprintf("urn:uuid:%s", uuid.New().String()),
 		Type:           types,
-		Issuer:         "did:web:cachet.id",
+		Issuer:         "did:veriff:production",
 		IssuanceDate:   now,
 		ExpirationDate: &expiration,
 		CredentialSubject: models.CredentialSubject{

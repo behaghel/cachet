@@ -43,7 +43,7 @@ class OpenID4VCIClientTest {
         assertNotNull(credentialResponse.credential)
         
         val credential = credentialResponse.credential
-        assertEquals("did:web:cachet.id", credential.issuer)
+        assertEquals("did:veriff:production", credential.issuer)
         assertTrue(credential.type.contains("IdentityCredential"))
         assertTrue(credential.credentialSubject.containsKey("verified"))
     }
@@ -106,7 +106,7 @@ class MockOpenID4VCIClient : OpenID4VCIClient {
             id = "urn:uuid:mock-credential-${System.currentTimeMillis()}",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = kotlinx.datetime.Clock.System.now(),
             credentialSubject = mapOf(
                 "id" to "did:example:holder",

@@ -47,7 +47,8 @@ fun WalletApp() {
                 CredentialsScreen(
                     credentials = currentState.credentials,
                     onStartVerification = { viewModel.startVeriffVerification() },
-                    onRefresh = { viewModel.loadCredentials() }
+                    onRefresh = { viewModel.loadCredentials() },
+                    onVerifyCredential = { credentialId -> viewModel.showPackSelection(credentialId) }
                 )
             }
             is WalletUiState.Error -> {
@@ -58,6 +59,38 @@ fun WalletApp() {
             }
             is WalletUiState.VerificationInProgress -> {
                 VerificationScreen()
+            }
+            is WalletUiState.LoadingPacks -> {
+                LoadingScreen()
+            }
+            is WalletUiState.Verifying -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text("Verifying against Trust Pack...")
+                    }
+                }
+            }
+            is WalletUiState.PackSelection -> {
+                PackListScreen(
+                    packs = currentState.packs,
+                    onSelectPack = { packId ->
+                        viewModel.verifyAgainstPack(currentState.credentialId, packId)
+                    },
+                    onBack = { viewModel.loadCredentials() }
+                )
+            }
+            is WalletUiState.VerificationComplete -> {
+                VerificationResultScreen(
+                    result = currentState.result,
+                    onBack = { viewModel.loadCredentials() }
+                )
             }
         }
     }

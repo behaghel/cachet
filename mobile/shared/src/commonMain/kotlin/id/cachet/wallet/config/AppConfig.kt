@@ -10,9 +10,14 @@ package id.cachet.wallet.config
 object AppConfig {
 
     private const val DEFAULT_BASE_URL = "http://10.0.2.2:8090"
+    private const val DEFAULT_VERIFIER_URL = "http://10.0.2.2:8081"
 
     /** Base URL for the issuance gateway. */
     var baseUrl: String = DEFAULT_BASE_URL
+        private set
+
+    /** Base URL for the verifier service. */
+    var verifierUrl: String = DEFAULT_VERIFIER_URL
         private set
 
     /** HTTP request timeout in milliseconds. */
@@ -33,11 +38,13 @@ object AppConfig {
      */
     fun configure(
         baseUrl: String? = null,
+        verifierUrl: String? = null,
         requestTimeoutMs: Long? = null,
         oauthClientId: String? = null,
         oauthScope: String? = null
     ) {
         baseUrl?.let { this.baseUrl = it }
+        verifierUrl?.let { this.verifierUrl = it }
         requestTimeoutMs?.let { this.requestTimeoutMs = it }
         oauthClientId?.let { this.oauthClientId = it }
         oauthScope?.let { this.oauthScope = it }
@@ -46,6 +53,7 @@ object AppConfig {
     /** Reset to defaults (for testing). */
     fun reset() {
         baseUrl = DEFAULT_BASE_URL
+        verifierUrl = DEFAULT_VERIFIER_URL
         requestTimeoutMs = 30_000L
         oauthClientId = "cachet-android-wallet"
         oauthScope = "credential_issuance"

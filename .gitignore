@@ -78,6 +78,11 @@ devenv.local.nix
 .android/
 *.apk
 *.aab
+mobile/build-tools/
+mobile/platform-tools/
+mobile/platforms/
+mobile/licenses/
+mobile/.knownPackages
 
 # Database
 *.db

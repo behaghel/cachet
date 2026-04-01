@@ -16,7 +16,7 @@
 package id.cachet.wallet.generated.models
 
 import id.cachet.wallet.generated.models.CredentialStatus
-import id.cachet.wallet.generated.models.VerifiableCredentialCredentialSubject
+import id.cachet.wallet.generated.models.CredentialSubject
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
@@ -26,12 +26,12 @@ import kotlinx.serialization.Contextual
  * 
  *
  * @param id Unique credential identifier
- * @param atContext JSON-LD context
- * @param type Credential types
+ * @param atContext 
+ * @param type 
  * @param issuer Credential issuer DID
- * @param issuanceDate When the credential was issued
+ * @param issuanceDate 
  * @param credentialSubject 
- * @param expirationDate When the credential expires (optional)
+ * @param expirationDate 
  * @param credentialStatus 
  */
 @Serializable
@@ -42,11 +42,9 @@ data class VerifiableCredential (
     @SerialName(value = "id")
     val id: kotlin.String,
 
-    /* JSON-LD context */
     @SerialName(value = "@context")
     val atContext: kotlin.collections.List<kotlin.String>,
 
-    /* Credential types */
     @SerialName(value = "type")
     val type: kotlin.collections.List<kotlin.String>,
 
@@ -54,14 +52,12 @@ data class VerifiableCredential (
     @SerialName(value = "issuer")
     val issuer: kotlin.String,
 
-    /* When the credential was issued */
     @Contextual @SerialName(value = "issuanceDate")
     val issuanceDate: java.time.OffsetDateTime,
 
     @Contextual @SerialName(value = "credentialSubject")
-    val credentialSubject: VerifiableCredentialCredentialSubject,
+    val credentialSubject: CredentialSubject,
 
-    /* When the credential expires (optional) */
     @Contextual @SerialName(value = "expirationDate")
     val expirationDate: java.time.OffsetDateTime? = null,
 

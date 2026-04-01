@@ -5,7 +5,7 @@
 | Name | Type | Description | Notes |
 | ------------ | ------------- | ------------- | ------------- |
 | **accessToken** | **kotlin.String** | JWT access token |  |
-| **tokenType** | [**inline**](#TokenType) | Token type |  |
+| **tokenType** | [**inline**](#TokenType) |  |  |
 | **expiresIn** | **kotlin.Int** | Token expiration time in seconds |  |
 | **scope** | **kotlin.String** | Granted scope |  |
 
