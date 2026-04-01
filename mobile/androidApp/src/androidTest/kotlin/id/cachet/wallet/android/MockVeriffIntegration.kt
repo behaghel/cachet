@@ -116,7 +116,7 @@ class MockVeriffIntegration : OpenID4VCIClient {
                 "VerifiableCredential",
                 "IdentityVerificationCredential"
             ),
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = now.toString(),
             expirationDate = null, // Identity verification doesn't typically expire
             credentialSubject = credentialSubject,

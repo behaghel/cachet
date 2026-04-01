@@ -12,7 +12,7 @@
   "predicates": [
     {
       "id": "identity.verified",
-      "claim": "identity_liveness",
+      "claim": "verified",
       "operator": "boolean",
       "value": true,
       "issuersAccepted": ["did:veriff:*"],
