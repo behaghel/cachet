@@ -23,30 +23,33 @@ import kotlinx.serialization.Contextual
 /**
  * 
  *
- * @param number Document number
- * @param type Document type
+ * @param number 
+ * @param type 
  * @param country ISO country code
+ * @param authenticity Document authenticity score
  */
 @Serializable
 
 data class VeriffSessionDocument (
 
-    /* Document number */
     @SerialName(value = "number")
     val number: kotlin.String? = null,
 
-    /* Document type */
     @SerialName(value = "type")
     val type: VeriffSessionDocument.Type? = null,
 
     /* ISO country code */
     @SerialName(value = "country")
-    val country: kotlin.String? = null
+    val country: kotlin.String? = null,
+
+    /* Document authenticity score */
+    @SerialName(value = "authenticity")
+    val authenticity: kotlin.Double? = null
 
 ) {
 
     /**
-     * Document type
+     * 
      *
      * Values: passport,driver_license,national_id
      */

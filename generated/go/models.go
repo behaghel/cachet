@@ -35,6 +35,31 @@ const (
 	Standard CredentialSubjectVerificationLevel = "standard"
 )
 
+// Defines values for PredicateDefinitionOperator.
+const (
+	Boolean          PredicateDefinitionOperator = "boolean"
+	EqualEqual       PredicateDefinitionOperator = "=="
+	GreaterThan      PredicateDefinitionOperator = ">"
+	GreaterThanEqual PredicateDefinitionOperator = ">="
+	LessThan         PredicateDefinitionOperator = "<"
+	LessThanEqual    PredicateDefinitionOperator = "<="
+)
+
+// Defines values for PredicateDefinitionProofType.
+const (
+	SdJwt   PredicateDefinitionProofType = "sd-jwt"
+	VcBbs   PredicateDefinitionProofType = "vc-bbs"
+	ZkSnark PredicateDefinitionProofType = "zk-snark"
+)
+
+// Defines values for PredicateResultStatus.
+const (
+	Failed       PredicateResultStatus = "failed"
+	NoCredential PredicateResultStatus = "no_credential"
+	NotEvaluable PredicateResultStatus = "not_evaluable"
+	Satisfied    PredicateResultStatus = "satisfied"
+)
+
 // Defines values for TokenRequestGrantType.
 const (
 	ClientCredentials TokenRequestGrantType = "client_credentials"
@@ -66,6 +91,18 @@ const (
 	VerifyResponseFreshnessOk      VerifyResponseFreshness = "ok"
 	VerifyResponseFreshnessStale   VerifyResponseFreshness = "stale"
 )
+
+// BadgeDefinition defines model for BadgeDefinition.
+type BadgeDefinition struct {
+	// Jurisdiction Badge jurisdiction
+	Jurisdiction *string `json:"jurisdiction,omitempty"`
+
+	// Label Badge display label
+	Label string `json:"label"`
+
+	// Ttl Badge time-to-live (ISO 8601 duration)
+	Ttl string `json:"ttl"`
+}
 
 // CredentialRequest defines model for CredentialRequest.
 type CredentialRequest struct {
@@ -167,7 +204,7 @@ type InclusionProof struct {
 
 // Pack defines model for Pack.
 type Pack struct {
-	// Id Pack identifier with version suffix
+	// Id Pack identifier
 	Id string `json:"id"`
 
 	// Name Human-readable pack name
@@ -176,6 +213,72 @@ type Pack struct {
 	// Version Semantic version
 	Version string `json:"version"`
 }
+
+// PackDefinition defines model for PackDefinition.
+type PackDefinition struct {
+	Badge BadgeDefinition `json:"badge"`
+
+	// Id Pack identifier
+	Id string `json:"id"`
+
+	// Jurisdictions Applicable jurisdictions (ISO country codes)
+	Jurisdictions *[]string `json:"jurisdictions,omitempty"`
+
+	// Name Human-readable pack name
+	Name       string                `json:"name"`
+	Predicates []PredicateDefinition `json:"predicates"`
+
+	// Purpose Purpose of the pack
+	Purpose string `json:"purpose"`
+
+	// Version Semantic version
+	Version string `json:"version"`
+}
+
+// PredicateDefinition defines model for PredicateDefinition.
+type PredicateDefinition struct {
+	// Claim Claim field name in the credential subject
+	Claim string `json:"claim"`
+
+	// Id Predicate identifier
+	Id string `json:"id"`
+
+	// IssuersAccepted DID patterns of accepted issuers (supports * wildcard)
+	IssuersAccepted []string `json:"issuersAccepted"`
+
+	// Operator Comparison operator
+	Operator PredicateDefinitionOperator `json:"operator"`
+
+	// ProofType Required proof type
+	ProofType PredicateDefinitionProofType `json:"proofType"`
+
+	// Required Whether this predicate is required for badge granting
+	Required *bool `json:"required,omitempty"`
+
+	// Value Expected value (type depends on operator)
+	Value interface{} `json:"value"`
+}
+
+// PredicateDefinitionOperator Comparison operator
+type PredicateDefinitionOperator string
+
+// PredicateDefinitionProofType Required proof type
+type PredicateDefinitionProofType string
+
+// PredicateResult defines model for PredicateResult.
+type PredicateResult struct {
+	// PredicateId Predicate identifier from the pack definition
+	PredicateId string `json:"predicateId"`
+
+	// Reason Human-readable reason (for non-satisfied statuses)
+	Reason *string `json:"reason,omitempty"`
+
+	// Status Evaluation outcome
+	Status PredicateResultStatus `json:"status"`
+}
+
+// PredicateResultStatus Evaluation outcome
+type PredicateResultStatus string
 
 // ReceiptHashRequest defines model for ReceiptHashRequest.
 type ReceiptHashRequest struct {
@@ -291,25 +394,50 @@ type VerifiableCredential struct {
 	Type   []string `json:"type"`
 }
 
+// VerificationSummary defines model for VerificationSummary.
+type VerificationSummary struct {
+	// BadgeGranted Whether the badge was granted (all required predicates satisfied)
+	BadgeGranted bool `json:"badgeGranted"`
+
+	// OptionalSatisfied Number of optional predicates that were satisfied
+	OptionalSatisfied *int `json:"optionalSatisfied,omitempty"`
+
+	// OptionalTotal Total number of optional predicates
+	OptionalTotal *int `json:"optionalTotal,omitempty"`
+
+	// RequiredSatisfied Number of required predicates that were satisfied
+	RequiredSatisfied int `json:"requiredSatisfied"`
+
+	// RequiredTotal Total number of required predicates
+	RequiredTotal int `json:"requiredTotal"`
+}
+
 // VerifyRequest defines model for VerifyRequest.
 type VerifyRequest struct {
 	// Bundle Credential presentation bundle
-	Bundle map[string]interface{} `json:"bundle"`
+	Bundle struct {
+		// Credentials Verifiable credentials to evaluate
+		Credentials []VerifiableCredential `json:"credentials"`
+	} `json:"bundle"`
 
-	// PolicyId Policy identifier to verify against
+	// PolicyId Pack identifier to verify against
 	PolicyId string `json:"policyId"`
 }
 
 // VerifyResponse defines model for VerifyResponse.
 type VerifyResponse struct {
-	// Badge Verification badge result
+	// Badge Badge label if granted, empty string otherwise
 	Badge string `json:"badge"`
 
 	// Freshness Freshness status of the credentials
 	Freshness VerifyResponseFreshness `json:"freshness"`
 
-	// Predicates Predicates that were proven
-	Predicates []string `json:"predicates"`
+	// PredicateResults Per-predicate evaluation results
+	PredicateResults []PredicateResult `json:"predicateResults"`
+
+	// Predicates Predicate IDs that were satisfied
+	Predicates []string            `json:"predicates"`
+	Summary    VerificationSummary `json:"summary"`
 }
 
 // VerifyResponseFreshness Freshness status of the credentials

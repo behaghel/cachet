@@ -24,7 +24,7 @@ import kotlinx.serialization.Contextual
  * 
  *
  * @param accessToken JWT access token
- * @param tokenType Token type
+ * @param tokenType 
  * @param expiresIn Token expiration time in seconds
  * @param scope Granted scope
  */
@@ -36,7 +36,6 @@ data class TokenResponse (
     @SerialName(value = "access_token")
     val accessToken: kotlin.String,
 
-    /* Token type */
     @SerialName(value = "token_type")
     val tokenType: TokenResponse.TokenType,
 
@@ -51,7 +50,7 @@ data class TokenResponse (
 ) {
 
     /**
-     * Token type
+     * 
      *
      * Values: Bearer
      */

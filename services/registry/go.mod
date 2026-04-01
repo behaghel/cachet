@@ -1,6 +1,6 @@
 module github.com/cachet-id/cachet/services/registry
 
-go 1.25.0
+go 1.25.7
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
@@ -15,6 +15,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
+	github.com/oapi-codegen/runtime v1.3.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.42.0 // indirect
@@ -32,6 +33,7 @@ require (
 )
 
 require (
+	github.com/cachet-id/cachet/generated/go/models v0.0.0
 	github.com/cachet-id/cachet/services/common v0.0.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -42,3 +44,5 @@ require (
 )
 
 replace github.com/cachet-id/cachet/services/common => ../common
+
+replace github.com/cachet-id/cachet/generated/go/models => ../../generated/go
