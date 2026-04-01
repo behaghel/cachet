@@ -32,7 +32,7 @@ func (c *Client) ListPacks() ([]models.PackDefinition, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetching packs: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("registry returned %d", resp.StatusCode)
@@ -51,7 +51,7 @@ func (c *Client) GetPack(packID string) (models.PackDefinition, error) {
 	if err != nil {
 		return models.PackDefinition{}, fmt.Errorf("fetching pack %s: %w", packID, err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusNotFound {
 		return models.PackDefinition{}, fmt.Errorf("pack not found: %s", packID)

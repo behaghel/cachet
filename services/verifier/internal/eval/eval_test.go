@@ -11,11 +11,10 @@ import (
 
 // --- helpers ---
 
-func ptrBool(b bool) *bool           { return &b }
-func ptrInt(i int) *int              { return &i }
-func ptrFloat64(f float64) *float64  { return &f }
-func ptrString(s string) *string     { return &s }
-func ptrTime(t time.Time) *time.Time { return &t }
+func ptrBool(b bool) *bool          { return &b }
+func ptrInt(i int) *int             { return &i }
+func ptrFloat64(f float64) *float64 { return &f }
+func ptrString(s string) *string    { return &s }
 
 func makeCredential(issuer string, subject models.CredentialSubject) models.VerifiableCredential {
 	return models.VerifiableCredential{

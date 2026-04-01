@@ -27,15 +27,15 @@ func mockRegistry() *httptest.Server {
 
 	mux.HandleFunc("/registry/packs", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]models.PackDefinition{testPack})
+		_ = json.NewEncoder(w).Encode([]models.PackDefinition{testPack})
 	})
 	mux.HandleFunc("/registry/packs/pack.test", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(testPack)
+		_ = json.NewEncoder(w).Encode(testPack)
 	})
 	mux.HandleFunc("/registry/packs/nonexistent", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "not_found"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "not_found"})
 	})
 
 	return httptest.NewServer(mux)
