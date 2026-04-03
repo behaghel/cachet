@@ -2,18 +2,18 @@
 
 ## Intro — a customer story (Relying Party)
 
-You run a parent community in Madrid. New caregivers join weekly; you want them onboarded fast without risking safety or hoovering up personal data you don’t want to store. A candidate applies. You click Request Pack → Childcare‑Readiness (ES). They open the link on their phone, unlock their Cachet wallet, and in under two minutes present privacy‑preserving proofs: age ≥ 18, recent liveness + ID, clean childcare‑specific background check, ≥2 verified references. You don’t see their birthdate, ID number, or referees’ names — only a badge: “Childcare‑Ready (ES) — valid 90 days” with an explainability pane that shows what was proven, by whom, and when. A Consent Receipt is logged (hash only) so you can audit later. You onboard with confidence, in minutes, without becoming a data controller for sensitive PII.
+You run a parent community in Madrid. New caregivers join weekly; you want them onboarded fast without risking safety or hoovering up personal data you don't want to store. A candidate applies. You click Request Cach'Pack → Childcare‑Readiness (ES). They open the link on their phone, unlock their Cachet wallet, and in under two minutes present privacy‑preserving proofs: age ≥ 18, recent liveness + ID, clean childcare‑specific background check, ≥2 verified references. You don't see their birthdate, ID number, or referees' names — only a cachet: "Childcare‑Ready (ES) — valid 90 days" with an explainability pane that shows what was proven, by whom, and when. A Consent Receipt is logged (hash only) so you can audit later. You onboard with confidence, in minutes, without becoming a data controller for sensitive PII.
 
-That’s Cachet: portable trust, human rights intact.
+That's Cachet: portable trust, human rights intact.
 
 ## High‑level architecture (overview)
 
 - Holder edge (Cachet Wallet, iOS/Android) — hardware‑backed keys, passkeys sign‑in, credential vault, proof planner, explainability UI, consent receipts. **Dual mode**: credential holder (receiving/presenting) AND relying party (requesting verification via QR/deeplink generation). All PII lives here.
-- Verifier — deterministic policy engine that validates presentations against signed Pack definitions (no ML gating). Returns a Badge and human‑readable “why”.
+- Verifier — deterministic policy engine that validates presentations against signed Cach'Pack definitions (no ML gating). Returns a Cachet and human‑readable "why".
 - Issuance Gateway — converts Veriff outcomes and partner attestations (justice ministries, platforms) into verifiable credentials.
-- Registries — signed, versioned catalogs for Packs/Policies and Issuers/Schemas/Revocation endpoints.
+- Registries — signed, versioned catalogs for Cach'Packs/Policies and Issuers/Schemas/Revocation endpoints.
 - Receipts & Transparency Log — creates consent receipts client‑side; anchors salted hashes in an append‑only Merkle log with Signed Tree Heads for public auditability.
-- Connector Hub & Vouching — pulls platform stats to mint credentials; runs reference capture → ZK “count ≥ K” proofs.
+- Connector Hub & Vouching — pulls platform stats to mint credentials; runs reference capture → ZK "count ≥ K" proofs.
 - Design intent: edge‑first privacy, standards for interop, and explainability by default.
 
 ## Key technologies (why they matter)
@@ -21,7 +21,7 @@ That’s Cachet: portable trust, human rights intact.
 - W3C Verifiable Credentials 2.0 — standard envelope for portable claims; interop with wallets & ecosystems.
 - SD‑JWT VC — selective disclosure of attributes (prove age ≥ 18 without birthdate).
 - BBS+ signatures — unlinkable selective disclosure across multiple presentations.
-- OpenID4VCI / OpenID4VP — issuance & presentation protocols so RPs can request Packs via standard OIDC‑style flows.
+- OpenID4VCI / OpenID4VP — issuance & presentation protocols so RPs can request Cach'Packs via standard OIDC‑style flows.
 - DIDs (Decentralized Identifiers) — stable identifiers for issuers/RPs/wallets with key rotation.
 - StatusList2021 revocation — scalable revocation lists with privacy; verifier checks freshness/validity.
 - ZK‑SNARKs (Plonk/Halo2) — privacy‑preserving predicates over aggregates (e.g., references ≥ 2, fulfilment ≥ 95%).
@@ -29,28 +29,28 @@ That’s Cachet: portable trust, human rights intact.
 - Trusted Execution Environments (SGX/SEV‑SNP) — optional server‑side secure compute for sensitive transforms.
 - HSM‑backed signing — protects registry/issuance/log signing keys; auditable key ceremonies.
 - Passkeys + Secure Enclave/StrongBox — phishing‑resistant auth and hardware key storage on devices.
-- WebAssembly proof planner — portable, sandboxed local planner that composes the cheapest valid proofs per Pack.
+- WebAssembly proof planner — portable, sandboxed local planner that composes the cheapest valid proofs per Cach'Pack.
 - Transparency Log (Merkle + STH) — tamper‑evident public auditing of receipt hashes without exposing PII.
 
 ## Core concepts
 
-- Trust Pack — a named, reusable set of predicates for a purpose (e.g., Childcare‑Readiness, Safe Seller).
+- Cach'Pack — a named, reusable set of predicates for a purpose (e.g., Childcare‑Readiness, Safe Seller).
 - Predicate — a property proven, not the raw attribute (e.g., age ≥ 18, fulfilment ≥ 95%).
-- Badge — contextual outcome, time‑boxed (e.g., Childcare‑Ready (ES, 90d)). No global scores.
+- Cachet — contextual outcome, time‑boxed (e.g., Childcare‑Ready (ES, 90d)). No global scores.
 - Issuer — entity that attests claims (e.g., Veriff for ID+liveness; justice ministry for records).
 - Holder — person being assessed, controlling what to disclose. **Can also act as RP** when requesting verification from others via mobile app.
-- Relying Party (RP) — assessor requesting a Pack (parent, buyer, marketplace, **or another Cachet user** via mobile-to-mobile verification).
-- Presentation — bundle of proofs (SD‑JWT/BBS+/ZK) satisfying Pack predicates.
+- Relying Party (RP) — assessor requesting a Cach'Pack (parent, buyer, marketplace, **or another Cachet user** via mobile-to-mobile verification).
+- Presentation — bundle of proofs (SD‑JWT/BBS+/ZK) satisfying Cach'Pack predicates.
 - Consent Receipt — signed record of purpose and predicates proven; hash anchored to the transparency log.
-- Policy Manifest — signed “constitution” that defines guardrails, crypto suites, fairness rules.
+- Policy Manifest — signed "constitution" that defines guardrails, crypto suites, fairness rules.
 - Trust Contacts & Vouches — private graph of endorsements with decay and context tags.
 
 ## Metrics that matter
 
 ### Reliability & speed
 
-- Time‑to‑trust (TTT): request → badge (p50/p95).
-- Verification success rate: % requests resulting in badge without re‑try.
+- Time‑to‑trust (TTT): request → cachet (p50/p95).
+- Verification success rate: % requests resulting in cachet without re‑try.
 - Issuer SLOs: availability/latency of revocation and issuance endpoints.
 - Anchoring latency: time to include receipt hash in transparency log.
 
@@ -63,35 +63,35 @@ That’s Cachet: portable trust, human rights intact.
 
 ### Adoption & growth
 
-- Pack reuse rate: recipients who reuse their Pack within 30/90 days.
+- Cach'Pack reuse rate: recipients who reuse their Cach'Pack within 30/90 days.
 - RP conversion: legacy → native OID4VP.
 - Virality coefficient: invites generated per completed assessment.
 
 ## Key flows (happy paths)
 
-### Request Pack & Present (Standard RP → Holder)
+### Request Cach'Pack & Present (Standard RP → Holder)
 
-1. RP initiates Request Pack (e.g., Childcare‑Readiness (ES)) →
+1. RP initiates Request Cach'Pack (e.g., Childcare‑Readiness (ES)) →
    QR/deeplink.
-2. Wallet fetches Pack & Policy, plans proofs locally, and presents.
+2. Wallet fetches Cach'Pack & Policy, plans proofs locally, and presents.
 3. Verifier checks signatures, revocation, freshness, jurisdiction →
-   returns Badge + explainability.
+   returns Cachet + explainability.
 4. Wallet issues Consent Receipt; hash anchored to transparency log;
    RP stores minimal copy.
 
 ### Mobile-to-Mobile Verification (Holder → Holder)
 
-1. **User A** (requesting verification) opens Cachet app → "Request Verification" 
-2. Selects Trust Pack (e.g., "Age Verification", "Safe Seller")
+1. **User A** (requesting verification) opens Cachet app → "Request Verification"
+2. Selects Cach'Pack (e.g., "Age Verification", "Safe Seller")
 3. App generates **QR code/deeplink** with verification request
 4. **User B** scans QR/opens link → wallet shows consent screen
-5. User B approves → presents credentials to prove Pack predicates
-6. **User A receives push notification** with Badge result + explainability
+5. User B approves → presents credentials to prove Cach'Pack predicates
+6. **User A receives push notification** with Cachet result + explainability
 7. Both users get Consent Receipts; hashes anchored to transparency log
 
-**Use cases**: 
+**Use cases**:
 - Parent verifying caregiver credentials peer-to-peer
-- Marketplace buyer verifying seller trust score  
+- Marketplace buyer verifying seller trust score
 - Event organizer checking age verification
 - Community member validating background clearance
 
@@ -124,15 +124,15 @@ That’s Cachet: portable trust, human rights intact.
 
 ### Phase A — MVP (0–3 months)
 
-- Wallet core (keys/passkeys, vault), two Packs (Childcare, Safe Seller), Verifier with deterministic policy, Issuance via Veriff, Consent Receipts + basic Transparency Log, RP SDKs (web/mobile).
+- Wallet core (keys/passkeys, vault), two Cach'Packs (Childcare, Safe Seller), Verifier with deterministic policy, Issuance via Veriff, Consent Receipts + basic Transparency Log, RP SDKs (web/mobile).
 
 - Exit: p95 TTT < 2m; ≥ 85% predicate‑only presentations; 2 live RP pilots.
 
 ### Phase B — Proof depth (3–6 months)
 
-- Vouching ZK flow, platform connectors (≥2), device attestation predicate, BBS+ for unlinkability, jurisdictional Pack variants (FR/EE/ES).
+- Vouching ZK flow, platform connectors (≥2), device attestation predicate, BBS+ for unlinkability, jurisdictional Cach'Pack variants (FR/EE/ES).
 
-- Exit: Pack reuse rate ≥ 35%; issuer SLOs ≥ 99.9%/30d; appeals resolved median < 5d.
+- Exit: Cach'Pack reuse rate ≥ 35%; issuer SLOs ≥ 99.9%/30d; appeals resolved median < 5d.
 
 ### Phase C — Scale & governance (6–9 months)
 
@@ -146,15 +146,15 @@ That’s Cachet: portable trust, human rights intact.
 
 ### Pricing components
 
-- **Per‑verification fee** (per successful Pack presentation) with volume tiers.
-- **Premium Packs** (domain‑specific content, e.g., childcare, fintech
+- **Per‑verification fee** (per successful Cach'Pack presentation) with volume tiers.
+- **Premium Cach'Packs** (domain‑specific content, e.g., childcare, fintech
   seller, licensed contractor) priced higher due to issuer costs.
 - **Enterprise plan** for marketplaces/community platforms: SLA, custom
-  Pack variants, analytics, dedicated support.
+  Cach'Pack variants, analytics, dedicated support.
 - **Issuer marketplace rev‑share** where applicable (e.g., background
   check partners).
 
-### What’s off‑limits
+### What's off‑limits
 
 - **No data brokerage**. No selling or renting PII. Revenue is from
   verification value‑add, not data.
@@ -162,7 +162,7 @@ That’s Cachet: portable trust, human rights intact.
 ### Adoption levers
 
 - Open SDKs & sample code; legacy fallback (signed summary) to ease integration.
-- Virality loop: every assessment invites the counterparty to mint a reusable Pack.
+- Virality loop: every assessment invites the counterparty to mint a reusable Cach'Pack.
 - Compliance lift: purpose‑binding, audit receipts, and explainability reduce RP legal risk and storage burden.
 
 ### Cost drivers
@@ -173,9 +173,9 @@ That’s Cachet: portable trust, human rights intact.
 ### Moat
 
 - Creator‑anchored brand & Policy Manifest transparency, issuer
-  network density, and Pack library quality.
+  network density, and Cach'Pack library quality.
 
-# Cachet — Trust Packs (Localized), Policy Manifest & Product Brief v0.4
+# Cachet — Cach'Packs (Localized), Policy Manifest & Product Brief v0.4
 
 _Last updated: 31 Aug 2025_
 
@@ -183,9 +183,9 @@ _Last updated: 31 Aug 2025_
 
 ### 10) Build phases
 
-1. **Phase A**: Registry, Wallet core, Issuance (Veriff), Verifier, two Packs, Receipts + Log.
+1. **Phase A**: Registry, Wallet core, Issuance (Veriff), Verifier, two Cach'Packs, Receipts + Log.
 2. **Phase B**: Vouching ZK, Connector Hub (1–2 platforms), device attestation, SDK hardening.
-3. **Phase C**: Trust Contacts, Policy Studio, multi‑region packs, oversight operations.
+3. **Phase C**: Trust Contacts, Policy Studio, multi‑region Cach'Packs, oversight operations.
 
 ---
 
@@ -281,4 +281,4 @@ To strengthen accountability and prevent silent tampering, every **Consent Recei
 
 ## Recap
 
-This architecture keeps PII at the edge, uses open standards for issuance/presentation, and centralizes only policy, revocation, and audit primitives. It’s issuer‑agnostic, RP‑friendly, and ready for ZK‑heavy predicates as they mature.
+This architecture keeps PII at the edge, uses open standards for issuance/presentation, and centralizes only policy, revocation, and audit primitives. It's issuer‑agnostic, RP‑friendly, and ready for ZK‑heavy predicates as they mature.

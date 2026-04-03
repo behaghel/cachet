@@ -9,7 +9,7 @@
   <!-- Status bar -->
   <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">9:41</text>
 
-  <!-- Illustration: receipt list with log badges -->
+  <!-- Illustration: receipt list with log cachets -->
   <rect x="48" y="140" width="280" height="50" rx="12" fill="#334155"/>
   <circle cx="76" cy="165" r="10" fill="#10B981"/>
   <text x="76" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF">✓</text>
@@ -27,7 +27,7 @@
   <rect x="48" y="260" width="280" height="50" rx="12" fill="#334155"/>
   <circle cx="76" cy="285" r="10" fill="#F59E0B"/>
   <text x="76" y="290" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#FFFFFF">⏳</text>
-  <text x="96" y="282" font-family="Inter, sans-serif" font-size="12" fill="#FFFFFF">Seller badge — Mar 10</text>
+  <text x="96" y="282" font-family="Inter, sans-serif" font-size="12" fill="#FFFFFF">Seller cachet — Mar 10</text>
   <text x="96" y="298" font-family="Inter, sans-serif" font-size="10" fill="#64748B">Marketplace</text>
   <text x="298" y="290" text-anchor="end" font-family="Inter, sans-serif" font-size="9" fill="#F59E0B">Pending</text>
 

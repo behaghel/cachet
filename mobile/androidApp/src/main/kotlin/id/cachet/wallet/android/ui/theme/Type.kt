@@ -22,7 +22,7 @@ val Typography = Typography(
         lineHeight = 34.sp,
         letterSpacing = (-0.5).sp
     ),
-    // headline → Section headers, badge names
+    // headline → Section headers, cachet names
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,

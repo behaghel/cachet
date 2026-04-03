@@ -21,8 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import id.cachet.wallet.android.ui.components.BadgeType
-import id.cachet.wallet.android.ui.components.CachetBadgeMark
+import id.cachet.wallet.android.ui.components.CachetType
+import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.components.SealButton
 import id.cachet.wallet.android.ui.theme.*
 
@@ -45,10 +45,10 @@ private val pages = listOf(
         ctaLabel = "Next"
     ),
     OnboardingPage(
-        title = "Earn badges,\nnot profiles",
-        description = "Badges prove specific things —\n\"I'm 18+\", not your whole identity.\nReuse them everywhere.",
+        title = "Cachets, not\ndata breaches",
+        description = "Cachets prove specific things —\n\"I'm 18+\", not your whole identity.\nReuse them everywhere.",
         keyIcon = "\u267B\uFE0F",
-        keyTitle = "Verify once, prove many times.",
+        keyTitle = "Cache once, prove many times.",
         keySubtitle = "No repeated ID checks.",
         ctaLabel = "Next"
     ),
@@ -102,7 +102,7 @@ fun OnboardingScreen(
             // ── Illustration ──
             when (currentPage) {
                 0 -> LogoIllustration()
-                1 -> BadgeCardsIllustration()
+                1 -> CachetCardsIllustration()
                 2 -> ReceiptListIllustration()
             }
 
@@ -239,10 +239,10 @@ private fun LogoIllustration() {
     }
 }
 
-// ── Page 2 illustration: fanned badge cards ──
+// ── Page 2 illustration: fanned cachet cards ──
 
 @Composable
-private fun BadgeCardsIllustration() {
+private fun CachetCardsIllustration() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,7 +281,7 @@ private fun BadgeCardsIllustration() {
             shadowElevation = 6.dp
         ) {
             Row(modifier = Modifier.padding(16.dp)) {
-                CachetBadgeMark(type = BadgeType.CHILDCARE, size = 56.dp)
+                CachetMark(type = CachetType.CHILDCARE, size = 56.dp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
@@ -315,7 +315,7 @@ private fun ReceiptListIllustration() {
     ) {
         ReceiptMockRow("Childcare check — Mar 15", "Parents Association", "Logged", BrandAccent)
         ReceiptMockRow("Age verification — Mar 12", "Concert venue", "Logged", BrandAccent)
-        ReceiptMockRow("Seller badge — Mar 10", "Marketplace", "Pending", TrustPending)
+        ReceiptMockRow("Seller cachet — Mar 10", "Marketplace", "Pending", TrustPending)
     }
 }
 

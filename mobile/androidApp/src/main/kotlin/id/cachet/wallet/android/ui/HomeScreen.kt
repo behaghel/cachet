@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.model.CredentialCardUi
-import id.cachet.wallet.android.ui.model.TrustPackUi
+import id.cachet.wallet.android.ui.model.CachPackUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.android.ui.theme.*
 
@@ -63,7 +63,7 @@ fun HomeScreen(
 
         // ── Segmented control ──
         CachetSegmentedControl(
-            tabs = listOf("My Trust", "Verify"),
+            tabs = listOf("My Trust", "Cache it"),
             selectedIndex = selectedTab,
             onTabSelected = { selectedTab = it }
         )
@@ -77,7 +77,7 @@ fun HomeScreen(
                     uiState = uiState,
                     onStartVerification = onStartVerification
                 )
-                1 -> VerifyTab(packs = DemoFixtures.trustPacks)
+                1 -> CacheTab(packs = DemoFixtures.cachPacks)
             }
         }
     }
@@ -176,8 +176,8 @@ private fun VaultCredentialCard(card: CredentialCardUi) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (card.badgeType != null) {
-                        CachetBadgeMark(type = card.badgeType, size = 28.dp)
+                    if (card.cachetType != null) {
+                        CachetMark(type = card.cachetType, size = 28.dp)
                     }
                     Text(
                         text = card.displayName,
@@ -339,11 +339,11 @@ private fun StepRow(number: String, label: String) {
 }
 
 // ═══════════════════════════════════════════
-// VERIFY TAB
+// CACHE TAB
 // ═══════════════════════════════════════════
 
 @Composable
-private fun VerifyTab(packs: List<TrustPackUi>) {
+private fun CacheTab(packs: List<CachPackUi>) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
@@ -361,9 +361,9 @@ private fun VerifyTab(packs: List<TrustPackUi>) {
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // Trust Pack question cards
+        // Cach'Pack question cards
         items(packs) { pack ->
-            TrustPackCard(pack = pack)
+            CachPackCard(pack = pack)
         }
 
         // Custom / browse
@@ -392,7 +392,7 @@ private fun VerifyTab(packs: List<TrustPackUi>) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Something else", style = MaterialTheme.typography.titleLarge.copy(fontSize = 15.sp), color = TextSecondary)
-                        Text("Browse all available Trust Packs", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                        Text("Browse all available cach'packs", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
                     }
                 }
             }
@@ -437,7 +437,7 @@ private fun VerifyTab(packs: List<TrustPackUi>) {
 }
 
 @Composable
-private fun TrustPackCard(pack: TrustPackUi) {
+private fun CachPackCard(pack: CachPackUi) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -450,7 +450,7 @@ private fun TrustPackCard(pack: TrustPackUi) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CachetBadgeMark(type = pack.badgeType, size = 44.dp)
+            CachetMark(type = pack.cachetType, size = 44.dp)
 
             Spacer(modifier = Modifier.width(12.dp))
 

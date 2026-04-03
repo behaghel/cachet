@@ -60,7 +60,7 @@ val TextPrimaryDark = Color(0xFFF5F5F4)
 val TextSecondaryDark = Color(0xFFA8A29E)
 val TextTertiaryDark = Color(0xFF64748B)
 
-// ── Shield badge ──
+// ── Shield cachet ──
 val ShieldBody = Color(0xFF263347)
 val ShieldBodyReflection = Color(0xFF2D3B52)
 

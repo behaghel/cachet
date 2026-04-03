@@ -19,7 +19,7 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
 | 4 | `holder-04-vault-my-trust.svg` | Home / My Trust | Direct after demo launch |
-| 5 | `home-c-dual-tabs.svg` | Home / Verify | Tap "Verify" segment |
+| 5 | `home-c-dual-tabs.svg` | Home / Cache it | Tap "Cache it" segment |
 | 6 | `history-01-tab.svg` | History | Tap "History" in bottom nav |
 | 7 | `holder-06-receipts.svg` | Receipts | Tap "Receipts" in bottom nav |
 
@@ -28,10 +28,10 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 | # | Wireframe | Screen | Notes |
 |---|-----------|--------|-------|
 | 8 | `holder-05-empty-vault.svg` | Empty Vault | Requires WalletUiState.Empty |
-| 9 | `verify-02-qr-share.svg` | QR Share | Requires trust pack card tap → overlay |
-| 10 | `verify-03-incoming-request.svg` | Incoming Request | Requires QR scan → overlay |
-| 11 | `verify-04-badge-result.svg` | Badge Result (pass) | Requires "Share & Verify" → overlay |
-| 12 | `verify-05-badge-result-fail.svg` | Badge Result (fail) | Requires fail scenario → overlay |
+| 9 | `cachet-02-qr-share.svg` | QR Share | Requires cach'pack card tap → overlay |
+| 10 | `cachet-03-incoming-request.svg` | Incoming Request | Requires QR scan → overlay |
+| 11 | `cachet-04-result-pass.svg` | Cachet Result (pass) | Requires "Share & Cache" → overlay |
+| 12 | `cachet-05-result-fail.svg` | Cachet Result (fail) | Requires fail scenario → overlay |
 
 ## Variant Wireframes (explored but not chosen)
 

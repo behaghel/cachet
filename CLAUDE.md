@@ -56,9 +56,9 @@ The project uses devenv for dependency management including Android SDK. Key com
 
 Cachet is a microservices-based trust provider with three core services:
 
-1. **Verifier** (`services/verifier/`) - Manages Trust Pack lists and verifies credential presentations
-   - Endpoints: `/packs` (GET), `/presentations/verify` (POST)
-   - Returns verification badges and predicates
+1. **Verifier** (`services/verifier/`) - Manages Cach'Pack lists and verifies credential presentations
+   - Endpoints: `/packs` (GET), `/presentations/cache` (POST)
+   - Returns cachets and predicates
 
 2. **Registry** (`services/registry/`) - Policy/pack registry service
    - Endpoints: `/policy/manifest` (GET)
@@ -85,17 +85,17 @@ Cachet is a microservices-based trust provider with three core services:
 
 ### Key Concepts
 
-- **Trust Packs**: Reusable, privacy-preserving credential templates (e.g., "Childcare Readiness", "Safe Seller")
+- **Cach'Packs**: Reusable, privacy-preserving credential templates (e.g., "Childcare Readiness", "Safe Seller")
 - **Presentations**: Verifiable credential bundles verified against policies
 - **Policy Manifests**: DID-signed policy definitions with versioning
 
 ### Data Flow
 
 1. **Issuance**: Veriff webhook → Issuance Gateway → SD-JWT VC issued via OpenID4VCI
-2. **Verification**: Clients request available Trust Packs from Verifier
+2. **Verification**: Clients request available Cach'Packs from Verifier
 3. **Presentation**: Credential presentations are verified against registered policies
-4. **Results**: Verification results include badges, predicates, and freshness status
-5. **Registry**: Provides policy manifests for Trust Pack definitions
+4. **Results**: Verification results include cachets, predicates, and freshness status
+5. **Registry**: Provides policy manifests for Cach'Pack definitions
 
 ### Mobile Wallet
 
@@ -107,7 +107,7 @@ Cachet is a microservices-based trust provider with three core services:
 
 ### Development Files
 
-- Trust Pack definitions: `docs/PACKS/`
+- Cach'Pack definitions: `docs/PACKS/`
 - Receipt samples: `docs/RECEIPTS/`
 - Policy manifest: `docs/POLICY_MANIFEST.yaml`
 - Architecture docs: `docs/ARCHITECTURE.md`, `docs/TRANSPARENCY_LOG_DESIGN.md`

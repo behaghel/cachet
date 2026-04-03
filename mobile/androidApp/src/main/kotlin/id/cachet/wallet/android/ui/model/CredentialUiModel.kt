@@ -1,6 +1,6 @@
 package id.cachet.wallet.android.ui.model
 
-import id.cachet.wallet.android.ui.components.BadgeType
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 
 data class CredentialCardUi(
@@ -9,7 +9,7 @@ data class CredentialCardUi(
     val issuerLine: String,
     val freshnessLabel: String,
     val isRevoked: Boolean,
-    val badgeType: BadgeType?,
+    val cachetType: CachetType?,
     val trustStatus: TrustStatus,
     val predicates: List<String>,
     val sharesSummary: String
@@ -21,9 +21,9 @@ data class VaultSummaryUi(
     val pendingCount: Int
 )
 
-data class TrustPackUi(
+data class CachPackUi(
     val question: String,
     val description: String,
     val proofCount: Int,
-    val badgeType: BadgeType
+    val cachetType: CachetType
 )

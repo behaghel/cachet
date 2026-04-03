@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
   <!--
-    SCREEN 5: Badge Result — PARTIAL FAIL
+    SCREEN 5: Cachet Result — PARTIAL FAIL
     Some predicates passed, some didn't. Important to design this case
     since it's where the UX earns trust through honesty.
   -->
@@ -18,7 +18,7 @@
 
   <!-- ═══ RESULT: INCOMPLETE ═══ -->
 
-  <!-- Badge circle — coral/warning -->
+  <!-- Cachet circle — coral/warning -->
   <circle cx="188" cy="260" r="80" fill="#F97068"/>
 
   <!-- Exclamation -->
@@ -54,7 +54,7 @@
 
   <!-- Metadata -->
   <line x1="48" y1="676" x2="327" y2="676" stroke="#334155" stroke-width="1"/>
-  <text x="48" y="698" font-family="Inter, sans-serif" font-size="11" fill="#64748B">No badge issued</text>
+  <text x="48" y="698" font-family="Inter, sans-serif" font-size="11" fill="#64748B">No cachet issued</text>
   <text x="300" y="698" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">All proofs required</text>
 
   <!-- ═══ RECEIPT ═══ -->

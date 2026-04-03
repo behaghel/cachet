@@ -1,6 +1,6 @@
 package id.cachet.wallet.android.ui.model
 
-import id.cachet.wallet.android.ui.components.BadgeType
+import id.cachet.wallet.android.ui.components.CachetType
 
 data class QrShareState(
     val question: String,
@@ -26,12 +26,12 @@ data class PredicateResult(
     val failReason: String? = null
 )
 
-data class BadgeResult(
-    val badgeName: String,
+data class CachetResult(
+    val cachetName: String,
     val allPassed: Boolean,
     val passedCount: Int,
     val totalCount: Int,
     val predicates: List<PredicateResult>,
     val validityLabel: String? = null,
-    val badgeType: BadgeType = BadgeType.IDENTITY
+    val cachetType: CachetType = CachetType.IDENTITY
 )

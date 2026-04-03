@@ -17,16 +17,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import id.cachet.wallet.android.ui.components.BadgeType
-import id.cachet.wallet.android.ui.components.CachetBadgeMark
+import id.cachet.wallet.android.ui.components.CachetType
+import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.components.SealButton
-import id.cachet.wallet.android.ui.model.BadgeResult
+import id.cachet.wallet.android.ui.model.CachetResult
 import id.cachet.wallet.android.ui.model.PredicateResult
 import id.cachet.wallet.android.ui.theme.*
 
 @Composable
-fun BadgeResultScreen(
-    result: BadgeResult,
+fun CachetResultScreen(
+    result: CachetResult,
     onDone: () -> Unit,
     onViewReceipt: (() -> Unit)? = null
 ) {
@@ -59,7 +59,7 @@ fun BadgeResultScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // ── Shield badge with glow ──
+            // ── Shield cachet with glow ──
             item {
                 Box(contentAlignment = Alignment.Center) {
                     // Glow rings
@@ -78,19 +78,19 @@ fun BadgeResultScreen(
                             style = Stroke(width = 1.dp.toPx())
                         )
                     }
-                    // Shield badge mark
-                    CachetBadgeMark(
-                        type = result.badgeType,
+                    // Shield cachet mark
+                    CachetMark(
+                        type = result.cachetType,
                         size = 180.dp
                     )
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // ── Badge name + summary pill ──
+            // ── Cachet name + summary pill ──
             item {
                 Text(
-                    text = result.badgeName,
+                    text = result.cachetName,
                     style = MaterialTheme.typography.displaySmall.copy(fontSize = 26.sp),
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -146,7 +146,7 @@ fun BadgeResultScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = if (result.allPassed) "Badge valid for" else "No badge issued",
+                                    text = if (result.allPassed) "Cachet valid for" else "No cachet issued",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = TrustNeutral
                                 )

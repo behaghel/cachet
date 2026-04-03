@@ -19,11 +19,11 @@ import androidx.compose.ui.unit.dp
 import id.cachet.wallet.android.ui.theme.*
 
 /**
- * Renders a Cachet shield badge at any size.
+ * Renders a Cachet shield mark at any size.
  * Geometry faithfully matches the Inkscape-edited SVG template (400x520 viewBox).
  */
 
-enum class BadgeType { CHILDCARE, SELLER, AGE, IDENTITY }
+enum class CachetType { CHILDCARE, SELLER, AGE, IDENTITY }
 
 data class ShieldColors(
     val outerRim: Color,
@@ -34,26 +34,26 @@ data class ShieldColors(
     val frontLeft: Color
 )
 
-private fun shieldColorsFor(type: BadgeType) = when (type) {
-    BadgeType.CHILDCARE -> ShieldColors(
+private fun shieldColorsFor(type: CachetType) = when (type) {
+    CachetType.CHILDCARE -> ShieldColors(
         ShieldChildcareOuterRim, ShieldChildcareRim, ShieldChildcareInnerRim,
         ShieldChildcareLisere, ShieldChildcareFrontR, ShieldChildcareFrontL
     )
-    BadgeType.SELLER -> ShieldColors(
+    CachetType.SELLER -> ShieldColors(
         ShieldSellerOuterRim, ShieldSellerRim, ShieldSellerInnerRim,
         ShieldSellerLisere, ShieldSellerFrontR, ShieldSellerFrontL
     )
-    BadgeType.AGE -> ShieldColors(
+    CachetType.AGE -> ShieldColors(
         ShieldAgeOuterRim, ShieldAgeRim, ShieldAgeInnerRim,
         ShieldAgeLisere, ShieldAgeFrontR, ShieldAgeFrontL
     )
-    BadgeType.IDENTITY -> ShieldColors(
+    CachetType.IDENTITY -> ShieldColors(
         ShieldIdentityOuterRim, ShieldIdentityRim, ShieldIdentityInnerRim,
         ShieldIdentityLisere, ShieldIdentityFrontR, ShieldIdentityFrontL
     )
 }
 
-// ── SVG path data (from Inkscape-edited badge-as-shield.svg) ──
+// ── SVG path data (from Inkscape-edited cachet-shield.svg) ──
 
 private const val PATH_OUTER_RIM =
     "M 200.70553,34.104065 c 39.06139,24.879064 148,28.59103 166,29.575994 V 238.90534 c 0,98.36711 -70,174.46241 -166,213.43806 -96,-38.97565 -166.000016,-115.07095 -166.000016,-213.43806 V 63.680059 C 55.527575,63.349807 151.06141,60.292553 200.70553,34.104065 Z"
@@ -98,8 +98,8 @@ private const val VIEWBOX_H = 520f
 private const val C_ARC_STROKE = 61.8185f
 
 @Composable
-fun CachetBadgeMark(
-    type: BadgeType,
+fun CachetMark(
+    type: CachetType,
     modifier: Modifier = Modifier,
     size: Dp = 56.dp
 ) {
@@ -141,10 +141,10 @@ fun CachetBadgeMark(
                 })
             }) {
                 when (type) {
-                    BadgeType.CHILDCARE -> drawBabyFace()
-                    BadgeType.SELLER -> drawDollarSign()
-                    BadgeType.AGE -> drawAgeText()
-                    BadgeType.IDENTITY -> drawCheckmark()
+                    CachetType.CHILDCARE -> drawBabyFace()
+                    CachetType.SELLER -> drawDollarSign()
+                    CachetType.AGE -> drawAgeText()
+                    CachetType.IDENTITY -> drawCheckmark()
                 }
             }
         }

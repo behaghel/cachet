@@ -12,14 +12,14 @@
   credential vault (SQLDelight); OpenID4VCI issuance flow; consent receipts; quality display.
   _iOS target declared but not built. Passkeys, offline QR, Trust Contacts are planned._
 - **RP SDKs** **(planned)**: Web (TS) & Mobile (Kotlin/Swift) for _Request Pack_
-  (OID4VP), badge rendering, explainability pane. _Stub directories exist._
+  (OID4VP), cachet rendering, explainability pane. _Stub directories exist._
 - **Issuer Console** **(planned)**: onboard issuer DIDs, schemas, status lists.
 
 ### Edge crypto & policy
 
-- **Local Proof Planner** **(planned)** (WASM): composes proofs per Pack using
+- **Local Proof Planner** **(planned)** (WASM): composes proofs per Cach'Pack using
   SD‑JWT/BBS+/ZK; chooses cheapest option; does not exfiltrate PII.
-- **Policy Cache** **(planned)**: signed Policy Manifest & Pack definitions (semver)
+- **Policy Cache** **(planned)**: signed Policy Manifest & Cach'Pack definitions (semver)
   stored locally.
 
 ### Core services (cloud)
@@ -28,8 +28,8 @@
   VC; pluggable issuers (justice ministries, platforms, payments).
 - **Presentation Verifier** (OID4VP) **(stub)**: schema registry, proof
   verification, revocation & freshness checks; returns deterministic
-  **Badge**. _Currently returns hardcoded stub responses._
-- **Pack/Policy Registry** **(implemented)**: signed, versioned Pack JSON; jurisdiction
+  **Cachet**. _Currently returns hardcoded stub responses._
+- **Cach'Pack/Policy Registry** **(implemented)**: signed, versioned Cach'Pack JSON; jurisdiction
   variants; public fetch. _Serves static manifest._
 - **Issuer Registry** **(planned)**: DID documents, schemas, revocation endpoints;
   trust/approval status.
@@ -79,7 +79,7 @@
 - **OID4VP**: `/authorize`, `/par`, `/presentation` (verifier);
   `nonce` & `state` anti‑replay.
 - **Packs**: `GET /packs`, `GET /packs/{id}@{version}`.
-- **Verify**: `POST /presentations/verify` → `{badge, predicates, freshness}`.
+- **Cache**: `POST /presentations/cache` → `{cachet, predicates, freshness}`.
 - **Receipts**: `POST /receipts/hash`, `GET /receipts/{id}`
   (holder‑scoped), `GET /log/sth`, `GET /log/proof?hash=...`.
 - **Issuers**: `POST /issuers/register`, `GET /issuers`, `GET
@@ -92,14 +92,14 @@
 1. Holder completes Veriff flow → Issuance Gateway obtains attested result.
 2. Gateway issues SD‑JWT VC (ID+liveness), writes revocation entry, returns to wallet via OID4VCI.
 
-### Request Pack / Present Proof
+### Request Cach'Pack / Present Proof
 
 1. RP SDK calls `/authorize` with `policyId` & purpose →
    QR/deeplink.
 2. Wallet pulls policy, plans proofs locally, assembles
    SD‑JWT/BBS+/ZK bundle.
 3. RP sends bundle to Verifier → checks schemas, signatures,
-   revocation, freshness, jurisdiction → returns **Badge** +
+   revocation, freshness, jurisdiction → returns **Cachet** +
    explainability.
 4. Wallet emits **Consent Receipt**, anchors hash to Transparency
    Log; RP stores minimal copy (TTL ≤ 90d).

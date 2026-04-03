@@ -35,7 +35,7 @@ fun HistoryScreen(
                 when (selectedFilter) {
                     HistoryFilter.GIVEN -> entry.direction == VerificationDirection.GIVEN
                     HistoryFilter.RECEIVED -> entry.direction == VerificationDirection.RECEIVED
-                    HistoryFilter.BADGES -> entry.badgeEarned != null
+                    HistoryFilter.CACHETS -> entry.cachetEarned != null
                     else -> true
                 }
             })
@@ -55,7 +55,7 @@ fun HistoryScreen(
             style = MaterialTheme.typography.displaySmall
         )
         Text(
-            text = "Verifications given and received",
+            text = "Cachings given and received",
             style = MaterialTheme.typography.bodySmall,
             color = TextSecondary
         )
@@ -91,8 +91,8 @@ fun HistoryScreen(
                     )
                 }
                 items(group.entries, key = { it.id }) { entry ->
-                    if (entry.badgeEarned != null) {
-                        BadgeEarnedCard(entry = entry)
+                    if (entry.cachetEarned != null) {
+                        CachetEarnedCard(entry = entry)
                     } else {
                         HistoryEntryCard(entry = entry)
                     }
@@ -193,11 +193,11 @@ private fun HistoryFilter.label() = when (this) {
     HistoryFilter.ALL -> "All"
     HistoryFilter.GIVEN -> "Given"
     HistoryFilter.RECEIVED -> "Received"
-    HistoryFilter.BADGES -> "Badges"
+    HistoryFilter.CACHETS -> "Cachets"
 }
 
 @Composable
-private fun BadgeEarnedCard(entry: HistoryEntry) {
+private fun CachetEarnedCard(entry: HistoryEntry) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -210,13 +210,13 @@ private fun BadgeEarnedCard(entry: HistoryEntry) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CachetBadgeMark(type = entry.badgeEarned!!, size = 48.dp)
+            CachetMark(type = entry.cachetEarned!!, size = 48.dp)
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "BADGE EARNED",
+                    text = "CACHET EARNED",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = TrustVerifiedText

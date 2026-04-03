@@ -1,6 +1,6 @@
 package id.cachet.wallet.android.ui.mapper
 
-import id.cachet.wallet.android.ui.components.BadgeType
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.model.CredentialCardUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
@@ -24,7 +24,7 @@ object CredentialMapper {
             issuerLine = buildIssuerLine(issuer, tier, expiry),
             freshnessLabel = freshnessLabel(stored.createdAt),
             isRevoked = stored.isRevoked,
-            badgeType = badgeTypeForTypes(vc.type),
+            cachetType = cachetTypeForTypes(vc.type),
             trustStatus = if (stored.isRevoked) TrustStatus.REVOKED else TrustStatus.VERIFIED,
             predicates = getPredicates(subject),
             sharesSummary = "Shared 3 times  ·  Last used 2 days ago"
@@ -55,11 +55,11 @@ object CredentialMapper {
         else -> issuer.take(24).let { if (issuer.length > 24) "$it…" else it }
     }
 
-    internal fun badgeTypeForTypes(types: List<String>): BadgeType? = when {
-        types.contains("IdentityCredential") -> BadgeType.IDENTITY
-        types.contains("ProofOfAge") -> BadgeType.AGE
-        types.contains("BackgroundCheck") -> BadgeType.CHILDCARE
-        types.contains("SellerCredential") -> BadgeType.SELLER
+    internal fun cachetTypeForTypes(types: List<String>): CachetType? = when {
+        types.contains("IdentityCredential") -> CachetType.IDENTITY
+        types.contains("ProofOfAge") -> CachetType.AGE
+        types.contains("BackgroundCheck") -> CachetType.CHILDCARE
+        types.contains("SellerCredential") -> CachetType.SELLER
         else -> null
     }
 

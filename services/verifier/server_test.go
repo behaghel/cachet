@@ -30,43 +30,43 @@ func TestHealthCheck(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `"status":"ok"`)
 }
 
-func TestListPacks(t *testing.T) {
+func TestListCachPacks(t *testing.T) {
 	server := NewServer(testCfg)
 	w := httptest.NewRecorder()
 	server.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/packs", nil))
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var packs []models.Pack
+	var packs []models.CachPack
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &packs))
 	assert.Len(t, packs, 2)
 	assert.Equal(t, "pack.childcare.readiness@0.1.0", packs[0].Id)
 	assert.Equal(t, "Childcare Readiness", packs[0].Name)
 }
 
-func TestVerifyPresentation_Success(t *testing.T) {
+func TestCachePresentation_Success(t *testing.T) {
 	server := NewServer(testCfg)
-	reqBody := models.VerifyRequest{
+	reqBody := models.CacheRequest{
 		PolicyId: "test.policy",
 		Bundle:   map[string]interface{}{"test": "data"},
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/presentations/verify", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/presentations/cache", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 	server.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var resp models.VerifyResponse
+	var resp models.CacheResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	assert.Equal(t, "Demo Badge (stub)", resp.Badge)
+	assert.Equal(t, "Demo Cachet (stub)", resp.Cachet)
 	assert.Contains(t, resp.Predicates, "age.ge.18")
-	assert.Equal(t, models.VerifyResponseFreshnessOk, resp.Freshness)
+	assert.Equal(t, models.CacheResponseFreshnessOk, resp.Freshness)
 }
 
-func TestVerifyPresentation_InvalidJSON(t *testing.T) {
+func TestCachePresentation_InvalidJSON(t *testing.T) {
 	server := NewServer(testCfg)
-	req := httptest.NewRequest(http.MethodPost, "/presentations/verify", bytes.NewReader([]byte("bad")))
+	req := httptest.NewRequest(http.MethodPost, "/presentations/cache", bytes.NewReader([]byte("bad")))
 	w := httptest.NewRecorder()
 	server.Router().ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)

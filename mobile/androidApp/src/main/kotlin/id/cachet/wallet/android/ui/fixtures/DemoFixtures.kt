@@ -1,6 +1,6 @@
 package id.cachet.wallet.android.ui.fixtures
 
-import id.cachet.wallet.android.ui.components.BadgeType
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.model.*
@@ -21,7 +21,7 @@ object DemoFixtures {
             issuerLine = "Issued by Veriff  ·  Premium tier  ·  Expires Dec 2026",
             freshnessLabel = "12d",
             isRevoked = false,
-            badgeType = BadgeType.IDENTITY,
+            cachetType = CachetType.IDENTITY,
             trustStatus = TrustStatus.VERIFIED,
             predicates = listOf("Age 18+", "ID Verified", "Liveness", "Nationality"),
             sharesSummary = "Shared 3 times  ·  Last used 2 days ago"
@@ -32,18 +32,18 @@ object DemoFixtures {
             issuerLine = "Issued by ClearCheck  ·  Standard tier",
             freshnessLabel = "45d",
             isRevoked = false,
-            badgeType = BadgeType.CHILDCARE,
+            cachetType = CachetType.CHILDCARE,
             trustStatus = TrustStatus.VERIFIED,
             predicates = listOf("Criminal clear", "ID Verified"),
             sharesSummary = "Shared 1 time  ·  Last used 5 days ago"
         ),
         CredentialCardUi(
             localId = "demo-seller",
-            displayName = "Safe Seller Badge",
+            displayName = "Safe Seller Cachet",
             issuerLine = "Issued by Marketplace  ·  Awaiting platform data",
             freshnessLabel = "—",
             isRevoked = false,
-            badgeType = BadgeType.SELLER,
+            cachetType = CachetType.SELLER,
             trustStatus = TrustStatus.PENDING,
             predicates = listOf("Fulfilment 95%+", "Low chargebacks"),
             sharesSummary = ""
@@ -58,10 +58,10 @@ object DemoFixtures {
 
     // ── Home / Verify tab ── (wireframe: home-c-dual-tabs)
 
-    val trustPacks: List<TrustPackUi> = listOf(
-        TrustPackUi("Safe for my kids?", "Identity, background check, references", 4, BadgeType.CHILDCARE),
-        TrustPackUi("Trusted seller?", "Identity, platform history, fulfilment rate", 4, BadgeType.SELLER),
-        TrustPackUi("Old enough?", "Age verification (18+ or 21+)", 1, BadgeType.AGE)
+    val cachPacks: List<CachPackUi> = listOf(
+        CachPackUi("Safe for my kids?", "Identity, background check, references", 4, CachetType.CHILDCARE),
+        CachPackUi("Trusted seller?", "Identity, platform history, fulfilment rate", 4, CachetType.SELLER),
+        CachPackUi("Old enough?", "Age verification (18+ or 21+)", 1, CachetType.AGE)
     )
 
     // ── History ── (wireframe: activity-01-tab / history-01-tab)
@@ -72,7 +72,7 @@ object DemoFixtures {
             entries = listOf(
                 HistoryEntry("h1", "Childcare readiness check", "You verified someone", "10:32 AM", "4 proofs checked", VerificationDirection.GIVEN, TrustStatus.PASSED),
                 HistoryEntry("h2", "Age verification", "Festival Entrada verified you", "9:15 AM", "1 proof shared", VerificationDirection.RECEIVED, TrustStatus.PASSED),
-                HistoryEntry("hb1", "Childcare Ready", "Valid for 90 days", "10:32 AM", "", VerificationDirection.GIVEN, TrustStatus.PASSED, badgeEarned = BadgeType.CHILDCARE)
+                HistoryEntry("hb1", "Childcare Ready", "Valid for 90 days", "10:32 AM", "", VerificationDirection.GIVEN, TrustStatus.PASSED, cachetEarned = CachetType.CHILDCARE)
             )
         ),
         HistoryGroup(
@@ -121,10 +121,10 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
-    // ── Overlay: Badge Result Pass ── (wireframe: verify-04-badge-result)
+    // ── Overlay: Cachet Result Pass ── (wireframe: cachet-04-result-pass)
 
-    val badgeResultPass = BadgeResult(
-        badgeName = "Childcare Ready",
+    val cachetResultPass = CachetResult(
+        cachetName = "Childcare Ready",
         allPassed = true,
         passedCount = 4,
         totalCount = 4,
@@ -135,13 +135,13 @@ object DemoFixtures {
             PredicateResult("2+ verified references", true)
         ),
         validityLabel = "90 days",
-        badgeType = BadgeType.CHILDCARE
+        cachetType = CachetType.CHILDCARE
     )
 
-    // ── Overlay: Badge Result Fail ── (wireframe: verify-05-badge-result-fail)
+    // ── Overlay: Cachet Result Fail ── (wireframe: cachet-05-result-fail)
 
-    val badgeResultFail = BadgeResult(
-        badgeName = "Incomplete",
+    val cachetResultFail = CachetResult(
+        cachetName = "Incomplete",
         allPassed = false,
         passedCount = 2,
         totalCount = 4,
@@ -152,6 +152,6 @@ object DemoFixtures {
             PredicateResult("2+ verified references", false, "Only 1 reference on file")
         ),
         validityLabel = null,
-        badgeType = BadgeType.CHILDCARE
+        cachetType = CachetType.CHILDCARE
     )
 }

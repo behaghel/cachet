@@ -28,7 +28,7 @@ tags:
   - name: issuance-gateway
     description: OpenID4VCI credential issuance and Veriff integration
   - name: verifier
-    description: Trust Pack verification
+    description: Cach'Pack verification
   - name: registry
     description: Policy and pack registry
   - name: receipts-log
@@ -123,26 +123,26 @@ paths:
 
   /packs:
     get:
-      summary: List available Trust Packs
-      description: Returns all registered Trust Pack definitions
+      summary: List available Cach'Packs
+      description: Returns all registered Cach'Pack definitions
       operationId: listPacks
       tags: [verifier]
       security: []
       responses:
         "200":
-          description: List of available Trust Packs
+          description: List of available Cach'Packs
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Pack"
+                  $ref: "#/components/schemas/CachPack"
 
-  /presentations/verify:
+  /presentations/cache:
     post:
-      summary: Verify a credential presentation
+      summary: Cache a credential presentation
       description: Verifies a credential bundle against a registered policy
-      operationId: verifyPresentation
+      operationId: cachePresentation
       tags: [verifier]
       security: []
       requestBody:
@@ -150,14 +150,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerifyRequest"
+              $ref: "#/components/schemas/CacheRequest"
       responses:
         "200":
           description: Verification result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VerifyResponse"
+                $ref: "#/components/schemas/CacheResponse"
         "400":
           description: Invalid request body
           content:
@@ -534,13 +534,13 @@ components:
 
     # ── Verifier ───────────────────────────────────────────────────
 
-    Pack:
+    CachPack:
       type: object
       required: [id, version, name]
       properties:
         id:
           type: string
-          description: Pack identifier with version suffix
+          description: Cach'Pack identifier with version suffix
           example: "pack.childcare.readiness@0.1.0"
         version:
           type: string
@@ -548,10 +548,10 @@ components:
           example: "0.1.0"
         name:
           type: string
-          description: Human-readable pack name
+          description: Human-readable Cach'Pack name
           example: "Childcare Readiness"
 
-    VerifyRequest:
+    CacheRequest:
       type: object
       required: [policyId, bundle]
       properties:
@@ -564,13 +564,13 @@ components:
           description: Credential presentation bundle
           additionalProperties: true
 
-    VerifyResponse:
+    CacheResponse:
       type: object
-      required: [badge, predicates, freshness]
+      required: [cachet, predicates, freshness]
       properties:
-        badge:
+        cachet:
           type: string
-          description: Verification badge result
+          description: Cachet result
           example: "Childcare Ready"
         predicates:
           type: array

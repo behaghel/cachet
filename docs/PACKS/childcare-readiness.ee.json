@@ -4,7 +4,7 @@
   "name": "Childcare Readiness (Estonia)",
   "purpose": "Assess suitability for paid childcare work in private homes",
   "jurisdictions": ["EE"],
-  "badge": {
+  "cachet": {
     "label": "Childcare‑Ready (EE)",
     "ttl": "P90D",
     "jurisdiction": "EE"

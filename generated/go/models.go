@@ -60,11 +60,11 @@ const (
 	VeriffSessionStatusExpired   VeriffSessionStatus = "expired"
 )
 
-// Defines values for VerifyResponseFreshness.
+// Defines values for CacheResponseFreshness.
 const (
-	VerifyResponseFreshnessExpired VerifyResponseFreshness = "expired"
-	VerifyResponseFreshnessOk      VerifyResponseFreshness = "ok"
-	VerifyResponseFreshnessStale   VerifyResponseFreshness = "stale"
+	CacheResponseFreshnessExpired CacheResponseFreshness = "expired"
+	CacheResponseFreshnessOk      CacheResponseFreshness = "ok"
+	CacheResponseFreshnessStale   CacheResponseFreshness = "stale"
 )
 
 // CredentialRequest defines model for CredentialRequest.
@@ -165,12 +165,12 @@ type InclusionProof struct {
 	Included *bool `json:"included,omitempty"`
 }
 
-// Pack defines model for Pack.
-type Pack struct {
-	// Id Pack identifier with version suffix
+// CachPack defines model for CachPack.
+type CachPack struct {
+	// Id Cach'Pack identifier with version suffix
 	Id string `json:"id"`
 
-	// Name Human-readable pack name
+	// Name Human-readable Cach'Pack name
 	Name string `json:"name"`
 
 	// Version Semantic version
@@ -291,8 +291,8 @@ type VerifiableCredential struct {
 	Type   []string `json:"type"`
 }
 
-// VerifyRequest defines model for VerifyRequest.
-type VerifyRequest struct {
+// CacheRequest defines model for CacheRequest.
+type CacheRequest struct {
 	// Bundle Credential presentation bundle
 	Bundle map[string]interface{} `json:"bundle"`
 
@@ -300,20 +300,20 @@ type VerifyRequest struct {
 	PolicyId string `json:"policyId"`
 }
 
-// VerifyResponse defines model for VerifyResponse.
-type VerifyResponse struct {
-	// Badge Verification badge result
-	Badge string `json:"badge"`
+// CacheResponse defines model for CacheResponse.
+type CacheResponse struct {
+	// Cachet Cachet result
+	Cachet string `json:"cachet"`
 
 	// Freshness Freshness status of the credentials
-	Freshness VerifyResponseFreshness `json:"freshness"`
+	Freshness CacheResponseFreshness `json:"freshness"`
 
 	// Predicates Predicates that were proven
 	Predicates []string `json:"predicates"`
 }
 
-// VerifyResponseFreshness Freshness status of the credentials
-type VerifyResponseFreshness string
+// CacheResponseFreshness Freshness status of the credentials
+type CacheResponseFreshness string
 
 // GetInclusionProofParams defines parameters for GetInclusionProof.
 type GetInclusionProofParams struct {
@@ -327,8 +327,8 @@ type RequestCredentialJSONRequestBody = CredentialRequest
 // RequestTokenFormdataRequestBody defines body for RequestToken for application/x-www-form-urlencoded ContentType.
 type RequestTokenFormdataRequestBody = TokenRequest
 
-// VerifyPresentationJSONRequestBody defines body for VerifyPresentation for application/json ContentType.
-type VerifyPresentationJSONRequestBody = VerifyRequest
+// CachePresentationJSONRequestBody defines body for CachePresentation for application/json ContentType.
+type CachePresentationJSONRequestBody = CacheRequest
 
 // SubmitReceiptHashJSONRequestBody defines body for SubmitReceiptHash for application/json ContentType.
 type SubmitReceiptHashJSONRequestBody = ReceiptHashRequest

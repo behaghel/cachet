@@ -2,7 +2,7 @@
   <!--
     MY TRUST TAB (Home — left tab of the Dual Tabs)
     The Holder's credential vault. Shows credentials with
-    badges, freshness, and quick predicate preview.
+    cachets, freshness, and quick predicate preview.
   -->
 
   <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
@@ -19,7 +19,7 @@
   <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
   <rect x="29" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
   <text x="112" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">My Trust</text>
-  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">Verify</text>
+  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">Cache it</text>
 
   <!-- ═══ SUMMARY BAR ═══ -->
   <rect x="16" y="172" width="343" height="48" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
@@ -73,7 +73,7 @@
   <rect x="16" y="576" width="343" height="120" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
   <rect x="16" y="576" width="343" height="56" rx="16" fill="#57534E"/>
   <rect x="16" y="610" width="343" height="22" fill="#57534E"/>
-  <text x="32" y="610" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Safe Seller Badge</text>
+  <text x="32" y="610" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Safe Seller Cachet</text>
   <rect x="250" y="592" width="72" height="24" rx="12" fill="#F59E0B"/>
   <text x="286" y="609" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF">Pending</text>
 

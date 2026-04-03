@@ -1,6 +1,6 @@
 package id.cachet.wallet.android.ui.mapper
 
-import id.cachet.wallet.android.ui.components.BadgeType
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.domain.model.*
 import kotlinx.datetime.Clock
@@ -64,21 +64,21 @@ class CredentialMapperTest {
         assertEquals("short", CredentialMapper.getIssuerDisplayName("short"))
     }
 
-    // ── badgeTypeForTypes ──
+    // ── cachetTypeForTypes ──
 
     @Test
-    fun `identity credential maps to IDENTITY badge`() {
-        assertEquals(BadgeType.IDENTITY, CredentialMapper.badgeTypeForTypes(listOf("IdentityCredential")))
+    fun `identity credential maps to IDENTITY cachet`() {
+        assertEquals(CachetType.IDENTITY, CredentialMapper.cachetTypeForTypes(listOf("IdentityCredential")))
     }
 
     @Test
-    fun `seller credential maps to SELLER badge`() {
-        assertEquals(BadgeType.SELLER, CredentialMapper.badgeTypeForTypes(listOf("SellerCredential")))
+    fun `seller credential maps to SELLER cachet`() {
+        assertEquals(CachetType.SELLER, CredentialMapper.cachetTypeForTypes(listOf("SellerCredential")))
     }
 
     @Test
     fun `unknown type returns null`() {
-        assertNull(CredentialMapper.badgeTypeForTypes(listOf("SomethingElse")))
+        assertNull(CredentialMapper.cachetTypeForTypes(listOf("SomethingElse")))
     }
 
     // ── getPredicates ──
@@ -214,7 +214,7 @@ class CredentialMapperTest {
         assertTrue(result.issuerLine.contains("Veriff"))
         assertTrue(result.issuerLine.contains("Premium tier"))
         assertEquals("3d", result.freshnessLabel)
-        assertEquals(BadgeType.IDENTITY, result.badgeType)
+        assertEquals(CachetType.IDENTITY, result.cachetType)
         assertEquals(TrustStatus.VERIFIED, result.trustStatus)
         assertEquals(listOf("Age 30+", "ID Verified"), result.predicates)
         assertFalse(result.isRevoked)

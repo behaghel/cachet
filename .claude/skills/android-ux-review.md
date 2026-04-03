@@ -68,7 +68,7 @@ Output a markdown report with this structure:
 | Screen | Wireframe | Verdict | Notes |
 |--------|-----------|---------|-------|
 | Onboarding 1 | holder-01-onboarding-1.svg | Match | — |
-| Home / My Trust | holder-04-vault-my-trust.svg | Minor | Status badge says "Passed" instead of "Verified" |
+| Home / My Trust | holder-04-vault-my-trust.svg | Minor | Status cachet says "Passed" instead of "Verified" |
 | ... | ... | ... | ... |
 
 ### Detailed Findings
@@ -83,7 +83,7 @@ Output a markdown report with this structure:
 - **Match** — Screen faithfully implements the wireframe
 - **Minor** — Small deviations that don't affect UX intent (e.g., slightly different spacing)
 - **Gap** — Missing elements, wrong content, or structural differences from the wireframe
-- **Upgrade** — Intentional improvement over the wireframe (e.g., badge icons instead of emoji)
+- **Upgrade** — Intentional improvement over the wireframe (e.g., cachet icons instead of emoji)
 
 ## Tips
 

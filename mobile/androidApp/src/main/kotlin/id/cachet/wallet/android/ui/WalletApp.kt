@@ -28,7 +28,7 @@ enum class MainTab { HOME, HISTORY, RECEIPTS }
 sealed class OverlayScreen {
     data class QrShare(val question: String, val predicates: List<String>) : OverlayScreen()
     data class IncomingRequest(val request: VerificationRequest) : OverlayScreen()
-    data class BadgeResultOverlay(val result: BadgeResult) : OverlayScreen()
+    data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,12 +61,12 @@ fun WalletApp(demoMode: Boolean = false) {
             is OverlayScreen.IncomingRequest -> IncomingRequestScreen(
                 request = screen.request,
                 onShare = {
-                    overlay = OverlayScreen.BadgeResultOverlay(DemoFixtures.badgeResultPass)
+                    overlay = OverlayScreen.CachetResultOverlay(DemoFixtures.cachetResultPass)
                 },
                 onDecline = { overlay = null },
                 onClose = { overlay = null }
             )
-            is OverlayScreen.BadgeResultOverlay -> BadgeResultScreen(
+            is OverlayScreen.CachetResultOverlay -> CachetResultScreen(
                 result = screen.result,
                 onDone = { overlay = null },
                 onViewReceipt = {
