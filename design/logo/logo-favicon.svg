@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 76" width="64" height="76">
+  <!--
+    Cachet favicon — Shield mark simplified for small sizes
+  -->
+  <!-- Border -->
+  <path d="M 32 2 C 38 2, 54 3, 58 4 L 58 32
+           C 58 48, 46 60, 32 66
+           C 18 60, 6 48, 6 32 L 6 4
+           C 10 3, 26 2, 32 2 Z"
+        fill="#10B981"/>
+  <!-- Body -->
+  <path d="M 32 8 C 36 8, 50 9, 52 10 L 52 32
+           C 52 45, 42 55, 32 60
+           C 22 55, 12 45, 12 32 L 12 10
+           C 14 9, 28 8, 32 8 Z"
+        fill="#1E293B"/>
+  <!-- Emerald circle -->
+  <circle cx="32" cy="36" r="17" fill="#10B981"/>
+  <!-- C arc -->
+  <path d="M 41.4 46 A 14 14 0 1 0 22.6 46"
+        fill="none" stroke="white" stroke-width="6.5" stroke-linecap="round"/>
+</svg>

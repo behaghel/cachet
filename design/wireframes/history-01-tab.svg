@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    HISTORY TAB
+    Shows both verifications given (as verifier) AND received (as holder).
+    Unified timeline — reinforces dual-mode identity.
+    Each entry shows: direction (given/received), badge result, counterparty, date.
+  -->
+
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Header -->
+  <text x="24" y="100" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">History</text>
+  <text x="24" y="120" font-family="Inter, sans-serif" font-size="13" fill="#57534E">Verifications given and received</text>
+
+  <!-- Filter pills -->
+  <rect x="24" y="136" width="50" height="30" rx="15" fill="#1E293B"/>
+  <text x="49" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">All</text>
+
+  <rect x="82" y="136" width="72" height="30" rx="15" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="118" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Given</text>
+
+  <rect x="162" y="136" width="86" height="30" rx="15" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="205" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Received</text>
+
+  <!-- ═══ TIMELINE ═══ -->
+
+  <!-- Date header -->
+  <text x="24" y="200" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#A8A29E">TODAY</text>
+
+  <!-- Entry 1: GIVEN — you verified someone, passed -->
+  <rect x="16" y="214" width="343" height="92" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <!-- Direction indicator: arrow out = given -->
+  <circle cx="40" cy="248" r="16" fill="#1E293B"/>
+  <text x="40" y="253" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#FFFFFF">↗</text>
+  <!-- Content -->
+  <text x="66" y="240" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Childcare readiness check</text>
+  <text x="66" y="258" font-family="Inter, sans-serif" font-size="12" fill="#57534E">You verified someone</text>
+  <text x="66" y="278" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">10:32 AM  ·  4 proofs checked</text>
+  <!-- Result badge -->
+  <rect x="268" y="232" width="72" height="24" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="248" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <text x="344" y="260" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Entry 2: RECEIVED — someone verified you, passed -->
+  <rect x="16" y="318" width="343" height="92" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="40" cy="352" r="16" fill="#10B981"/>
+  <text x="40" y="357" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#FFFFFF">↙</text>
+  <text x="66" y="344" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Age verification</text>
+  <text x="66" y="362" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Festival Entrada verified you</text>
+  <text x="66" y="382" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">9:15 AM  ·  1 proof shared</text>
+  <rect x="268" y="336" width="72" height="24" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="352" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <text x="344" y="364" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Date header -->
+  <text x="24" y="440" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#A8A29E">MAR 28</text>
+
+  <!-- Entry 3: GIVEN — incomplete -->
+  <rect x="16" y="454" width="343" height="92" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="40" cy="488" r="16" fill="#1E293B"/>
+  <text x="40" y="493" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#FFFFFF">↗</text>
+  <text x="66" y="480" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Trusted seller check</text>
+  <text x="66" y="498" font-family="Inter, sans-serif" font-size="12" fill="#57534E">You verified someone</text>
+  <text x="66" y="518" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">2:45 PM  ·  2 of 4 proofs passed</text>
+  <rect x="248" y="472" width="92" height="24" rx="12" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="294" y="488" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Incomplete</text>
+  <text x="344" y="500" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Entry 4: RECEIVED — passed -->
+  <rect x="16" y="558" width="343" height="92" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="40" cy="592" r="16" fill="#10B981"/>
+  <text x="40" y="597" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#FFFFFF">↙</text>
+  <text x="66" y="584" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Identity check</text>
+  <text x="66" y="602" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Freelance platform verified you</text>
+  <text x="66" y="622" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">11:20 AM  ·  2 proofs shared</text>
+  <rect x="268" y="576" width="72" height="24" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="592" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <text x="344" y="604" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Date header -->
+  <text x="24" y="680" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#A8A29E">MAR 22</text>
+
+  <!-- Entry 5: RECEIVED — declined -->
+  <rect x="16" y="694" width="343" height="52" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="40" cy="720" r="12" fill="#F5F5F4"/>
+  <text x="40" y="725" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">↙</text>
+  <text x="62" y="718" font-family="Inter, sans-serif" font-size="13" fill="#A8A29E">Background check request — you declined</text>
+  <text x="62" y="734" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Unknown requester  ·  3:10 PM</text>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <rect x="0" y="752" width="375" height="60" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="94" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Home</text>
+  <text x="188" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#10B981">History</text>
+  <circle cx="188" cy="770" r="2" fill="#10B981"/>
+  <text x="282" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Receipts</text>
+</svg>

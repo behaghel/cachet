@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    HOME VARIANT C: "Dual Tabs"
+    Top segmented control: "My Trust" | "Verify"
+    Swipeable. Both modes feel equally native — no hierarchy.
+    Currently showing the "Verify" tab to show the novel flow.
+  -->
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- ═══ HEADER ═══ -->
+  <text x="188" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+
+  <!-- Segmented control -->
+  <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
+  <!-- Inactive tab -->
+  <text x="106" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">My Trust</text>
+  <!-- Active tab (Verify) -->
+  <rect x="180" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
+  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Verify</text>
+
+  <!-- ═══ VERIFY TAB CONTENT ═══ -->
+
+  <text x="24" y="196" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#1C1917">What do you need to know?</text>
+  <text x="24" y="216" font-family="Inter, sans-serif" font-size="13" fill="#57534E">Pick a question — we'll handle the proof</text>
+
+  <!-- Trust Pack as question cards — full width, stacked -->
+
+  <!-- Question 1: Childcare -->
+  <rect x="16" y="236" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="48" cy="268" r="20" fill="#1E293B"/>
+  <text x="48" y="274" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#FFFFFF">👶</text>
+  <text x="80" y="262" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Safe for my kids?</text>
+  <text x="80" y="280" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Identity, background check, references</text>
+  <rect x="80" y="292" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="305" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">4 proofs</text>
+  <text x="340" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">›</text>
+
+  <!-- Question 2: Seller -->
+  <rect x="16" y="336" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="48" cy="368" r="20" fill="#1E293B"/>
+  <text x="48" y="374" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#FFFFFF">🛒</text>
+  <text x="80" y="362" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Trusted seller?</text>
+  <text x="80" y="380" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Identity, platform history, fulfilment rate</text>
+  <rect x="80" y="392" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">4 proofs</text>
+  <text x="340" y="370" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">›</text>
+
+  <!-- Question 3: Age -->
+  <rect x="16" y="436" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="48" cy="468" r="20" fill="#1E293B"/>
+  <text x="48" y="474" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#FFFFFF">🎂</text>
+  <text x="80" y="462" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Old enough?</text>
+  <text x="80" y="480" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Age verification (18+ or 21+)</text>
+  <rect x="80" y="492" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="505" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">1 proof</text>
+  <text x="340" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">›</text>
+
+  <!-- Question 4: Custom -->
+  <rect x="16" y="536" width="343" height="88" rx="16" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1" stroke-dasharray="6 4"/>
+  <circle cx="48" cy="568" r="20" fill="#E7E5E4"/>
+  <text x="48" y="574" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#A8A29E">+</text>
+  <text x="80" y="565" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#57534E">Something else</text>
+  <text x="80" y="583" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Browse all available Trust Packs</text>
+
+  <!-- ═══ OR: Scan QR ═══ -->
+  <text x="188" y="660" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">— or —</text>
+
+  <rect x="100" y="674" width="175" height="48" rx="24" fill="none" stroke="#1E293B" stroke-width="2"/>
+  <text x="188" y="703" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1E293B">Scan a QR code</text>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <rect x="0" y="752" width="375" height="60" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="94" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#10B981">Home</text>
+  <circle cx="94" cy="770" r="2" fill="#10B981"/>
+  <text x="188" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">History</text>
+  <text x="282" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Receipts</text>
+
+  <!-- Label -->
+  <rect x="100" y="14" width="175" height="22" rx="11" fill="#1E293B"/>
+  <text x="188" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF" letter-spacing="1">C — DUAL TABS (Verify view)</text>
+</svg>

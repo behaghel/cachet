@@ -1,0 +1,37 @@
+package id.cachet.wallet.android.ui.model
+
+import id.cachet.wallet.android.ui.components.BadgeType
+
+data class QrShareState(
+    val question: String,
+    val predicates: List<String>,
+    val expiresLabel: String = "Request expires in 4:58"
+)
+
+data class RequestPredicate(
+    val claim: String,
+    val privacyNote: String
+)
+
+data class VerificationRequest(
+    val question: String,
+    val predicates: List<RequestPredicate>,
+    val retentionDays: Int = 90,
+    val loggedInTransparencyLog: Boolean = true
+)
+
+data class PredicateResult(
+    val label: String,
+    val passed: Boolean,
+    val failReason: String? = null
+)
+
+data class BadgeResult(
+    val badgeName: String,
+    val allPassed: Boolean,
+    val passedCount: Int,
+    val totalCount: Int,
+    val predicates: List<PredicateResult>,
+    val validityLabel: String? = null,
+    val badgeType: BadgeType = BadgeType.IDENTITY
+)

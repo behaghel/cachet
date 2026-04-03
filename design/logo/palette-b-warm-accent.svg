@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
+  <!--
+    PALETTE B: Warm Accent
+    Same slate+emerald foundation, but introduces a warm coral as a
+    third voice for destructive/urgent states. Amber for pending.
+    More color range, warmer overall feel.
+  -->
+
+  <!-- Title -->
+  <text x="600" y="40" text-anchor="middle" font-family="Inter, Helvetica Neue, sans-serif"
+        font-size="24" font-weight="700" fill="#1E293B">PALETTE B — Warm Accent</text>
+  <text x="600" y="62" text-anchor="middle" font-family="Inter, Helvetica Neue, sans-serif"
+        font-size="13" fill="#64748B">Slate + emerald foundation, coral for urgency, amber for pending — warmer range</text>
+
+  <!-- ═══ ROW 1: Brand ═══ -->
+  <text x="30" y="105" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">BRAND</text>
+
+  <rect x="30" y="115" width="120" height="80" rx="8" fill="#1E293B"/>
+  <text x="90" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Primary</text>
+  <text x="90" y="229" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#1E293B</text>
+
+  <rect x="170" y="115" width="120" height="80" rx="8" fill="#10B981"/>
+  <text x="230" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Accent</text>
+  <text x="230" y="229" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#10B981</text>
+
+  <rect x="310" y="115" width="120" height="80" rx="8" fill="#0F172A"/>
+  <text x="370" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Primary Dark</text>
+  <text x="370" y="229" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#0F172A</text>
+
+  <rect x="450" y="115" width="120" height="80" rx="8" fill="#34D399"/>
+  <text x="510" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Accent Light</text>
+  <text x="510" y="229" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#34D399</text>
+
+  <rect x="590" y="115" width="120" height="80" rx="8" fill="#F97068"/>
+  <text x="650" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Warm Accent</text>
+  <text x="650" y="229" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#F97068</text>
+
+  <!-- ═══ ROW 2: Trust States ═══ -->
+  <text x="30" y="275" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">TRUST STATES</text>
+
+  <rect x="30" y="285" width="120" height="80" rx="8" fill="#10B981"/>
+  <text x="90" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Verified</text>
+  <text x="90" y="399" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#10B981</text>
+
+  <rect x="170" y="285" width="120" height="80" rx="8" fill="#F59E0B"/>
+  <text x="230" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Pending</text>
+  <text x="230" y="399" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#F59E0B</text>
+
+  <rect x="310" y="285" width="120" height="80" rx="8" fill="#F97068"/>
+  <text x="370" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Revoked</text>
+  <text x="370" y="399" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#F97068</text>
+
+  <rect x="450" y="285" width="120" height="80" rx="8" fill="#64748B"/>
+  <text x="510" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Neutral</text>
+  <text x="510" y="399" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#64748B</text>
+
+  <!-- ═══ ROW 3: Surfaces (Light) ═══ -->
+  <text x="30" y="445" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">SURFACES — LIGHT MODE</text>
+
+  <rect x="30" y="455" width="120" height="80" rx="8" fill="#FAFAF9" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="90" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Background</text>
+  <text x="90" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#FAFAF9</text>
+
+  <rect x="170" y="455" width="120" height="80" rx="8" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="230" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Card</text>
+  <text x="230" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#FFFFFF</text>
+
+  <rect x="310" y="455" width="120" height="80" rx="8" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="370" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Elevated</text>
+  <text x="370" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#F5F5F4</text>
+
+  <rect x="450" y="455" width="120" height="80" rx="8" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="510" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Accent Tint</text>
+  <text x="510" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#ECFDF5</text>
+
+  <!-- ═══ ROW 3b: Surfaces (Dark) ═══ -->
+  <text x="630" y="445" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">SURFACES — DARK MODE</text>
+
+  <rect x="630" y="455" width="120" height="80" rx="8" fill="#0F172A"/>
+  <text x="690" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">Background</text>
+  <text x="690" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748B">#0F172A</text>
+
+  <rect x="770" y="455" width="120" height="80" rx="8" fill="#1C1917"/>
+  <text x="830" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">Card</text>
+  <text x="830" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748B">#1C1917</text>
+
+  <rect x="910" y="455" width="120" height="80" rx="8" fill="#292524"/>
+  <text x="970" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">Elevated</text>
+  <text x="970" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748B">#292524</text>
+
+  <rect x="1050" y="455" width="120" height="80" rx="8" fill="#022C22"/>
+  <text x="1110" y="555" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#94A3B8">Accent Tint</text>
+  <text x="1110" y="569" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748B">#022C22</text>
+
+  <!-- ═══ ROW 4: Text ═══ -->
+  <text x="30" y="615" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">TEXT</text>
+
+  <rect x="30" y="625" width="120" height="50" rx="8" fill="#1C1917"/>
+  <text x="90" y="695" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Primary</text>
+  <text x="90" y="709" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#1C1917</text>
+
+  <rect x="170" y="625" width="120" height="50" rx="8" fill="#57534E"/>
+  <text x="230" y="695" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Secondary</text>
+  <text x="230" y="709" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#57534E</text>
+
+  <rect x="310" y="625" width="120" height="50" rx="8" fill="#A8A29E"/>
+  <text x="370" y="695" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">Tertiary</text>
+  <text x="370" y="709" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#A8A29E</text>
+
+  <rect x="450" y="625" width="120" height="50" rx="8" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="510" y="695" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1E293B">On Brand</text>
+  <text x="510" y="709" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#94A3B8">#FFFFFF</text>
+
+  <!-- ═══ Logo preview in context ═══ -->
+  <text x="830" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" letter-spacing="2">LOGO IN CONTEXT</text>
+
+  <!-- Light background -->
+  <rect x="740" y="115" width="180" height="180" rx="12" fill="#FAFAF9" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="830" cy="185" r="55" fill="#1E293B"/>
+  <circle cx="830" cy="212" r="45" fill="#10B981"/>
+  <path d="M 805.2 232.6 A 43 43 0 1 1 854.8 232.6" fill="none" stroke="white" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Dark background -->
+  <rect x="940" y="115" width="180" height="180" rx="12" fill="#0F172A"/>
+  <circle cx="1030" cy="185" r="55" fill="#1E293B"/>
+  <circle cx="1030" cy="212" r="45" fill="#10B981"/>
+  <path d="M 1005.2 232.6 A 43 43 0 1 1 1054.8 232.6" fill="none" stroke="white" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Sample buttons -->
+  <rect x="740" y="310" width="180" height="48" rx="24" fill="#10B981"/>
+  <text x="830" y="340" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Verify Identity</text>
+
+  <rect x="940" y="310" width="180" height="48" rx="24" fill="none" stroke="#F97068" stroke-width="2"/>
+  <text x="1030" y="340" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#F97068">Revoke</text>
+
+  <!-- Sample badges -->
+  <rect x="740" y="375" width="120" height="28" rx="14" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="800" y="394" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">Verified</text>
+
+  <rect x="875" y="375" width="120" height="28" rx="14" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+  <text x="935" y="394" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#92400E">Pending</text>
+
+  <rect x="1010" y="375" width="120" height="28" rx="14" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="1070" y="394" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#B91C1C">Revoked</text>
+
+  <!-- Footer note -->
+  <text x="600" y="790" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#94A3B8">
+    Warm palette — coral #F97068 as third voice for urgency/revocation. Stone-tinted surfaces. More color range.
+  </text>
+</svg>

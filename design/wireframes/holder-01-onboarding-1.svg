@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    ONBOARDING 1/3: "Your trust, portable"
+    First screen after install. Sets the tone.
+  -->
+
+  <rect width="375" height="812" rx="40" fill="#1E293B"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">9:41</text>
+
+  <!-- Skip -->
+  <text x="338" y="95" text-anchor="end" font-family="Inter, sans-serif" font-size="14" fill="#64748B">Skip</text>
+
+  <!-- Illustration area: large logo mark -->
+  <circle cx="188" cy="280" r="100" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+  <circle cx="188" cy="260" r="72" fill="#1E293B"/>
+  <circle cx="188" cy="290" r="58" fill="#10B981"/>
+  <path d="M 164.5 306 A 55 55 0 1 1 211.5 306"
+        fill="none" stroke="white" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Text content -->
+  <text x="188" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Your trust, portable</text>
+
+  <text x="188" y="478" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Prove what matters about you</text>
+  <text x="188" y="498" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">without exposing what doesn't.</text>
+
+  <!-- Key point -->
+  <rect x="40" y="536" width="295" height="56" rx="16" fill="#334155"/>
+  <text x="64" y="560" font-family="Inter, sans-serif" font-size="20" fill="#10B981">🔒</text>
+  <text x="92" y="558" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Your data never leaves your phone.</text>
+  <text x="92" y="576" font-family="Inter, sans-serif" font-size="12" fill="#64748B">Not even Cachet can see it.</text>
+
+  <!-- Pagination dots -->
+  <circle cx="172" cy="650" r="4" fill="#FFFFFF"/>
+  <circle cx="188" cy="650" r="4" fill="#64748B"/>
+  <circle cx="204" cy="650" r="4" fill="#64748B"/>
+
+  <!-- CTA -->
+  <rect x="24" y="700" width="327" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="734" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Next</text>
+</svg>

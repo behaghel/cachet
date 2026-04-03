@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    SCREEN 3: Incoming Request
+    The OTHER person's phone — they scanned the QR or tapped the link.
+    "Someone wants to verify you." Clear, non-threatening, informative.
+  -->
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Close button -->
+  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">✕</text>
+
+  <!-- ═══ REQUEST HEADER ═══ -->
+  <!-- Requester avatar/icon -->
+  <circle cx="188" cy="140" r="36" fill="#1E293B"/>
+  <text x="188" y="148" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" fill="#FFFFFF">?</text>
+
+  <text x="188" y="204" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Verification Request</text>
+  <text x="188" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Someone wants to know:</text>
+
+  <!-- The question -->
+  <rect x="32" y="248" width="311" height="60" rx="16" fill="#1E293B"/>
+  <text x="188" y="284" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#FFFFFF">Are you safe for childcare?</text>
+
+  <!-- ═══ WHAT THEY'LL SEE ═══ -->
+  <text x="24" y="348" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">They will learn:</text>
+  <text x="24" y="366" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Only these facts — nothing more</text>
+
+  <!-- Predicate list with check/proof icons -->
+  <rect x="16" y="384" width="343" height="200" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+
+  <!-- Predicate 1 -->
+  <circle cx="44" cy="416" r="12" fill="#ECFDF5"/>
+  <text x="44" y="421" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#10B981">✓</text>
+  <text x="66" y="414" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">You are 18 or older</text>
+  <text x="66" y="430" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age will NOT be shared</text>
+
+  <!-- Divider -->
+  <line x1="40" y1="446" x2="340" y2="446" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 2 -->
+  <circle cx="44" cy="468" r="12" fill="#ECFDF5"/>
+  <text x="44" y="473" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#10B981">✓</text>
+  <text x="66" y="466" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">Your identity is verified</text>
+  <text x="66" y="482" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name will NOT be shared</text>
+
+  <!-- Divider -->
+  <line x1="40" y1="498" x2="340" y2="498" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 3 -->
+  <circle cx="44" cy="520" r="12" fill="#ECFDF5"/>
+  <text x="44" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#10B981">✓</text>
+  <text x="66" y="518" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">No criminal record</text>
+  <text x="66" y="534" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only a clear/not-clear result</text>
+
+  <!-- Divider -->
+  <line x1="40" y1="550" x2="340" y2="550" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 4 -->
+  <circle cx="44" cy="568" r="12" fill="#ECFDF5"/>
+  <text x="44" y="573" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#10B981">✓</text>
+  <text x="66" y="566" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">2+ verified references</text>
+  <text x="66" y="582" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Referee names will NOT be shared</text>
+
+  <!-- ═══ CONSENT DETAILS ═══ -->
+  <rect x="16" y="600" width="343" height="52" rx="12" fill="#F5F5F4"/>
+  <text x="32" y="622" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Result kept by requester for</text>
+  <text x="258" y="622" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1C1917">90 days</text>
+  <text x="32" y="640" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Logged in transparency log</text>
+  <text x="258" y="640" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#10B981">Yes</text>
+
+  <!-- ═══ ACTION BUTTONS ═══ -->
+  <rect x="16" y="672" width="343" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="706" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Share &amp; Verify</text>
+
+  <rect x="16" y="736" width="343" height="44" rx="22" fill="none"/>
+  <text x="188" y="764" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Decline</text>
+</svg>

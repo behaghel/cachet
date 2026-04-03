@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="400" height="480">
+  <!--
+    Cachet logo mark — Shield shape
+    Brand colors: Midnight Slate #1E293B + Vivid Emerald #10B981
+    Based on badge-as-shield concept with brand palette.
+  -->
+
+  <!-- ═══ SHIELD BORDER — beveled 3D effect ═══ -->
+  <!-- Outer rim: light emerald highlight -->
+  <path d="M 200 16 C 240 16, 340 20, 356 24 L 356 200
+           C 356 300, 290 380, 200 420
+           C 110 380, 44 300, 44 200 L 44 24
+           C 60 20, 160 16, 200 16 Z"
+        fill="#34D399"/>
+
+  <!-- Mid rim: emerald -->
+  <path d="M 200 26 C 236 26, 332 30, 346 33 L 346 200
+           C 346 294, 284 372, 200 410
+           C 116 372, 54 294, 54 200 L 54 33
+           C 68 30, 164 26, 200 26 Z"
+        fill="#10B981"/>
+
+  <!-- Inner rim: deeper emerald shadow -->
+  <path d="M 200 36 C 232 36, 324 40, 336 42 L 336 200
+           C 336 288, 278 364, 200 400
+           C 122 364, 64 288, 64 200 L 64 42
+           C 76 40, 168 36, 200 36 Z"
+        fill="#059669"/>
+
+  <!-- Lisere: light emerald accent -->
+  <path d="M 200 44 C 228 44, 318 48, 328 50 L 328 200
+           C 328 282, 272 356, 200 392
+           C 128 356, 72 282, 72 200 L 72 50
+           C 82 48, 172 44, 200 44 Z"
+        fill="#6EE7B7"/>
+
+  <!-- ═══ SHIELD BODY — dark slate ═══ -->
+  <path d="M 200 54 C 224 54, 310 57, 320 59 L 320 200
+           C 320 276, 266 348, 200 382
+           C 134 348, 80 276, 80 200 L 80 59
+           C 90 57, 176 54, 200 54 Z"
+        fill="#1E293B" id="shield-body"/>
+
+  <!-- Left half: slightly lighter for center-fold effect -->
+  <path d="M 200 54 C 176 54, 90 57, 80 59 L 80 200
+           C 80 276, 134 348, 200 382 Z"
+        fill="#253347"/>
+
+  <!-- ═══ FRONT CIRCLE — Vivid Emerald ═══ -->
+  <circle cx="200" cy="230" r="110" fill="#10B981"/>
+
+  <!-- Left half lighter for fold -->
+  <path d="M 200 120 C 139 120, 90 169, 90 230
+           C 90 291, 139 340, 200 340 Z"
+        fill="#34D399" opacity="0.3"/>
+
+  <!-- ═══ WHITE C ARC ═══ -->
+  <path d="M 260 296 A 90 90 0 1 0 140 296"
+        fill="none" stroke="white" stroke-width="40" stroke-linecap="round"/>
+</svg>

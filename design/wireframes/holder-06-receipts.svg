@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    RECEIPTS TAB (Transparency Log)
+    The user's audit trail. Every share logged.
+    "Your data, your receipts, your proof."
+  -->
+
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Header -->
+  <text x="24" y="100" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Receipts</text>
+  <text x="24" y="120" font-family="Inter, sans-serif" font-size="13" fill="#57534E">Your data sharing history, on the record</text>
+
+  <!-- Audit button -->
+  <rect x="245" y="82" width="114" height="36" rx="18" fill="#1E293B"/>
+  <text x="302" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">Run Audit</text>
+
+  <!-- ═══ RECEIPT LIST ═══ -->
+
+  <!-- Receipt 1 -->
+  <rect x="16" y="144" width="343" height="96" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="32" y="160" width="8" height="8" rx="4" fill="#10B981"/>
+  <text x="48" y="168" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Childcare readiness check</text>
+  <text x="48" y="186" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Parents Association Madrid</text>
+  <text x="48" y="204" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Mar 28, 2026  ·  4 predicates shared</text>
+  <!-- Log badge -->
+  <rect x="268" y="158" width="72" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="173" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Logged ✓</text>
+  <!-- Retention -->
+  <text x="280" y="206" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 26</text>
+  <text x="340" y="185" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Receipt 2 -->
+  <rect x="16" y="252" width="343" height="96" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="32" y="268" width="8" height="8" rx="4" fill="#10B981"/>
+  <text x="48" y="276" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Age verification</text>
+  <text x="48" y="294" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Festival Entrada</text>
+  <text x="48" y="312" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Mar 22, 2026  ·  1 predicate shared</text>
+  <rect x="268" y="266" width="72" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="281" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Logged ✓</text>
+  <text x="280" y="314" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 20</text>
+  <text x="340" y="293" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Receipt 3 -->
+  <rect x="16" y="360" width="343" height="96" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="32" y="376" width="8" height="8" rx="4" fill="#F59E0B"/>
+  <text x="48" y="384" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Trusted seller check</text>
+  <text x="48" y="402" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Marketplace buyer</text>
+  <text x="48" y="420" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Mar 18, 2026  ·  4 predicates shared</text>
+  <rect x="260" y="374" width="80" height="22" rx="11" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+  <text x="300" y="389" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#92400E">Pending ⏳</text>
+  <text x="280" y="422" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 16</text>
+  <text x="340" y="401" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- Receipt 4 -->
+  <rect x="16" y="468" width="343" height="96" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="32" y="484" width="8" height="8" rx="4" fill="#10B981"/>
+  <text x="48" y="492" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Identity check</text>
+  <text x="48" y="510" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Freelance platform onboarding</text>
+  <text x="48" y="528" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Mar 10, 2026  ·  2 predicates shared</text>
+  <rect x="268" y="482" width="72" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="304" y="497" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Logged ✓</text>
+  <text x="280" y="530" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 8</text>
+  <text x="340" y="509" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">›</text>
+
+  <!-- ═══ AUDIT SUMMARY BAR ═══ -->
+  <rect x="16" y="584" width="343" height="48" rx="12" fill="#022C22"/>
+  <text x="32" y="613" font-family="Inter, sans-serif" font-size="12" fill="#34D399">✓  Last audit: 100% of receipts verified in log</text>
+  <text x="340" y="613" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">2d ago</text>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <rect x="0" y="752" width="375" height="60" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="94" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Home</text>
+  <text x="188" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">History</text>
+  <text x="282" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#10B981">Receipts</text>
+  <circle cx="282" cy="770" r="2" fill="#10B981"/>
+</svg>

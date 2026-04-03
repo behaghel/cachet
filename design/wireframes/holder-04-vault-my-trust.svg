@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    MY TRUST TAB (Home — left tab of the Dual Tabs)
+    The Holder's credential vault. Shows credentials with
+    badges, freshness, and quick predicate preview.
+  -->
+
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- ═══ HEADER ═══ -->
+  <text x="188" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+
+  <!-- Segmented control — My Trust active -->
+  <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
+  <rect x="29" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
+  <text x="112" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">My Trust</text>
+  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">Verify</text>
+
+  <!-- ═══ SUMMARY BAR ═══ -->
+  <rect x="16" y="172" width="343" height="48" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="32" y="201" font-family="Inter, sans-serif" font-size="13" fill="#065F46">3 credentials  ·  2 verified  ·  1 pending</text>
+
+  <!-- ═══ CREDENTIAL CARDS ═══ -->
+
+  <!-- Card 1: Identity — expanded style -->
+  <rect x="16" y="236" width="343" height="188" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <!-- Header bar -->
+  <rect x="16" y="236" width="343" height="56" rx="16" fill="#1E293B"/>
+  <rect x="16" y="270" width="343" height="22" fill="#1E293B"/>
+  <text x="32" y="270" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Identity Credential</text>
+  <rect x="258" y="252" width="64" height="24" rx="12" fill="#10B981"/>
+  <text x="290" y="269" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF">Verified</text>
+  <text x="338" y="269" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#94A3B8">12d</text>
+
+  <!-- Body -->
+  <text x="32" y="316" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Issued by Veriff  ·  Premium tier  ·  Expires Dec 2026</text>
+
+  <!-- What this proves -->
+  <text x="32" y="340" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1C1917">What this proves</text>
+  <rect x="32" y="350" width="64" height="24" rx="12" fill="#ECFDF5"/>
+  <text x="64" y="366" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">Age 18+</text>
+  <rect x="104" y="350" width="86" height="24" rx="12" fill="#ECFDF5"/>
+  <text x="147" y="366" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">ID Verified</text>
+  <rect x="198" y="350" width="66" height="24" rx="12" fill="#ECFDF5"/>
+  <text x="231" y="366" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">Liveness</text>
+  <rect x="272" y="350" width="72" height="24" rx="12" fill="#ECFDF5"/>
+  <text x="308" y="366" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">Nationality</text>
+
+  <!-- Shared count -->
+  <text x="32" y="404" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Shared 3 times  ·  Last used 2 days ago</text>
+
+  <!-- Card 2: Background Check -->
+  <rect x="16" y="440" width="343" height="120" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="16" y="440" width="343" height="56" rx="16" fill="#1E293B"/>
+  <rect x="16" y="474" width="343" height="22" fill="#1E293B"/>
+  <text x="32" y="474" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Background Check</text>
+  <rect x="258" y="456" width="64" height="24" rx="12" fill="#10B981"/>
+  <text x="290" y="473" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF">Verified</text>
+  <text x="338" y="473" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#94A3B8">45d</text>
+
+  <text x="32" y="516" font-family="Inter, sans-serif" font-size="12" fill="#57534E">ClearCheck  ·  Standard tier</text>
+  <rect x="32" y="528" width="94" height="22" rx="11" fill="#ECFDF5"/>
+  <text x="79" y="543" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">Criminal clear</text>
+  <rect x="134" y="528" width="76" height="22" rx="11" fill="#ECFDF5"/>
+  <text x="172" y="543" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#065F46">ID Verified</text>
+
+  <!-- Card 3: Safe Seller — pending -->
+  <rect x="16" y="576" width="343" height="120" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="16" y="576" width="343" height="56" rx="16" fill="#57534E"/>
+  <rect x="16" y="610" width="343" height="22" fill="#57534E"/>
+  <text x="32" y="610" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Safe Seller Badge</text>
+  <rect x="250" y="592" width="72" height="24" rx="12" fill="#F59E0B"/>
+  <text x="286" y="609" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF">Pending</text>
+
+  <text x="32" y="652" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Marketplace  ·  Awaiting platform data</text>
+  <rect x="32" y="664" width="100" height="22" rx="11" fill="#F5F5F4"/>
+  <text x="82" y="679" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Fulfilment 95%+</text>
+  <rect x="140" y="664" width="100" height="22" rx="11" fill="#F5F5F4"/>
+  <text x="190" y="679" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Low chargebacks</text>
+
+  <!-- ═══ Add credential FAB ═══ -->
+  <circle cx="340" cy="720" r="26" fill="#10B981"/>
+  <text x="340" y="728" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="300" fill="#FFFFFF">+</text>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <rect x="0" y="752" width="375" height="60" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="94" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#10B981">Home</text>
+  <circle cx="94" cy="770" r="2" fill="#10B981"/>
+  <text x="188" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">History</text>
+  <text x="282" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Receipts</text>
+</svg>

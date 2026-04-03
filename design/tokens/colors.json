@@ -1,0 +1,174 @@
+{
+  "brand": {
+    "primary": {
+      "value": "#1E293B",
+      "description": "Midnight Slate — authority, structure, back circle"
+    },
+    "primaryDark": {
+      "value": "#0F172A",
+      "description": "Darker slate — dark mode backgrounds, deep surfaces"
+    },
+    "accent": {
+      "value": "#10B981",
+      "description": "Vivid Emerald — trust, verification, front circle"
+    },
+    "accentLight": {
+      "value": "#34D399",
+      "description": "Light emerald — hover states, dark mode accent"
+    },
+    "accentDark": {
+      "value": "#065F46",
+      "description": "Deep emerald — accent text on light backgrounds"
+    },
+    "warm": {
+      "value": "#F97068",
+      "description": "Warm Coral — urgency, revocation, destructive actions"
+    }
+  },
+  "trust": {
+    "verified": {
+      "value": "#10B981",
+      "description": "Verified state — same as brand accent"
+    },
+    "verifiedBg": {
+      "value": "#ECFDF5",
+      "description": "Verified badge background (light mode)"
+    },
+    "verifiedBorder": {
+      "value": "#A7F3D0",
+      "description": "Verified badge border (light mode)"
+    },
+    "verifiedText": {
+      "value": "#065F46",
+      "description": "Verified badge text (light mode)"
+    },
+    "pending": {
+      "value": "#F59E0B",
+      "description": "Pending / in-progress state"
+    },
+    "pendingBg": {
+      "value": "#FEF3C7",
+      "description": "Pending badge background"
+    },
+    "pendingBorder": {
+      "value": "#FCD34D",
+      "description": "Pending badge border"
+    },
+    "pendingText": {
+      "value": "#92400E",
+      "description": "Pending badge text"
+    },
+    "revoked": {
+      "value": "#F97068",
+      "description": "Revoked / error state — same as brand warm"
+    },
+    "revokedBg": {
+      "value": "#FEE2E2",
+      "description": "Revoked badge background"
+    },
+    "revokedBorder": {
+      "value": "#FCA5A5",
+      "description": "Revoked badge border"
+    },
+    "revokedText": {
+      "value": "#B91C1C",
+      "description": "Revoked badge text"
+    },
+    "neutral": {
+      "value": "#64748B",
+      "description": "Unchecked / default / not-yet state"
+    }
+  },
+  "surface": {
+    "light": {
+      "background": {
+        "value": "#FAFAF9",
+        "description": "App background"
+      },
+      "card": {
+        "value": "#FFFFFF",
+        "description": "Card surfaces"
+      },
+      "elevated": {
+        "value": "#F5F5F4",
+        "description": "Elevated surfaces, bottom sheets"
+      },
+      "accentTint": {
+        "value": "#ECFDF5",
+        "description": "Emerald-tinted surface for emphasis"
+      },
+      "border": {
+        "value": "#E7E5E4",
+        "description": "Card borders, dividers"
+      }
+    },
+    "dark": {
+      "background": {
+        "value": "#0F172A",
+        "description": "App background"
+      },
+      "card": {
+        "value": "#1C1917",
+        "description": "Card surfaces"
+      },
+      "elevated": {
+        "value": "#292524",
+        "description": "Elevated surfaces"
+      },
+      "accentTint": {
+        "value": "#022C22",
+        "description": "Dark emerald-tinted surface"
+      },
+      "border": {
+        "value": "#334155",
+        "description": "Card borders, dividers"
+      }
+    }
+  },
+  "text": {
+    "light": {
+      "primary": {
+        "value": "#1C1917",
+        "description": "Headlines, body text"
+      },
+      "secondary": {
+        "value": "#57534E",
+        "description": "Subtitles, descriptions"
+      },
+      "tertiary": {
+        "value": "#A8A29E",
+        "description": "Timestamps, hints, placeholders"
+      },
+      "onBrand": {
+        "value": "#FFFFFF",
+        "description": "Text on brand-colored surfaces"
+      },
+      "onAccent": {
+        "value": "#FFFFFF",
+        "description": "Text on emerald surfaces"
+      }
+    },
+    "dark": {
+      "primary": {
+        "value": "#F5F5F4",
+        "description": "Headlines, body text"
+      },
+      "secondary": {
+        "value": "#A8A29E",
+        "description": "Subtitles, descriptions"
+      },
+      "tertiary": {
+        "value": "#64748B",
+        "description": "Timestamps, hints"
+      },
+      "onBrand": {
+        "value": "#FFFFFF",
+        "description": "Text on brand-colored surfaces"
+      },
+      "onAccent": {
+        "value": "#FFFFFF",
+        "description": "Text on emerald surfaces"
+      }
+    }
+  }
+}

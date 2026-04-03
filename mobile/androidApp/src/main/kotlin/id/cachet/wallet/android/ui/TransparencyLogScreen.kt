@@ -129,7 +129,7 @@ fun TransparencyLogScreen(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF4CAF50)
+                            tint = id.cachet.wallet.android.ui.theme.TrustVerified
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -281,22 +281,22 @@ private fun TransparencyLogStatusBadge(
 ) {
     val (color, icon, text) = when {
         logEntry == null -> Triple(
-            Color.Gray,
+            id.cachet.wallet.android.ui.theme.TrustNeutral,
             Icons.Default.CloudOff,
             "Not Logged"
         )
         logEntry.isVerified -> Triple(
-            Color(0xFF4CAF50),
+            id.cachet.wallet.android.ui.theme.TrustVerified,
             Icons.Default.Verified,
             "Verified"
         )
         logEntry.anchoredAt != null -> Triple(
-            Color(0xFFFF9800),
+            id.cachet.wallet.android.ui.theme.TrustPending,
             Icons.Default.Schedule,
             "Anchored"
         )
         else -> Triple(
-            Color.Gray,
+            id.cachet.wallet.android.ui.theme.TrustNeutral,
             Icons.Default.Schedule,
             "Pending"
         )

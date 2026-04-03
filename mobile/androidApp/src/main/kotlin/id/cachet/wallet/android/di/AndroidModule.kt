@@ -35,7 +35,10 @@ val androidModule = module {
     }
     
     // ViewModels
-    viewModel { 
-        WalletViewModel(get()) 
+    viewModel { params ->
+        WalletViewModel(
+            issuanceUseCase = get(),
+            demoMode = params.getOrNull<Boolean>() ?: false
+        )
     }
 }

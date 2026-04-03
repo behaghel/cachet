@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <!--
+    Cachet stacked logo — shield mark above wordmark
+  -->
+
+  <!-- Shield mark (scaled 0.6x, centered) -->
+  <g transform="translate(30, 0) scale(0.6)">
+    <!-- Border -->
+    <path d="M 200 16 C 240 16, 340 20, 356 24 L 356 200
+             C 356 300, 290 380, 200 420
+             C 110 380, 44 300, 44 200 L 44 24
+             C 60 20, 160 16, 200 16 Z"
+          fill="#10B981"/>
+    <path d="M 200 36 C 232 36, 324 40, 336 42 L 336 200
+             C 336 288, 278 364, 200 400
+             C 122 364, 64 288, 64 200 L 64 42
+             C 76 40, 168 36, 200 36 Z"
+          fill="#059669"/>
+    <path d="M 200 44 C 228 44, 318 48, 328 50 L 328 200
+             C 328 282, 272 356, 200 392
+             C 128 356, 72 282, 72 200 L 72 50
+             C 82 48, 172 44, 200 44 Z"
+          fill="#6EE7B7"/>
+    <!-- Body -->
+    <path d="M 200 54 C 224 54, 310 57, 320 59 L 320 200
+             C 320 276, 266 348, 200 382
+             C 134 348, 80 276, 80 200 L 80 59
+             C 90 57, 176 54, 200 54 Z"
+          fill="#1E293B"/>
+    <!-- Emerald circle -->
+    <circle cx="200" cy="230" r="110" fill="#10B981"/>
+    <!-- C arc -->
+    <path d="M 260 296 A 90 90 0 1 0 140 296"
+          fill="none" stroke="white" stroke-width="40" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="150" y="370" text-anchor="middle"
+        font-family="Inter, Helvetica Neue, Arial, sans-serif"
+        font-size="38" font-weight="600" letter-spacing="6"
+        fill="#1E293B">CACHET</text>
+</svg>

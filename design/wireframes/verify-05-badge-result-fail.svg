@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    SCREEN 5: Badge Result — PARTIAL FAIL
+    Some predicates passed, some didn't. Important to design this case
+    since it's where the UX earns trust through honesty.
+  -->
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#0F172A"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#FFFFFF"/>
+
+  <!-- Close -->
+  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#64748B">✕</text>
+
+  <!-- ═══ RESULT: INCOMPLETE ═══ -->
+
+  <!-- Badge circle — coral/warning -->
+  <circle cx="188" cy="260" r="80" fill="#F97068"/>
+
+  <!-- Exclamation -->
+  <rect x="184" y="218" width="8" height="48" rx="4" fill="white"/>
+  <circle cx="188" cy="290" r="6" fill="white"/>
+
+  <!-- Result text -->
+  <text x="188" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">Incomplete</text>
+
+  <rect x="108" y="400" width="160" height="28" rx="14" fill="#4C1D1D"/>
+  <text x="188" y="419" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FCA5A5">2 of 4 proofs passed</text>
+
+  <!-- ═══ WHAT WAS PROVEN ═══ -->
+  <text x="188" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748B">Verified just now</text>
+
+  <rect x="24" y="490" width="327" height="220" rx="16" fill="#1E293B"/>
+
+  <!-- Passed -->
+  <text x="48" y="520" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
+  <text x="68" y="520" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Age 18 or older</text>
+
+  <text x="48" y="550" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
+  <text x="68" y="550" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Identity verified</text>
+
+  <!-- Failed -->
+  <text x="48" y="588" font-family="Inter, sans-serif" font-size="13" fill="#F97068">✗</text>
+  <text x="68" y="588" font-family="Inter, sans-serif" font-size="13" fill="#F97068">No criminal record</text>
+  <text x="68" y="606" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Credential not available</text>
+
+  <text x="48" y="640" font-family="Inter, sans-serif" font-size="13" fill="#F97068">✗</text>
+  <text x="68" y="640" font-family="Inter, sans-serif" font-size="13" fill="#F97068">2+ verified references</text>
+  <text x="68" y="658" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Only 1 reference on file</text>
+
+  <!-- Metadata -->
+  <line x1="48" y1="676" x2="327" y2="676" stroke="#334155" stroke-width="1"/>
+  <text x="48" y="698" font-family="Inter, sans-serif" font-size="11" fill="#64748B">No badge issued</text>
+  <text x="300" y="698" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">All proofs required</text>
+
+  <!-- ═══ RECEIPT ═══ -->
+  <rect x="24" y="726" width="327" height="44" rx="12" fill="#022C22"/>
+  <text x="48" y="752" font-family="Inter, sans-serif" font-size="12" fill="#34D399">✓  Consent receipt logged</text>
+  <text x="312" y="752" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">View</text>
+
+  <!-- Done -->
+  <rect x="24" y="778" width="327" height="48" rx="24" fill="#FFFFFF"/>
+  <text x="188" y="808" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1E293B">Done</text>
+</svg>

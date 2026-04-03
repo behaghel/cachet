@@ -13,13 +13,14 @@ import id.cachet.wallet.android.ui.theme.CachetWalletTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val demoMode = intent.getBooleanExtra("demo_mode", false)
         setContent {
             CachetWalletTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WalletApp()
+                    WalletApp(demoMode = demoMode)
                 }
             }
         }

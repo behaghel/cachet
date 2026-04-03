@@ -1,0 +1,78 @@
+{
+  "fontFamily": {
+    "primary": {
+      "value": "Inter",
+      "description": "UI text — clean, geometric, excellent small-size readability"
+    },
+    "mono": {
+      "value": "JetBrains Mono",
+      "description": "Technical data — hashes, DIDs, log IDs"
+    }
+  },
+  "scale": {
+    "display": {
+      "size": 28,
+      "lineHeight": 34,
+      "weight": 700,
+      "letterSpacing": -0.5,
+      "family": "primary",
+      "description": "Screen titles"
+    },
+    "headline": {
+      "size": 22,
+      "lineHeight": 28,
+      "weight": 600,
+      "letterSpacing": 0,
+      "family": "primary",
+      "description": "Section headers, badge names"
+    },
+    "title": {
+      "size": 18,
+      "lineHeight": 24,
+      "weight": 600,
+      "letterSpacing": 0,
+      "family": "primary",
+      "description": "Card titles, credential names"
+    },
+    "body": {
+      "size": 16,
+      "lineHeight": 24,
+      "weight": 400,
+      "letterSpacing": 0,
+      "family": "primary",
+      "description": "Descriptions, consent text"
+    },
+    "label": {
+      "size": 14,
+      "lineHeight": 20,
+      "weight": 500,
+      "letterSpacing": 0.1,
+      "family": "primary",
+      "description": "Buttons, chips, metadata"
+    },
+    "caption": {
+      "size": 12,
+      "lineHeight": 16,
+      "weight": 400,
+      "letterSpacing": 0,
+      "family": "primary",
+      "description": "Timestamps, secondary info"
+    },
+    "mono": {
+      "size": 13,
+      "lineHeight": 18,
+      "weight": 400,
+      "letterSpacing": 0,
+      "family": "mono",
+      "description": "Hashes, DIDs, log entry IDs"
+    },
+    "wordmark": {
+      "size": 36,
+      "lineHeight": 36,
+      "weight": 600,
+      "letterSpacing": 6,
+      "family": "primary",
+      "description": "CACHET wordmark in logo"
+    }
+  }
+}

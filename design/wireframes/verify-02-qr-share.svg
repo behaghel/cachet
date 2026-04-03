@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    SCREEN 2: QR / Share
+    After selecting "Safe for my kids?" the verifier sees this screen.
+    Shows a QR code to present to the person being verified.
+    Social moment — large, confident, clear.
+  -->
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#1E293B"/>
+
+  <!-- Status bar (light text on dark) -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#FFFFFF"/>
+
+  <!-- Back arrow + Close -->
+  <text x="24" y="95" font-family="Inter, sans-serif" font-size="22" fill="#FFFFFF">‹</text>
+  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">✕</text>
+
+  <!-- Title -->
+  <text x="188" y="130" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Safe for my kids?</text>
+  <text x="188" y="152" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#A8A29E">Show this code to the person you want to verify</text>
+
+  <!-- QR code area (white rounded rectangle simulating QR) -->
+  <rect x="60" y="180" width="255" height="255" rx="20" fill="#FFFFFF"/>
+  <!-- QR pattern simulation -->
+  <rect x="82" y="202" width="24" height="24" fill="#1E293B"/>
+  <rect x="82" y="230" width="24" height="8" fill="#1E293B"/>
+  <rect x="114" y="202" width="8" height="24" fill="#1E293B"/>
+  <rect x="130" y="202" width="8" height="8" fill="#1E293B"/>
+  <rect x="130" y="218" width="16" height="8" fill="#1E293B"/>
+  <rect x="154" y="202" width="24" height="8" fill="#1E293B"/>
+  <rect x="186" y="202" width="8" height="16" fill="#1E293B"/>
+  <rect x="202" y="202" width="8" height="8" fill="#1E293B"/>
+  <rect x="218" y="202" width="8" height="24" fill="#1E293B"/>
+  <rect x="234" y="202" width="24" height="8" fill="#1E293B"/>
+  <rect x="266" y="202" width="24" height="24" fill="#1E293B"/>
+  <rect x="82" y="250" width="8" height="16" fill="#1E293B"/>
+  <rect x="98" y="258" width="16" height="8" fill="#1E293B"/>
+  <rect x="130" y="250" width="8" height="8" fill="#1E293B"/>
+  <rect x="146" y="242" width="24" height="8" fill="#1E293B"/>
+  <rect x="178" y="250" width="8" height="16" fill="#1E293B"/>
+  <rect x="202" y="242" width="16" height="8" fill="#1E293B"/>
+  <rect x="234" y="250" width="8" height="16" fill="#1E293B"/>
+  <rect x="266" y="250" width="8" height="8" fill="#1E293B"/>
+  <!-- Center: logo mark -->
+  <circle cx="188" cy="307" r="22" fill="#1E293B"/>
+  <circle cx="188" cy="313" r="17" fill="#10B981"/>
+  <path d="M 180.5 318.5 A 10 10 0 1 1 195.5 318.5" fill="none" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- More QR rows -->
+  <rect x="82" y="340" width="24" height="8" fill="#1E293B"/>
+  <rect x="114" y="334" width="8" height="16" fill="#1E293B"/>
+  <rect x="130" y="340" width="16" height="8" fill="#1E293B"/>
+  <rect x="218" y="334" width="8" height="16" fill="#1E293B"/>
+  <rect x="242" y="340" width="16" height="8" fill="#1E293B"/>
+  <rect x="82" y="370" width="24" height="24" fill="#1E293B"/>
+  <rect x="114" y="378" width="8" height="16" fill="#1E293B"/>
+  <rect x="130" y="370" width="24" height="8" fill="#1E293B"/>
+  <rect x="162" y="386" width="8" height="8" fill="#1E293B"/>
+  <rect x="186" y="378" width="16" height="8" fill="#1E293B"/>
+  <rect x="218" y="370" width="24" height="8" fill="#1E293B"/>
+  <rect x="250" y="378" width="8" height="16" fill="#1E293B"/>
+  <rect x="266" y="370" width="24" height="24" fill="#1E293B"/>
+
+  <!-- What will be checked -->
+  <text x="188" y="475" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">This will verify:</text>
+
+  <!-- Predicate chips -->
+  <rect x="44" y="492" width="80" height="28" rx="14" fill="#334155"/>
+  <text x="84" y="510" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF">Age 18+</text>
+
+  <rect x="132" y="492" width="106" height="28" rx="14" fill="#334155"/>
+  <text x="185" y="510" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF">ID Verified</text>
+
+  <rect x="246" y="492" width="86" height="28" rx="14" fill="#334155"/>
+  <text x="289" y="510" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF">No record</text>
+
+  <rect x="108" y="528" width="80" height="28" rx="14" fill="#334155"/>
+  <text x="148" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF">2+ refs</text>
+
+  <!-- Waiting state -->
+  <text x="188" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#A8A29E">Waiting for them to scan...</text>
+  <!-- Animated dots hint -->
+  <circle cx="170" cy="624" r="4" fill="#64748B" opacity="0.4"/>
+  <circle cx="186" cy="624" r="4" fill="#64748B" opacity="0.7"/>
+  <circle cx="202" cy="624" r="4" fill="#64748B" opacity="1"/>
+
+  <!-- Alternative: Share link -->
+  <rect x="80" y="664" width="215" height="48" rx="24" fill="none" stroke="#64748B" stroke-width="1.5"/>
+  <text x="188" y="693" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#FFFFFF">Share link instead</text>
+
+  <!-- Expires label -->
+  <text x="188" y="740" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Request expires in 4:58</text>
+</svg>

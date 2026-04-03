@@ -1,0 +1,25 @@
+{
+  "base": 8,
+  "unit": "dp",
+  "scale": {
+    "xs":  { "value": 4,  "description": "Inline padding, icon gaps" },
+    "sm":  { "value": 8,  "description": "Tight grouping, chip internal padding" },
+    "md":  { "value": 16, "description": "Standard padding, card internal spacing" },
+    "lg":  { "value": 24, "description": "Section separation, card-to-card gap" },
+    "xl":  { "value": 32, "description": "Screen-level horizontal padding" },
+    "2xl": { "value": 48, "description": "Major section breaks, top-of-screen spacing" }
+  },
+  "radius": {
+    "sm":   { "value": 8,  "description": "Small chips, indicators" },
+    "md":   { "value": 12, "description": "Input fields, small cards" },
+    "lg":   { "value": 16, "description": "Cards, content areas" },
+    "xl":   { "value": 24, "description": "Bottom sheets, modals" },
+    "full": { "value": 9999, "description": "Pills, FABs, circular buttons" }
+  },
+  "elevation": {
+    "none":   { "value": 0,  "description": "Flat surfaces" },
+    "low":    { "value": 2,  "description": "Cards at rest" },
+    "medium": { "value": 4,  "description": "Floating elements, FAB" },
+    "high":   { "value": 8,  "description": "Bottom sheets, dialogs" }
+  }
+}
