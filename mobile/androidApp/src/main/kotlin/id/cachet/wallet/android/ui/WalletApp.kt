@@ -2,24 +2,18 @@ package id.cachet.wallet.android.ui
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import id.cachet.wallet.android.ui.components.CachetSegmentedControl
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.theme.*
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-
-enum class MainTab { HOME, HISTORY, RECEIPTS }
 
 /**
  * Overlay screens that sit on top of the main tab navigation.
@@ -38,7 +32,7 @@ fun WalletApp(demoMode: Boolean = false) {
     val uiState by viewModel.uiState.collectAsState()
 
     var isOnboarded by remember { mutableStateOf(demoMode) }
-    var currentTab by remember { mutableStateOf(MainTab.HOME) }
+    var selectedTab by remember { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
 
     // ── Onboarding gate ──
@@ -71,91 +65,54 @@ fun WalletApp(demoMode: Boolean = false) {
                 onDone = { overlay = null },
                 onViewReceipt = {
                     overlay = null
-                    currentTab = MainTab.RECEIPTS
+                    selectedTab = 1 // Activity tab
                 }
             )
         }
         return
     }
 
-    // ── Main app shell ──
-    Scaffold(
-        containerColor = SurfaceBackground,
-        bottomBar = {
-            CachetBottomBar(
-                currentTab = currentTab,
-                onTabSelected = { currentTab = it }
-            )
-        }
-    ) { innerPadding ->
-        Crossfade(
-            targetState = currentTab,
+    // ── Main app shell (no bottom nav) ──
+    Scaffold(containerColor = SurfaceBackground) { innerPadding ->
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            label = "main-tab"
-        ) { tab ->
-            when (tab) {
-                MainTab.HOME -> HomeScreen(
-                    uiState = uiState,
-                    onStartVerification = { viewModel.startVeriffVerification() },
-                    onRefresh = { viewModel.loadCredentials() }
-                )
-                MainTab.HISTORY -> HistoryScreen()
-                MainTab.RECEIPTS -> ReceiptsScreen()
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Header ──
+            Text(
+                text = "Cachet",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.displaySmall
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ── Top segmented control ──
+            CachetSegmentedControl(
+                tabs = listOf("My Cachets", "Activity"),
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Tab content ──
+            Crossfade(targetState = selectedTab, label = "main-tab") { tab ->
+                when (tab) {
+                    0 -> HomeScreen(
+                        uiState = uiState,
+                        onStartVerification = { viewModel.startVeriffVerification() },
+                        onRefresh = { viewModel.loadCredentials() }
+                    )
+                    1 -> ActivityScreen()
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun CachetBottomBar(
-    currentTab: MainTab,
-    onTabSelected: (MainTab) -> Unit
-) {
-    NavigationBar(
-        containerColor = SurfaceCard,
-        tonalElevation = 0.dp
-    ) {
-        NavigationBarItem(
-            selected = currentTab == MainTab.HOME,
-            onClick = { onTabSelected(MainTab.HOME) },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            label = { Text("Home", fontWeight = if (currentTab == MainTab.HOME) FontWeight.SemiBold else FontWeight.Normal) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = BrandAccent,
-                selectedTextColor = BrandAccent,
-                unselectedIconColor = TextTertiary,
-                unselectedTextColor = TextTertiary,
-                indicatorColor = SurfaceAccentTint
-            )
-        )
-        NavigationBarItem(
-            selected = currentTab == MainTab.HISTORY,
-            onClick = { onTabSelected(MainTab.HISTORY) },
-            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "History") },
-            label = { Text("History", fontWeight = if (currentTab == MainTab.HISTORY) FontWeight.SemiBold else FontWeight.Normal) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = BrandAccent,
-                selectedTextColor = BrandAccent,
-                unselectedIconColor = TextTertiary,
-                unselectedTextColor = TextTertiary,
-                indicatorColor = SurfaceAccentTint
-            )
-        )
-        NavigationBarItem(
-            selected = currentTab == MainTab.RECEIPTS,
-            onClick = { onTabSelected(MainTab.RECEIPTS) },
-            icon = { Icon(Icons.Default.Receipt, contentDescription = "Receipts") },
-            label = { Text("Receipts", fontWeight = if (currentTab == MainTab.RECEIPTS) FontWeight.SemiBold else FontWeight.Normal) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = BrandAccent,
-                selectedTextColor = BrandAccent,
-                unselectedIconColor = TextTertiary,
-                unselectedTextColor = TextTertiary,
-                indicatorColor = SurfaceAccentTint
-            )
-        )
     }
 }
 

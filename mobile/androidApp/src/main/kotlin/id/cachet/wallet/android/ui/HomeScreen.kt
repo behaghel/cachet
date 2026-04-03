@@ -1,30 +1,26 @@
 package id.cachet.wallet.android.ui
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
-import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.model.CredentialCardUi
-import id.cachet.wallet.android.ui.model.CachPackUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.android.ui.theme.*
 
@@ -39,65 +35,15 @@ fun HomeScreen(
         is WalletUiState.Loading -> { LoadingScreen(); return }
         is WalletUiState.VerificationInProgress -> { VerificationScreen(); return }
         is WalletUiState.Error -> { ErrorScreen(uiState.message, onRetry = onRefresh); return }
-        else -> { /* continue to tabs */ }
+        else -> { /* continue to grid */ }
     }
 
-    var selectedTab by remember { mutableIntStateOf(0) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ── Header ──
-        Text(
-            text = "Cachet",
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.displaySmall
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // ── Segmented control ──
-        CachetSegmentedControl(
-            tabs = listOf("My Trust", "Cache it"),
-            selectedIndex = selectedTab,
-            onTabSelected = { selectedTab = it }
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // ── Tab content ──
-        Crossfade(targetState = selectedTab, label = "home-tab") { tab ->
-            when (tab) {
-                0 -> MyTrustTab(
-                    uiState = uiState,
-                    onStartVerification = onStartVerification
-                )
-                1 -> CacheTab(packs = DemoFixtures.cachPacks)
-            }
-        }
-    }
-}
-
-// ═══════════════════════════════════════════
-// MY TRUST TAB
-// ═══════════════════════════════════════════
-
-@Composable
-private fun MyTrustTab(
-    uiState: WalletUiState,
-    onStartVerification: () -> Unit
-) {
     val state = uiState as? WalletUiState.HasCredentials
 
     if (state == null || state.credentials.isEmpty()) {
         EmptyVault(onStartVerification = onStartVerification)
     } else {
-        CredentialVault(
+        MyCachetsGrid(
             credentials = state.credentials,
             summary = state.vaultSummary,
             onStartVerification = onStartVerification
@@ -105,19 +51,25 @@ private fun MyTrustTab(
     }
 }
 
+// ═══════════════════════════════════════════
+// MY CACHETS GRID
+// ═══════════════════════════════════════════
+
 @Composable
-private fun CredentialVault(
+private fun MyCachetsGrid(
     credentials: List<CredentialCardUi>,
     summary: VaultSummaryUi,
     onStartVerification: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(bottom = 72.dp)
         ) {
-            // Summary bar
-            item {
+            // Summary bar — full width
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -133,9 +85,9 @@ private fun CredentialVault(
                 }
             }
 
-            // Credential cards
+            // Cachet grid cards
             items(credentials, key = { it.localId }) { card ->
-                VaultCredentialCard(card = card)
+                CachetGridCard(card = card)
             }
         }
 
@@ -155,78 +107,46 @@ private fun CredentialVault(
 }
 
 @Composable
-private fun VaultCredentialCard(card: CredentialCardUi) {
+private fun CachetGridCard(card: CredentialCardUi) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        colors = CardDefaults.cardColors(
+            containerColor = if (card.isRevoked) SurfaceElevated else SurfaceCard
+        ),
         border = BorderStroke(1.dp, SurfaceBorder)
     ) {
-        Column {
-            // ── Slate header bar ──
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                color = if (card.isRevoked) TextSecondary else BrandPrimary
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (card.cachetType != null) {
-                        CachetMark(type = card.cachetType, size = 28.dp)
-                    }
-                    Text(
-                        text = card.displayName,
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 16.sp),
-                        color = TextOnBrand,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TrustStatusChip(status = card.trustStatus)
-                    Text(
-                        text = card.freshnessLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextTertiary
-                    )
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Shield mark
+            if (card.cachetType != null) {
+                CachetMark(type = card.cachetType, size = 56.dp)
             }
 
-            // ── Body ──
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = card.issuerLine,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
+            // Display name
+            Text(
+                text = card.displayName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                Spacer(modifier = Modifier.height(12.dp))
+            // Trust status
+            TrustStatusChip(status = card.trustStatus)
 
-                Text(
-                    text = "What this proves",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(card.predicates) { label ->
-                        PredicateChip(label = label, verified = !card.isRevoked)
-                    }
-                }
-
-                if (card.sharesSummary.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = card.sharesSummary,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextTertiary
-                    )
-                }
-            }
+            // Freshness
+            Text(
+                text = card.freshnessLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = TextTertiary
+            )
         }
     }
 }
@@ -335,156 +255,5 @@ private fun StepRow(number: String, label: String) {
             style = MaterialTheme.typography.bodyLarge,
             color = TextPrimary
         )
-    }
-}
-
-// ═══════════════════════════════════════════
-// CACHE TAB
-// ═══════════════════════════════════════════
-
-@Composable
-private fun CacheTab(packs: List<CachPackUi>) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        item {
-            Text(
-                text = "What do you need to know?",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = "Pick a question — we'll handle the proof",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        // Cach'Pack question cards
-        items(packs) { pack ->
-            CachPackCard(pack = pack)
-        }
-
-        // Custom / browse
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceElevated),
-                border = BorderStroke(1.dp, SurfaceBorder)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = SurfaceBorder
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("+", fontSize = 20.sp, color = TextTertiary)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Something else", style = MaterialTheme.typography.titleLarge.copy(fontSize = 15.sp), color = TextSecondary)
-                        Text("Browse all available cach'packs", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
-                    }
-                }
-            }
-        }
-
-        // Or scan QR
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "— or —",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodySmall,
-                color = TextTertiary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedButton(
-                onClick = { /* TODO: QR scanner */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(2.dp, BrandPrimary)
-            ) {
-                Icon(
-                    Icons.Default.QrCodeScanner,
-                    contentDescription = null,
-                    tint = BrandPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Scan a QR code",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BrandPrimary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CachPackCard(pack: CachPackUi) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceBorder)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CachetMark(type = pack.cachetType, size = 44.dp)
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = pack.question,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 15.sp),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = pack.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Surface(
-                    shape = RoundedCornerShape(9.dp),
-                    color = TrustVerifiedBg
-                ) {
-                    Text(
-                        text = "${pack.proofCount} proof${if (pack.proofCount != 1) "s" else ""}",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = TrustVerifiedText
-                    )
-                }
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = BrandAccent,
-                modifier = Modifier.size(24.dp)
-            )
-        }
     }
 }
