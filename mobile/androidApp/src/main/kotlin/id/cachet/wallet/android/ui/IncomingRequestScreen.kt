@@ -197,7 +197,7 @@ fun IncomingRequestScreen(
             // ── Action buttons ──
             item {
                 SealButton(
-                    text = "Share & Cache",
+                    text = "Cache & Share",
                     onClick = onShare
                 )
                 Spacer(modifier = Modifier.height(8.dp))

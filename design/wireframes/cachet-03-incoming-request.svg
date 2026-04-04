@@ -37,69 +37,69 @@
   <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">&#x2715;</text>
 
   <!-- Request header: childcare shield with ? badge -->
-  <use href="#childcare-shield" x="158" y="101" width="60" height="78"/>
-  <!-- Question mark badge in SE quadrant -->
-  <circle cx="220" cy="170" r="18" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="2"/>
-  <text x="220" y="177" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1E293B">?</text>
+  <use href="#childcare-shield" x="158" y="88" width="60" height="78"/>
+  <!-- Question mark badge -->
+  <circle cx="212" cy="152" r="22" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="2"/>
+  <text x="212" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1E293B">?</text>
 
-  <text x="188" y="204" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Caching Request</text>
-  <text x="188" y="228" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Someone wants to know:</text>
+  <text x="188" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Caching Request</text>
+  <text x="188" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Someone wants to know:</text>
 
   <!-- The question -->
-  <rect x="32" y="248" width="311" height="60" rx="16" fill="#1E293B"/>
-  <text x="188" y="284" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#FFFFFF">Are you safe for childcare?</text>
+  <rect x="32" y="235" width="311" height="60" rx="16" fill="#1E293B"/>
+  <text x="188" y="271" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#FFFFFF">Are you safe for childcare?</text>
 
   <!-- What they'll see -->
-  <text x="24" y="348" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">They will learn:</text>
-  <text x="24" y="366" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Only these facts — nothing more</text>
+  <text x="24" y="335" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">They will learn:</text>
+  <text x="24" y="353" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Only these facts — nothing more</text>
 
   <!-- Predicate list with arrow icons (proofs not yet performed) -->
-  <rect x="16" y="384" width="343" height="200" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="16" y="371" width="343" height="200" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
   <!-- Predicate 1 -->
-  <circle cx="44" cy="416" r="12" fill="#F5F5F4"/>
-  <text x="44" y="421" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
-  <text x="66" y="414" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">You are 18 or older</text>
-  <text x="66" y="430" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age will NOT be shared</text>
+  <circle cx="44" cy="403" r="12" fill="#F5F5F4"/>
+  <text x="44" y="408" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
+  <text x="66" y="401" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">You are 18 or older</text>
+  <text x="66" y="417" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age will NOT be shared</text>
 
   <!-- Divider -->
-  <line x1="40" y1="446" x2="340" y2="446" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="433" x2="340" y2="433" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 2 -->
-  <circle cx="44" cy="468" r="12" fill="#F5F5F4"/>
-  <text x="44" y="473" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
-  <text x="66" y="466" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">Your identity is verified</text>
-  <text x="66" y="482" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name will NOT be shared</text>
+  <circle cx="44" cy="455" r="12" fill="#F5F5F4"/>
+  <text x="44" y="460" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
+  <text x="66" y="453" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">Your identity is verified</text>
+  <text x="66" y="469" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name will NOT be shared</text>
 
   <!-- Divider -->
-  <line x1="40" y1="498" x2="340" y2="498" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="485" x2="340" y2="485" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 3 -->
-  <circle cx="44" cy="520" r="12" fill="#F5F5F4"/>
-  <text x="44" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
-  <text x="66" y="518" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">No criminal record</text>
-  <text x="66" y="534" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only a clear/not-clear result</text>
+  <circle cx="44" cy="507" r="12" fill="#F5F5F4"/>
+  <text x="44" y="512" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
+  <text x="66" y="505" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">No criminal record</text>
+  <text x="66" y="521" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only a clear/not-clear result</text>
 
   <!-- Divider -->
-  <line x1="40" y1="550" x2="340" y2="550" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="537" x2="340" y2="537" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 4 -->
-  <circle cx="44" cy="568" r="12" fill="#F5F5F4"/>
-  <text x="44" y="573" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
-  <text x="66" y="566" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">2+ verified references</text>
-  <text x="66" y="582" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Referee names will NOT be shared</text>
+  <circle cx="44" cy="555" r="12" fill="#F5F5F4"/>
+  <text x="44" y="560" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">&#x2192;</text>
+  <text x="66" y="553" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#1C1917">2+ verified references</text>
+  <text x="66" y="569" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Referee names will NOT be shared</text>
 
   <!-- Consent details -->
-  <rect x="16" y="600" width="343" height="52" rx="12" fill="#F5F5F4"/>
-  <text x="32" y="622" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Result kept by requester for</text>
-  <text x="258" y="622" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1C1917">90 days</text>
-  <text x="32" y="640" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Logged in transparency log</text>
-  <text x="258" y="640" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#10B981">Yes</text>
+  <rect x="16" y="587" width="343" height="52" rx="12" fill="#F5F5F4"/>
+  <text x="32" y="609" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Result kept by requester for</text>
+  <text x="258" y="609" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1C1917">90 days</text>
+  <text x="32" y="627" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Logged in transparency log</text>
+  <text x="258" y="627" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#10B981">Yes</text>
 
   <!-- Action buttons -->
-  <rect x="16" y="672" width="343" height="56" rx="28" fill="#10B981"/>
-  <text x="188" y="706" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Share &amp; Cache</text>
+  <rect x="16" y="659" width="343" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="693" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Cache &amp; Share</text>
 
-  <rect x="16" y="736" width="343" height="44" rx="22" fill="none"/>
-  <text x="188" y="764" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Decline</text>
+  <rect x="16" y="723" width="343" height="44" rx="22" fill="none"/>
+  <text x="188" y="751" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Decline</text>
 </svg>

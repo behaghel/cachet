@@ -39,50 +39,50 @@
   <!-- Result: Incomplete — childcare shield with forbidden sign overlay -->
 
   <!-- Childcare shield -->
-  <use href="#childcare-shield" x="128" y="180" width="120" height="156"/>
+  <use href="#childcare-shield" x="128" y="120" width="120" height="156"/>
 
-  <!-- Forbidden sign in SE quadrant -->
-  <circle cx="240" cy="270" r="24" fill="none" stroke="#F97068" stroke-width="4"/>
-  <line x1="223" y1="253" x2="257" y2="287" stroke="#F97068" stroke-width="4" stroke-linecap="round"/>
+  <!-- Forbidden sign centered over shield -->
+  <circle cx="188" cy="198" r="52" fill="none" stroke="#B91C1C" stroke-width="12"/>
+  <line x1="151" y1="161" x2="225" y2="235" stroke="#B91C1C" stroke-width="12" stroke-linecap="round"/>
 
   <!-- Result text -->
-  <text x="188" y="360" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">Incomplete</text>
+  <text x="188" y="300" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">Incomplete</text>
 
-  <rect x="108" y="375" width="160" height="28" rx="14" fill="#4C1D1D"/>
-  <text x="188" y="394" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FCA5A5">2 of 4 proofs passed</text>
+  <rect x="108" y="315" width="160" height="28" rx="14" fill="#4C1D1D"/>
+  <text x="188" y="334" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FCA5A5">2 of 4 proofs passed</text>
 
   <!-- What was proven -->
-  <text x="188" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748B">Verified just now</text>
+  <text x="188" y="380" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748B">Verified just now</text>
 
-  <rect x="24" y="460" width="327" height="220" rx="16" fill="#1E293B"/>
+  <rect x="24" y="400" width="327" height="220" rx="16" fill="#1E293B"/>
 
   <!-- Passed -->
-  <text x="48" y="490" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
-  <text x="68" y="490" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Age 18 or older</text>
+  <text x="48" y="430" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="430" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Age 18 or older</text>
 
-  <text x="48" y="520" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
-  <text x="68" y="520" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Identity verified</text>
+  <text x="48" y="460" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="460" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Identity verified</text>
 
   <!-- Failed -->
-  <text x="48" y="558" font-family="Inter, sans-serif" font-size="13" fill="#F97068">&#x2717;</text>
-  <text x="68" y="558" font-family="Inter, sans-serif" font-size="13" fill="#F97068">No criminal record</text>
-  <text x="68" y="576" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Credential not available</text>
+  <text x="48" y="498" font-family="Inter, sans-serif" font-size="13" fill="#F97068">&#x2717;</text>
+  <text x="68" y="498" font-family="Inter, sans-serif" font-size="13" fill="#F97068">No criminal record</text>
+  <text x="68" y="516" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Credential not available</text>
 
-  <text x="48" y="610" font-family="Inter, sans-serif" font-size="13" fill="#F97068">&#x2717;</text>
-  <text x="68" y="610" font-family="Inter, sans-serif" font-size="13" fill="#F97068">2+ verified references</text>
-  <text x="68" y="628" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Only 1 reference on file</text>
+  <text x="48" y="550" font-family="Inter, sans-serif" font-size="13" fill="#F97068">&#x2717;</text>
+  <text x="68" y="550" font-family="Inter, sans-serif" font-size="13" fill="#F97068">2+ verified references</text>
+  <text x="68" y="568" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Only 1 reference on file</text>
 
   <!-- Metadata -->
-  <line x1="48" y1="646" x2="327" y2="646" stroke="#334155" stroke-width="1"/>
-  <text x="48" y="668" font-family="Inter, sans-serif" font-size="11" fill="#64748B">No cachet issued</text>
-  <text x="300" y="668" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">All proofs required</text>
+  <line x1="48" y1="586" x2="327" y2="586" stroke="#334155" stroke-width="1"/>
+  <text x="48" y="608" font-family="Inter, sans-serif" font-size="11" fill="#64748B">No cachet issued</text>
+  <text x="300" y="608" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">All proofs required</text>
 
   <!-- Receipt -->
-  <rect x="24" y="696" width="327" height="44" rx="12" fill="#022C22"/>
-  <text x="48" y="722" font-family="Inter, sans-serif" font-size="12" fill="#34D399">&#x2713;  Consent receipt logged</text>
-  <text x="312" y="722" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">View</text>
+  <rect x="24" y="636" width="327" height="44" rx="12" fill="#022C22"/>
+  <text x="48" y="662" font-family="Inter, sans-serif" font-size="12" fill="#34D399">&#x2713;  Consent receipt logged</text>
+  <text x="312" y="662" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">View</text>
 
   <!-- Done -->
-  <rect x="24" y="748" width="327" height="48" rx="24" fill="#FFFFFF"/>
-  <text x="188" y="778" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1E293B">Done</text>
+  <rect x="24" y="688" width="327" height="48" rx="24" fill="#FFFFFF"/>
+  <text x="188" y="718" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1E293B">Done</text>
 </svg>

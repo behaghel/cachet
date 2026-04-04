@@ -39,8 +39,8 @@
   <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
 
   <!-- Header: mini logo + wordmark -->
-  <use href="#brand-shield" x="132" y="78" width="14" height="17"/>
-  <text x="198" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+  <use href="#brand-shield" x="121" y="64" width="36" height="43"/>
+  <text x="210" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
 
   <!-- Segmented control — Activity active -->
   <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
@@ -76,7 +76,7 @@
   <text x="88" y="328" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">10:32 AM · Valid 90 days</text>
   <text x="88" y="346" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 28 · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
-  <text x="344" y="306" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
+  <text x="344" y="306" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#D6D3D1">></text>
 
   <!-- Regular entry: Received verification (shifted down by 56: was y=328, now y=384) -->
   <rect x="16" y="384" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
@@ -92,10 +92,10 @@
   <text x="72" y="450" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">9:15 AM · 1 proof · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
   <!-- Cartridge (shifted: was y=357, now y=413) -->
-  <rect x="280" y="413" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
-  <text x="308" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <rect x="270" y="413" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="298" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">passed</text>
 
-  <text x="344" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
+  <text x="344" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#D6D3D1">></text>
 
   <!-- Date header (shifted: was y=434, now y=490) -->
   <text x="24" y="490" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E" letter-spacing="1">MAR 28</text>
@@ -114,10 +114,10 @@
   <text x="72" y="568" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">2:45 PM · 2 of 4 passed · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
   <!-- Cartridge (shifted: was y=475, now y=531) -->
-  <rect x="260" y="531" width="76" height="22" rx="11" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
-  <text x="298" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Incomplete</text>
+  <rect x="250" y="531" width="76" height="22" rx="11" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="288" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">incomplete</text>
 
-  <text x="344" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
+  <text x="344" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#D6D3D1">></text>
 
   <!-- Regular entry: Received — passed (shifted: was y=538, now y=594) -->
   <rect x="16" y="594" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
@@ -132,10 +132,10 @@
   <text x="72" y="660" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">11:20 AM · 2 proofs · <tspan fill="#92400E">&#x231B; Pending</tspan></text>
 
   <!-- Cartridge (shifted: was y=567, now y=623) -->
-  <rect x="280" y="623" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
-  <text x="308" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <rect x="270" y="623" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="298" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">passed</text>
 
-  <text x="344" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
+  <text x="344" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#D6D3D1">></text>
 
   <!-- Declined (muted) (shifted: was y=630, now y=686) -->
   <rect x="16" y="686" width="343" height="48" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>

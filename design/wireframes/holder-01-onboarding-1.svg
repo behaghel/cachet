@@ -27,7 +27,7 @@
   <text x="338" y="95" text-anchor="end" font-family="Inter, sans-serif" font-size="14" fill="#64748B">Skip</text>
 
   <!-- Illustration area: large brand logo shield — the shield IS the illustration -->
-  <use href="#brand-shield" x="118" y="200" width="140" height="168"/>
+  <use href="#brand-shield" x="88" y="140" width="200" height="240"/>
 
   <!-- Text content -->
   <text x="188" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Your trust, portable</text>

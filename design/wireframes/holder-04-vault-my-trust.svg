@@ -71,8 +71,8 @@
   <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
 
   <!-- Header: mini logo + wordmark -->
-  <use href="#brand-shield" x="132" y="78" width="14" height="17"/>
-  <text x="198" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+  <use href="#brand-shield" x="121" y="64" width="36" height="43"/>
+  <text x="210" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
 
   <!-- Segmented control — My Cachets active -->
   <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
