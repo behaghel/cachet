@@ -20,13 +20,15 @@ class IssuanceUseCase(
     suspend fun requestCredential(
         clientId: String,
         credentialTypes: List<String>,
-        format: String = "jwt_vc"
+        format: String = "jwt_vc",
+        sessionId: String? = null
     ): Result<StoredCredential> {
         return try {
-            // Step 1: Request OAuth2 token
+            // Step 1: Request OAuth2 token (with optional Veriff session binding)
             val tokenResponse = openID4VCIClient.requestToken(
                 clientId = clientId,
-                scope = "credential_issuance"
+                scope = "credential_issuance",
+                sessionId = sessionId
             )
             
             // Step 2: Request credential using the token

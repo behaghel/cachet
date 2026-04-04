@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.cachet.wallet.android.ui.components.*
-import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.theme.*
 
@@ -35,11 +34,12 @@ private fun ActivityFilter.label() = when (this) {
 
 @Composable
 fun ActivityScreen(
-    historyGroups: List<HistoryGroup> = DemoFixtures.historyGroups,
-    receipts: List<ReceiptItem> = DemoFixtures.receipts
+    historyGroups: List<HistoryGroup>,
+    receipts: List<ReceiptItem>,
+    auditResult: String? = null,
+    onRunAudit: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf(ActivityFilter.ALL) }
-    var auditRan by remember { mutableStateOf(false) }
 
     val filteredGroups = remember(selectedFilter, historyGroups) {
         when (selectedFilter) {
@@ -100,7 +100,7 @@ fun ActivityScreen(
                         ReceiptCard(receipt = receipt)
                     }
 
-                    item { AuditSummaryBar(hasRun = auditRan) }
+                    item { AuditSummaryBar(result = auditResult) }
                 }
 
                 ActivityFilter.EXCHANGES -> {
@@ -128,7 +128,7 @@ fun ActivityScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             Button(
-                                onClick = { auditRan = true },
+                                onClick = onRunAudit,
                                 shape = RoundedCornerShape(18.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = BrandPrimary,
@@ -147,7 +147,7 @@ fun ActivityScreen(
                     items(receipts, key = { it.id }) { receipt ->
                         ReceiptCard(receipt = receipt)
                     }
-                    item { AuditSummaryBar(hasRun = auditRan) }
+                    item { AuditSummaryBar(result = auditResult) }
                 }
 
                 ActivityFilter.CACHETS -> {
@@ -417,7 +417,7 @@ private fun ReceiptCard(receipt: ReceiptItem) {
 }
 
 @Composable
-private fun AuditSummaryBar(hasRun: Boolean) {
+private fun AuditSummaryBar(result: String?) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -431,12 +431,12 @@ private fun AuditSummaryBar(hasRun: Boolean) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "✓  Last audit: 100% of receipts verified in log",
+                text = if (result != null) "✓  Last audit: $result" else "✓  No audit run yet",
                 style = MaterialTheme.typography.bodySmall,
                 color = BrandAccentLight
             )
             Text(
-                text = if (hasRun) "Just now" else "2d ago",
+                text = if (result != null) "Just now" else "—",
                 style = MaterialTheme.typography.labelSmall,
                 color = TrustNeutral
             )

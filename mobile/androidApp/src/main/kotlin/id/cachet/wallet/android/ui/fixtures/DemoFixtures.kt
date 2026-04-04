@@ -121,6 +121,31 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
+    // ── Overlay: Seller Request ──
+
+    val sellerRequest = VerificationRequest(
+        question = "Are you a trusted seller?",
+        predicates = listOf(
+            RequestPredicate("Your identity is verified", "Your name will NOT be shared"),
+            RequestPredicate("Platform history available", "Only summary metrics shared"),
+            RequestPredicate("Fulfilment rate above 95%", "Only a pass/fail result"),
+            RequestPredicate("Low chargeback rate", "Only a pass/fail result")
+        ),
+        retentionDays = 90,
+        loggedInTransparencyLog = true
+    )
+
+    // ── Overlay: Age Request ──
+
+    val ageRequest = VerificationRequest(
+        question = "Are you old enough?",
+        predicates = listOf(
+            RequestPredicate("You are 18 or older", "Your exact age will NOT be shared")
+        ),
+        retentionDays = 30,
+        loggedInTransparencyLog = true
+    )
+
     // ── Overlay: Cachet Result Pass ── (wireframe: cachet-04-result-pass)
 
     val cachetResultPass = CachetResult(

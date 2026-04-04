@@ -19,7 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
+import id.cachet.wallet.android.ui.fixtures.DemoFixtures
+import id.cachet.wallet.android.ui.model.CachPackUi
 import id.cachet.wallet.android.ui.model.CredentialCardUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.android.ui.theme.*
@@ -28,7 +32,8 @@ import id.cachet.wallet.android.ui.theme.*
 fun HomeScreen(
     uiState: WalletUiState,
     onStartVerification: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onPackSelected: (CachPackUi) -> Unit = {}
 ) {
     // Transient states take over the whole screen
     when (uiState) {
@@ -46,7 +51,9 @@ fun HomeScreen(
         MyCachetsGrid(
             credentials = state.credentials,
             summary = state.vaultSummary,
-            onStartVerification = onStartVerification
+            packs = DemoFixtures.cachPacks,
+            onStartVerification = onStartVerification,
+            onPackSelected = onPackSelected
         )
     }
 }
@@ -59,7 +66,9 @@ fun HomeScreen(
 private fun MyCachetsGrid(
     credentials: List<CredentialCardUi>,
     summary: VaultSummaryUi,
-    onStartVerification: () -> Unit
+    packs: List<CachPackUi>,
+    onStartVerification: () -> Unit,
+    onPackSelected: (CachPackUi) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
@@ -89,6 +98,30 @@ private fun MyCachetsGrid(
             items(credentials, key = { it.localId }) { card ->
                 CachetGridCard(card = card)
             }
+
+            // ── "Cache it" section ── full width
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Cache it",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Pick a question — we'll handle the proof",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+            }
+
+            // Cach'pack cards — full width
+            items(packs, key = { it.question }) { pack ->
+                CachPackCard(pack = pack, onClick = { onPackSelected(pack) })
+            }
         }
 
         // FAB
@@ -102,6 +135,40 @@ private fun MyCachetsGrid(
             shape = CircleShape
         ) {
             Icon(Icons.Default.Add, contentDescription = "Add credential")
+        }
+    }
+}
+
+@Composable
+private fun CachPackCard(pack: CachPackUi, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.dp, SurfaceBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CachetMark(type = pack.cachetType, size = 36.dp)
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = pack.question,
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "${pack.proofCount} proofs",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary
+                )
+            }
         }
     }
 }

@@ -85,6 +85,7 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	grantType := r.FormValue("grant_type")
 	clientID := r.FormValue("client_id")
 	scope := r.FormValue("scope")
+	sessionID := r.FormValue("session_id")
 
 	if grantType != "client_credentials" {
 		common.WriteError(w, r, http.StatusBadRequest, "unsupported_grant_type", "Only client_credentials is supported")
@@ -95,7 +96,7 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := oauth.IssueToken(s.signingKey, clientID, scope)
+	resp, err := oauth.IssueToken(s.signingKey, clientID, scope, sessionID)
 	if err != nil {
 		log.Ctx(r.Context()).Error().Err(err).Msg("token signing failed")
 		common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to issue token")
@@ -131,16 +132,11 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	claims, _ := token.Claims.(jwt.MapClaims)
 	sessionID, _ := claims["session_id"].(string)
 
-	// Find a verified session — use session_id from token if available, else first approved
+	// Look up the verified Veriff session bound to this token
 	var session veriff.Session
 	var found bool
 	if sessionID != "" {
 		session, found = s.sessions.Get(sessionID)
-	}
-	if !found {
-		// Fallback: this is temporary until session binding is fully wired
-		// TODO: remove fallback once mobile sends session_id in token request
-		session, found = s.findFirstApprovedSession()
 	}
 	if !found {
 		common.WriteError(w, r, http.StatusBadRequest, "no_session", "No verified identity session found")
@@ -220,15 +216,4 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		Float64("confidence", validation.Confidence).
 		Msg("session stored")
 	w.WriteHeader(http.StatusOK)
-}
-
-// findFirstApprovedSession is a temporary fallback until session binding is wired.
-func (s *Server) findFirstApprovedSession() (veriff.Session, bool) {
-	store, ok := s.sessions.(*veriff.InMemoryStore)
-	if !ok {
-		return veriff.Session{}, false
-	}
-	return store.FindFirst(func(sess veriff.Session) bool {
-		return sess.Status == "approved"
-	})
 }

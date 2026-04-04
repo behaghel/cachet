@@ -295,6 +295,10 @@ components:
           type: string
           description: Requested scope
           example: "credential_issuance"
+        session_id:
+          type: string
+          description: Veriff session ID to bind to this token (optional)
+          example: "sess-abc-123"
 
     TokenResponse:
       type: object

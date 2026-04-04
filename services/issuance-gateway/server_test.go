@@ -223,8 +223,8 @@ func TestFullFlow_WebhookThenCredential(t *testing.T) {
 	s.Router().ServeHTTP(wh, httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(webhookBody)))
 	require.Equal(t, http.StatusOK, wh.Code)
 
-	// 2. Token
-	token := getTestToken(t, s)
+	// 2. Token — bound to the session
+	token := getTestTokenWithSession(t, s, "flow-1")
 
 	// 3. Credential
 	credBody, _ := json.Marshal(map[string]interface{}{
@@ -240,12 +240,38 @@ func TestFullFlow_WebhookThenCredential(t *testing.T) {
 	assert.Contains(t, cw.Body.String(), "VerifiableCredential")
 }
 
+func TestCredential_NoSession(t *testing.T) {
+	s := testServer(t)
+	// Token without session_id should fail at credential endpoint
+	token := getTestToken(t, s)
+
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "jwt_vc",
+		"types":  []string{"VerifiableCredential"},
+	})
+	credReq := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	credReq.Header.Set("Authorization", "Bearer "+token)
+	cw := httptest.NewRecorder()
+	s.Router().ServeHTTP(cw, credReq)
+
+	assert.Equal(t, http.StatusBadRequest, cw.Code)
+	assert.Contains(t, cw.Body.String(), "no_session")
+}
+
 func getTestToken(t *testing.T, s *Server) string {
+	t.Helper()
+	return getTestTokenWithSession(t, s, "")
+}
+
+func getTestTokenWithSession(t *testing.T, s *Server, sessionID string) string {
 	t.Helper()
 	form := url.Values{
 		"grant_type": {"client_credentials"},
 		"client_id":  {"test"},
 		"scope":      {"credential_issuance"},
+	}
+	if sessionID != "" {
+		form.Set("session_id", sessionID)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

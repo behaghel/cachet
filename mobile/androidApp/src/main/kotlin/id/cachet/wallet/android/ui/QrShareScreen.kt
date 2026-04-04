@@ -2,6 +2,7 @@ package id.cachet.wallet.android.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import id.cachet.wallet.android.ui.components.QrCodeImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +32,8 @@ fun QrShareScreen(
     state: QrShareState,
     onBack: () -> Unit,
     onClose: () -> Unit,
-    onShareLink: () -> Unit = {}
+    onShareLink: () -> Unit = {},
+    onScanSimulated: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -94,9 +96,14 @@ fun QrShareScreen(
                 color = Color.White
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    // QR pattern placeholder
-                    QrPatternPlaceholder()
-                    // Cachet logo in center
+                    if (state.qrPayload.isNotBlank()) {
+                        QrCodeImage(
+                            content = state.qrPayload,
+                            modifier = Modifier.fillMaxSize().padding(24.dp)
+                        )
+                    } else {
+                        QrPatternPlaceholder()
+                    }
                     CachetLogoMini()
                 }
             }

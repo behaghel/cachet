@@ -5,7 +5,8 @@ import id.cachet.wallet.android.ui.components.CachetType
 data class QrShareState(
     val question: String,
     val predicates: List<String>,
-    val expiresLabel: String = "Request expires in 4:58"
+    val expiresLabel: String = "Request expires in 4:58",
+    val qrPayload: String = ""
 )
 
 data class RequestPredicate(

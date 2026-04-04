@@ -11,7 +11,7 @@ import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
 interface OpenID4VCIClient {
-    suspend fun requestToken(clientId: String, scope: String): TokenResponse
+    suspend fun requestToken(clientId: String, scope: String, sessionId: String? = null): TokenResponse
     suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
 }
 
@@ -47,7 +47,7 @@ class KtorOpenID4VCIClient(
     private val baseUrl: String = AppConfig.baseUrl
 ) : OpenID4VCIClient {
 
-    override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
+    override suspend fun requestToken(clientId: String, scope: String, sessionId: String?): TokenResponse {
         try {
             val response: HttpResponse = httpClient.submitForm(
                 url = "$baseUrl/oauth/token",
@@ -55,6 +55,7 @@ class KtorOpenID4VCIClient(
                     append("grant_type", "client_credentials")
                     append("client_id", clientId)
                     append("scope", scope)
+                    if (sessionId != null) append("session_id", sessionId)
                 }
             )
 

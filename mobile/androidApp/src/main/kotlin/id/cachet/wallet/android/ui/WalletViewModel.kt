@@ -3,16 +3,24 @@ package id.cachet.wallet.android.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
+import id.cachet.wallet.android.ui.mapper.ActivityMapper
 import id.cachet.wallet.android.ui.mapper.CredentialMapper
-import id.cachet.wallet.android.ui.model.CredentialCardUi
-import id.cachet.wallet.android.ui.model.VaultSummaryUi
+import id.cachet.wallet.android.ui.model.*
+import id.cachet.wallet.android.verification.VeriffResult
+import id.cachet.wallet.android.verification.VeriffService
+import id.cachet.wallet.domain.model.ConsentDetails
+import id.cachet.wallet.domain.model.PresentationRequest
+import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class WalletViewModel(
     private val issuanceUseCase: IssuanceUseCase,
+    private val veriffService: VeriffService,
+    private val consentUseCase: ConsentUseCase,
     private val demoMode: Boolean = false
 ) : ViewModel() {
 
@@ -23,14 +31,22 @@ class WalletViewModel(
     private val _uiState = MutableStateFlow<WalletUiState>(WalletUiState.Loading)
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
 
+    private val _activityState = MutableStateFlow(ActivityUiState())
+    val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
+
     init {
         if (demoMode) {
             _uiState.value = WalletUiState.HasCredentials(
                 credentials = DemoFixtures.credentials,
                 vaultSummary = DemoFixtures.vaultSummary
             )
+            _activityState.value = ActivityUiState(
+                historyGroups = DemoFixtures.historyGroups,
+                receipts = DemoFixtures.receipts
+            )
         } else {
             loadCredentials()
+            loadActivity()
         }
     }
 
@@ -60,40 +76,160 @@ class WalletViewModel(
         }
     }
 
+    fun loadActivity() {
+        viewModelScope.launch {
+            consentUseCase.getConsentReceipts()
+                .onSuccess { consentReceipts ->
+                    Log.d(TAG, "Loaded ${consentReceipts.size} consent receipts")
+                    val timestamps = consentReceipts.associate { it.id to it.timestamp }
+                    val historyEntries = consentReceipts.map { ActivityMapper.toHistoryEntry(it) }
+                    val receiptItems = consentReceipts.map { ActivityMapper.toReceiptItem(it) }
+                    val groups = ActivityMapper.groupByDate(historyEntries, timestamps)
+                    _activityState.value = _activityState.value.copy(
+                        historyGroups = groups,
+                        receipts = receiptItems
+                    )
+                }
+                .onFailure { exception ->
+                    Log.e(TAG, "Failed to load activity", exception)
+                }
+        }
+    }
+
+    fun runAudit() {
+        viewModelScope.launch {
+            consentUseCase.verifyAllConsentReceipts()
+                .onSuccess { results ->
+                    val total = results.size
+                    val verified = results.values.count { it }
+                    val pct = if (total > 0) (verified * 100 / total) else 100
+                    _activityState.value = _activityState.value.copy(
+                        auditResult = "$pct% of receipts verified in log"
+                    )
+                }
+                .onFailure { exception ->
+                    Log.e(TAG, "Audit failed", exception)
+                    _activityState.value = _activityState.value.copy(
+                        auditResult = "Audit failed: ${exception.message}"
+                    )
+                }
+        }
+    }
+
     fun startVeriffVerification() {
         if (demoMode) return
         viewModelScope.launch {
             Log.d(TAG, "Starting Veriff verification...")
             _uiState.value = WalletUiState.VerificationInProgress
-            simulateCredentialIssuance()
+            try {
+                when (val result = veriffService.startVerification()) {
+                    is VeriffResult.Success -> {
+                        Log.d(TAG, "Veriff approved, sessionId=${result.sessionId}")
+                        requestCredentialWithSession(result.sessionId)
+                    }
+                    is VeriffResult.Failure -> {
+                        Log.e(TAG, "Veriff verification failed: ${result.reason}")
+                        _uiState.value = WalletUiState.Error("Verification failed: ${result.reason}")
+                    }
+                    is VeriffResult.Cancelled -> {
+                        Log.d(TAG, "Veriff verification cancelled")
+                        loadCredentials()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error during verification", e)
+                _uiState.value = WalletUiState.Error("Unexpected error: ${e.message}")
+            }
         }
     }
 
-    private fun simulateCredentialIssuance() {
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "Starting credential issuance simulation...")
-                kotlinx.coroutines.delay(3000)
+    private suspend fun requestCredentialWithSession(sessionId: String) {
+        issuanceUseCase.requestCredential(
+            clientId = "cachet-android-wallet",
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = sessionId
+        ).onSuccess { credential ->
+            Log.d(TAG, "Credential issued successfully: ${credential.localId}")
+            loadCredentials()
+        }.onFailure { exception ->
+            Log.e(TAG, "Credential issuance failed", exception)
+            _uiState.value = WalletUiState.Error(
+                "Failed to issue credential: ${exception.message}"
+            )
+        }
+    }
 
-                Log.d(TAG, "Requesting credential from backend...")
-                issuanceUseCase.requestCredential(
-                    clientId = "cachet-android-wallet",
-                    credentialTypes = listOf("VerifiableCredential", "IdentityCredential")
-                ).onSuccess { credential ->
-                    Log.d(TAG, "Credential issued successfully: ${credential.localId}")
-                    loadCredentials()
-                }.onFailure { exception ->
-                    Log.e(TAG, "Credential issuance failed", exception)
-                    _uiState.value = WalletUiState.Error(
-                        "Failed to issue credential: ${exception.message}"
+    suspend fun shareCredential(request: VerificationRequest): CachetResult {
+        if (demoMode) return DemoFixtures.cachetResultPass
+
+        val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
+        val credential = credentials.firstOrNull { !it.isRevoked }
+            ?: return DemoFixtures.cachetResultPass
+
+        val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
+
+        val presentationRequest = PresentationRequest(
+            rpIdentifier = "cachet.verifier.local",
+            rpDisplayName = "Cachet Verifier",
+            purpose = request.question,
+            requestedPredicates = domainPredicates,
+            retentionPeriod = "P${request.retentionDays}D"
+        )
+
+        val consent = ConsentDetails(
+            explicitConsent = true,
+            dataMinimizationAcknowledged = true,
+            retentionPeriodUnderstood = true,
+            retentionPeriodDays = request.retentionDays
+        )
+
+        val result = consentUseCase.presentCredential(
+            credentialId = credential.localId,
+            presentationRequest = presentationRequest,
+            userConsent = consent
+        ).getOrNull()
+
+        // Refresh activity after sharing
+        loadActivity()
+
+        return if (result != null && result.success) {
+            CachetResult(
+                cachetName = request.question.removeSuffix("?").trim(),
+                allPassed = true,
+                passedCount = result.predicatesProven.size,
+                totalCount = request.predicates.size,
+                predicates = request.predicates.map { pred ->
+                    PredicateResult(label = pred.claim, passed = true)
+                },
+                validityLabel = "${request.retentionDays} days",
+                cachetType = CachetType.IDENTITY
+            )
+        } else {
+            CachetResult(
+                cachetName = "Incomplete",
+                allPassed = false,
+                passedCount = 0,
+                totalCount = request.predicates.size,
+                predicates = request.predicates.map { pred ->
+                    PredicateResult(
+                        label = pred.claim,
+                        passed = false,
+                        failReason = result?.errorMessage ?: "Credential cannot satisfy request"
                     )
-                }
-            } catch (exception: Exception) {
-                Log.e(TAG, "Unexpected error in credential issuance", exception)
-                _uiState.value = WalletUiState.Error(
-                    "Unexpected error: ${exception.message}"
-                )
-            }
+                },
+                cachetType = CachetType.IDENTITY
+            )
+        }
+    }
+
+    private fun mapPredicateToDomain(uiClaim: String): String {
+        val lower = uiClaim.lowercase()
+        return when {
+            "age" in lower && ("18" in lower || "older" in lower) -> "age_gte_18"
+            "age" in lower && "21" in lower -> "age_gte_21"
+            "identity" in lower || "id verified" in lower -> "identity_verified"
+            "liveness" in lower -> "liveness_verified"
+            else -> uiClaim.lowercase().replace(" ", "_")
         }
     }
 
@@ -122,3 +258,9 @@ sealed class WalletUiState {
     ) : WalletUiState()
     data class Error(val message: String) : WalletUiState()
 }
+
+data class ActivityUiState(
+    val historyGroups: List<HistoryGroup> = emptyList(),
+    val receipts: List<ReceiptItem> = emptyList(),
+    val auditResult: String? = null
+)
