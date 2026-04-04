@@ -1,9 +1,5 @@
 package id.cachet.wallet.android.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -12,18 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import id.cachet.wallet.android.ui.components.CachetType
-import id.cachet.wallet.android.ui.components.CachetMark
-import id.cachet.wallet.android.ui.components.SealButton
+import id.cachet.wallet.android.ui.components.*
 import id.cachet.wallet.android.ui.theme.*
 
 private data class OnboardingPage(
@@ -97,16 +87,16 @@ fun OnboardingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.weight(0.2f))
 
             // ── Illustration ──
             when (currentPage) {
-                0 -> LogoIllustration()
+                0 -> BrandShieldMark(size = 160.dp)
                 1 -> CachetCardsIllustration()
                 2 -> ReceiptListIllustration()
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.weight(0.3f))
 
             // ── Title ──
             Text(
@@ -117,7 +107,7 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // ── Description ──
             Text(
@@ -128,39 +118,16 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // ── Key point card ──
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF334155)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = page.keyIcon,
-                        fontSize = 20.sp
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = page.keyTitle,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                            color = Color.White
-                        )
-                        Text(
-                            text = page.keySubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TrustNeutral
-                        )
-                    }
-                }
-            }
+            KeyPointCard(
+                icon = page.keyIcon,
+                title = page.keyTitle,
+                subtitle = page.keySubtitle
+            )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(0.4f))
 
             // ── Pagination dots ──
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -173,7 +140,7 @@ fun OnboardingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // ── CTA ──
             SealButton(
@@ -187,55 +154,8 @@ fun OnboardingScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
-    }
-}
-
-// ── Page 1 illustration: Cachet logo mark ──
-
-@Composable
-private fun LogoIllustration() {
-    Canvas(modifier = Modifier.size(200.dp)) {
-        val cx = size.width / 2
-        val cy = size.height / 2
-
-        // Outer ring
-        drawCircle(
-            color = Color(0xFF334155),
-            radius = size.minDimension / 2,
-            center = Offset(cx, cy),
-            style = Stroke(width = 1.dp.toPx())
-        )
-        // Back circle (shield body)
-        drawCircle(
-            color = BrandPrimary,
-            radius = 72.dp.toPx(),
-            center = Offset(cx, cy - 6.dp.toPx())
-        )
-        // Front circle (emerald) — shifted down to match shield proportions
-        drawCircle(
-            color = BrandAccent,
-            radius = 60.dp.toPx(),
-            center = Offset(cx, cy + 14.dp.toPx())
-        )
-        // White C arc — thicker, positioned lower with wider opening
-        val arcPath = Path().apply {
-            addArc(
-                oval = androidx.compose.ui.geometry.Rect(
-                    left = cx - 50.dp.toPx(),
-                    top = cy - 30.dp.toPx(),
-                    right = cx + 50.dp.toPx(),
-                    bottom = cy + 70.dp.toPx()
-                ),
-                startAngleDegrees = 50f,
-                sweepAngleDegrees = 260f
-            )
-        }
-        drawPath(
-            arcPath, Color.White,
-            style = Stroke(width = 28.dp.toPx(), cap = StrokeCap.Round)
-        )
     }
 }
 
@@ -305,7 +225,7 @@ private fun CachetCardsIllustration() {
     }
 }
 
-// ── Page 3 illustration: receipt list mock ──
+// ── Page 3 illustration: receipt list with cachet shields ──
 
 @Composable
 private fun ReceiptListIllustration() {
@@ -313,14 +233,15 @@ private fun ReceiptListIllustration() {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ReceiptMockRow("Childcare check — Mar 15", "Parents Association", "Logged", BrandAccent)
-        ReceiptMockRow("Age verification — Mar 12", "Concert venue", "Logged", BrandAccent)
-        ReceiptMockRow("Seller cachet — Mar 10", "Marketplace", "Pending", TrustPending)
+        ReceiptMockRow(CachetType.CHILDCARE, "Childcare check — Mar 15", "Parents Association", "Logged", BrandAccent)
+        ReceiptMockRow(CachetType.AGE, "Age verification — Mar 12", "Concert venue", "Logged", BrandAccent)
+        ReceiptMockRow(CachetType.SELLER, "Seller cachet — Mar 10", "Marketplace", "Pending", TrustPending)
     }
 }
 
 @Composable
 private fun ReceiptMockRow(
+    cachetType: CachetType,
     title: String,
     subtitle: String,
     status: String,
@@ -334,22 +255,10 @@ private fun ReceiptMockRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(20.dp),
-                shape = CircleShape,
-                color = statusColor
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        if (status == "Logged") "✓" else "⏳",
-                        fontSize = 10.sp,
-                        color = Color.White
-                    )
-                }
-            }
+            CachetMark(type = cachetType, size = 28.dp)
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.bodySmall, color = Color.White)

@@ -1,6 +1,8 @@
 package id.cachet.wallet.android.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -109,7 +111,7 @@ fun CachetMark(
     Canvas(modifier = modifier.size(width = widthDp, height = size)) {
         val scale = this.size.height / VIEWBOX_H
 
-        withTransform({ scale(scale, scale) }) {
+        withTransform({ scale(scale, scale, pivot = Offset.Zero) }) {
             // Border layers (back to front)
             drawPath(outerRimPath, color = colors.outerRim)
             drawPath(rimPath, color = colors.rim)
@@ -251,4 +253,69 @@ private fun DrawScope.drawAgeText() {
         Offset(227f, 215f), Offset(227f, 233f),
         strokeWidth = 4f, cap = StrokeCap.Round
     )
+}
+
+// ═══════════════════════════════════════════
+// BRAND SHIELD (green logo, 400x480 viewBox)
+// ═══════════════════════════════════════════
+
+// Path data from design/wireframes/holder-01-onboarding-1.svg  <symbol id="brand-shield">
+private const val BRAND_OUTER   = "M 200 32 C 240 55, 348 58, 366 59 V 221 C 366 311, 296 382, 200 418 C 104 382, 34 311, 34 221 V 59 C 52 58, 160 55, 200 32 Z"
+private const val BRAND_RIM     = "M 200 40 C 238 54, 340 63, 362 63 V 219 C 362 307, 294 376, 200 412 C 106 376, 38 307, 38 219 V 63 C 60 63, 162 54, 200 40 Z"
+private const val BRAND_INNER   = "M 200 47 C 234 63, 334 68, 354 71 V 218 C 354 301, 288 367, 200 401 C 112 367, 46 301, 46 218 V 71 C 66 68, 166 63, 200 47 Z"
+private const val BRAND_LISERE  = "M 200 54 C 230 64, 328 74, 350 73 V 218 C 350 297, 286 363, 200 397 C 114 363, 50 297, 50 218 V 73 C 72 74, 170 64, 200 54 Z"
+private const val BRAND_BODY    = "M 200 62 C 228 71, 322 78, 342 81 V 218 C 342 294, 280 356, 200 388 C 120 356, 58 294, 58 218 V 81 C 78 78, 172 71, 200 62 Z"
+private const val BRAND_BODY_R  = "M 200 62 C 172 71, 78 78, 58 81 V 218 C 58 294, 120 356, 200 388 Z"
+private const val BRAND_FRONT_R = "M 200 131 C 280 131, 330 152, 326 257 C 324 320, 268 358, 200 390 Z"
+private const val BRAND_FRONT_L = "M 200 131 C 120 131, 70 152, 74 257 C 76 320, 132 358, 200 390 Z"
+private const val BRAND_C_ARC   = "M 274 308 A 108 108 0 1 0 126 308"
+
+private val brandOuterPath   by lazy { PathParser().parsePathString(BRAND_OUTER).toPath() }
+private val brandRimPath     by lazy { PathParser().parsePathString(BRAND_RIM).toPath() }
+private val brandInnerPath   by lazy { PathParser().parsePathString(BRAND_INNER).toPath() }
+private val brandLiserePath  by lazy { PathParser().parsePathString(BRAND_LISERE).toPath() }
+private val brandBodyPath    by lazy { PathParser().parsePathString(BRAND_BODY).toPath() }
+private val brandBodyRPath   by lazy { PathParser().parsePathString(BRAND_BODY_R).toPath() }
+private val brandFrontRPath  by lazy { PathParser().parsePathString(BRAND_FRONT_R).toPath() }
+private val brandFrontLPath  by lazy { PathParser().parsePathString(BRAND_FRONT_L).toPath() }
+private val brandCArcPath    by lazy { PathParser().parsePathString(BRAND_C_ARC).toPath() }
+
+private const val BRAND_VB_W = 400f
+private const val BRAND_VB_H = 480f
+
+@Composable
+fun BrandShieldMark(
+    modifier: Modifier = Modifier,
+    size: Dp = 200.dp
+) {
+    val heightPx = with(LocalDensity.current) { size.toPx() }
+    val scale = heightPx / BRAND_VB_H
+    val shieldWidthPx = BRAND_VB_W * scale
+
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(size)
+    ) {
+        // Center the shield drawing within the full-width canvas
+        val offsetX = (this.size.width - shieldWidthPx) / 2f
+
+        withTransform({
+            translate(left = offsetX)
+            scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
+        }) {
+            drawPath(brandOuterPath,  color = Color(0xFF34D399))  // light emerald
+            drawPath(brandRimPath,    color = Color(0xFF10B981))  // vivid emerald
+            drawPath(brandInnerPath,  color = Color(0xFF059669))  // mid emerald
+            drawPath(brandLiserePath, color = Color(0xFF6EE7B7))  // pale emerald
+            drawPath(brandBodyPath,   color = Color(0xFF1E293B))  // midnight slate
+            drawPath(brandBodyRPath,  color = Color(0xFF253347))  // slate reflection
+            drawPath(brandFrontRPath, color = Color(0xFF0EA572))  // deep emerald
+            drawPath(brandFrontLPath, color = Color(0xFF10B981))  // vivid emerald
+            drawPath(
+                brandCArcPath, color = Color.White,
+                style = Stroke(width = 56f, cap = StrokeCap.Round)
+            )
+        }
+    }
 }

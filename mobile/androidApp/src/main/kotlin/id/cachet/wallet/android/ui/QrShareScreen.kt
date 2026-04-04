@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.model.QrShareState
 import id.cachet.wallet.android.ui.theme.*
 
@@ -104,7 +105,7 @@ fun QrShareScreen(
                     } else {
                         QrPatternPlaceholder()
                     }
-                    CachetLogoMini()
+                    BrandShieldMark(size = 48.dp)
                 }
             }
 
@@ -229,28 +230,3 @@ private fun QrPatternPlaceholder() {
     }
 }
 
-// ── Cachet logo mini (center of QR) ──
-
-@Composable
-private fun CachetLogoMini() {
-    Canvas(modifier = Modifier.size(48.dp)) {
-        val cx = size.width / 2
-        val cy = size.height / 2
-        // Back circle
-        drawCircle(BrandPrimary, radius = size.minDimension / 2, center = Offset(cx, cy))
-        // Front circle — shifted down to match shield proportions
-        drawCircle(BrandAccent, radius = size.minDimension * 0.40f, center = Offset(cx, cy + 4.dp.toPx()))
-        // C arc — thicker, positioned lower with wider opening
-        val arcPath = Path().apply {
-            addArc(
-                oval = androidx.compose.ui.geometry.Rect(
-                    cx - 9.dp.toPx(), cy - 3.dp.toPx(),
-                    cx + 9.dp.toPx(), cy + 15.dp.toPx()
-                ),
-                startAngleDegrees = 50f,
-                sweepAngleDegrees = 260f
-            )
-        }
-        drawPath(arcPath, Color.White, style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round))
-    }
-}

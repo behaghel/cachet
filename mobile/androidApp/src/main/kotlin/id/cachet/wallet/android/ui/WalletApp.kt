@@ -47,13 +47,13 @@ sealed class OverlayScreen {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletApp(demoMode: Boolean = false) {
-    val viewModel: WalletViewModel = koinViewModel { parametersOf(demoMode) }
+fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
+    val viewModel: WalletViewModel = koinViewModel { parametersOf(demoMode, demoEmpty) }
     val uiState by viewModel.uiState.collectAsState()
     val activityState by viewModel.activityState.collectAsState()
 
     val scope = rememberCoroutineScope()
-    var isOnboarded by remember { mutableStateOf(demoMode) }
+    var isOnboarded by remember { mutableStateOf(demoMode || demoEmpty) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
 
@@ -153,6 +153,20 @@ fun WalletApp(demoMode: Boolean = false) {
                                 question = pack.question,
                                 predicates = pack.description.split(", "),
                                 pack = pack
+                            )
+                        },
+                        onCardTapped = { card ->
+                            // Map credential to a QR share overlay using its predicates
+                            val syntheticPack = CachPackUi(
+                                question = card.displayName,
+                                description = card.predicates.joinToString(", "),
+                                proofCount = card.predicates.size,
+                                cachetType = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
+                            )
+                            overlay = OverlayScreen.QrShare(
+                                question = card.displayName,
+                                predicates = card.predicates,
+                                pack = syntheticPack
                             )
                         }
                     )

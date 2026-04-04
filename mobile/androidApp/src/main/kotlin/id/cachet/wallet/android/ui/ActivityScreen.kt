@@ -1,9 +1,6 @@
 package id.cachet.wallet.android.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -170,57 +166,8 @@ fun ActivityScreen(
 // ═══════════════════════════════════════════
 
 @Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = TextTertiary,
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-}
-
-@Composable
 private fun DateLabel(label: String) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = TextTertiary,
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-}
-
-@Composable
-private fun FilterPill(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val bg by animateColorAsState(
-        targetValue = if (selected) BrandPrimary else SurfaceElevated,
-        animationSpec = tween(200), label = "pill-bg"
-    )
-    val fg by animateColorAsState(
-        targetValue = if (selected) TextOnBrand else TextSecondary,
-        animationSpec = tween(200), label = "pill-fg"
-    )
-
-    Surface(
-        modifier = Modifier
-            .clip(RoundedCornerShape(15.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(15.dp),
-        color = bg
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = fg
-        )
-    }
+    SectionHeader(text = label)
 }
 
 // ═══════════════════════════════════════════

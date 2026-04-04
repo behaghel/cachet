@@ -17,7 +17,7 @@ object DemoFixtures {
     val credentials: List<CredentialCardUi> = listOf(
         CredentialCardUi(
             localId = "demo-identity",
-            displayName = "Identity Credential",
+            displayName = "Identity",
             issuerLine = "Issued by Veriff  ·  Premium tier  ·  Expires Dec 2026",
             freshnessLabel = "12d",
             isRevoked = false,
@@ -27,9 +27,9 @@ object DemoFixtures {
             sharesSummary = "Shared 3 times  ·  Last used 2 days ago"
         ),
         CredentialCardUi(
-            localId = "demo-background",
-            displayName = "Background Check",
-            issuerLine = "Issued by ClearCheck  ·  Standard tier",
+            localId = "demo-childcare",
+            displayName = "Childcare",
+            issuerLine = "Issued by Parents Association  ·  Standard tier",
             freshnessLabel = "45d",
             isRevoked = false,
             cachetType = CachetType.CHILDCARE,
@@ -39,7 +39,7 @@ object DemoFixtures {
         ),
         CredentialCardUi(
             localId = "demo-seller",
-            displayName = "Safe Seller Cachet",
+            displayName = "Safe Seller",
             issuerLine = "Issued by Marketplace  ·  Awaiting platform data",
             freshnessLabel = "—",
             isRevoked = false,
@@ -56,7 +56,7 @@ object DemoFixtures {
         pendingCount = 1
     )
 
-    // ── Home / Verify tab ── (wireframe: home-c-dual-tabs)
+    // ── Home / Cache it section ── (inline on My Cachets tab)
 
     val cachPacks: List<CachPackUi> = listOf(
         CachPackUi("Safe for my kids?", "Identity, background check, references", 4, CachetType.CHILDCARE),
@@ -64,7 +64,7 @@ object DemoFixtures {
         CachPackUi("Old enough?", "Age verification (18+ or 21+)", 1, CachetType.AGE)
     )
 
-    // ── History ── (wireframe: activity-01-tab / history-01-tab)
+    // ── Activity ── (wireframe: activity-01-tab)
 
     val historyGroups: List<HistoryGroup> = listOf(
         HistoryGroup(
@@ -90,7 +90,7 @@ object DemoFixtures {
         )
     )
 
-    // ── Receipts ── (wireframe: holder-06-receipts)
+    // ── Receipts ── (shown in Activity tab, Receipts filter)
 
     val receipts: List<ReceiptItem> = listOf(
         ReceiptItem("r1", "Childcare readiness check", "Parents Association Madrid", "Mar 28, 2026", 4, ReceiptLogStatus.LOGGED, "Expires Jun 26"),

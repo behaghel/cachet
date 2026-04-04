@@ -2,8 +2,6 @@
 
 Maps each wireframe SVG to the screen, composable, and navigation steps in demo mode.
 
-**Launch command:** `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_mode true`
-
 ## Onboarding (launch WITHOUT demo_mode)
 
 Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
@@ -16,27 +14,31 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 
 ## Main Tabs (launch WITH demo_mode)
 
+**Launch:** `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_mode true`
+
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
-| 4 | `holder-04-vault-my-trust.svg` | Home / My Trust | Direct after demo launch |
-| 5 | `home-c-dual-tabs.svg` | Home / Cache it | Tap "Cache it" segment |
-| 6 | `history-01-tab.svg` | History | Tap "History" in bottom nav |
-| 7 | `holder-06-receipts.svg` | Receipts | Tap "Receipts" in bottom nav |
+| 4 | `holder-04-vault-my-trust.svg` | Home / My Cachets | Direct after demo launch |
+| 5 | `activity-01-tab.svg` | Activity | Tap "Activity" segment |
 
-## Deeper Flows (not reachable from demo nav yet)
+## Deeper Flows (reachable in demo mode)
 
-| # | Wireframe | Screen | Notes |
-|---|-----------|--------|-------|
-| 8 | `holder-05-empty-vault.svg` | Empty Vault | Requires WalletUiState.Empty |
-| 9 | `cachet-02-qr-share.svg` | QR Share | Requires cach'pack card tap → overlay |
-| 10 | `cachet-03-incoming-request.svg` | Incoming Request | Requires QR scan → overlay |
-| 11 | `cachet-04-result-pass.svg` | Cachet Result (pass) | Requires "Share & Cache" → overlay |
-| 12 | `cachet-05-result-fail.svg` | Cachet Result (fail) | Requires fail scenario → overlay |
+| # | Wireframe | Screen | Nav Steps |
+|---|-----------|--------|-----------|
+| 6 | `holder-05-empty-vault.svg` | Empty Vault | `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true` |
+| 7 | `cachet-02-qr-share.svg` | QR Share | From My Cachets: tap any cachet card |
+| 8 | `cachet-03-incoming-request.svg` | Incoming Request | Auto-transitions from QR Share after 4s (or tap "Scan simulated") |
+| 9 | `cachet-04-result-pass.svg` | Cachet Result (pass) | Tap "Share & Cache" on Incoming Request |
+| 10 | `cachet-05-result-fail.svg` | Cachet Result (fail) | Requires fail scenario data |
 
-## Variant Wireframes (explored but not chosen)
+## Deprecated Wireframes
 
-| Wireframe | Notes |
-|-----------|-------|
-| `home-a-split.svg` | Split home variant — not implemented |
-| `home-b-credentials-fab.svg` | Credentials+FAB variant — not implemented |
-| `activity-01-tab.svg` | Activity tab variant — History tab is a hybrid |
+These wireframes are no longer canonical and should be skipped during reviews.
+
+| Wireframe | Reason |
+|-----------|--------|
+| `home-a-split.svg` | Variant — not implemented |
+| `home-b-credentials-fab.svg` | Variant — not implemented |
+| `home-c-dual-tabs.svg` | Deprecated — replaced by My Cachets tab |
+| `history-01-tab.svg` | Deprecated — merged into Activity tab |
+| `holder-06-receipts.svg` | Deprecated — merged into Activity tab (Receipts filter) |

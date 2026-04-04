@@ -33,7 +33,8 @@ fun HomeScreen(
     uiState: WalletUiState,
     onStartVerification: () -> Unit,
     onRefresh: () -> Unit,
-    onPackSelected: (CachPackUi) -> Unit = {}
+    onPackSelected: (CachPackUi) -> Unit = {},
+    onCardTapped: (CredentialCardUi) -> Unit = {}
 ) {
     // Transient states take over the whole screen
     when (uiState) {
@@ -53,7 +54,8 @@ fun HomeScreen(
             summary = state.vaultSummary,
             packs = DemoFixtures.cachPacks,
             onStartVerification = onStartVerification,
-            onPackSelected = onPackSelected
+            onPackSelected = onPackSelected,
+            onCardTapped = onCardTapped
         )
     }
 }
@@ -68,7 +70,8 @@ private fun MyCachetsGrid(
     summary: VaultSummaryUi,
     packs: List<CachPackUi>,
     onStartVerification: () -> Unit,
-    onPackSelected: (CachPackUi) -> Unit
+    onPackSelected: (CachPackUi) -> Unit,
+    onCardTapped: (CredentialCardUi) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
@@ -86,7 +89,7 @@ private fun MyCachetsGrid(
                     border = BorderStroke(1.dp, TrustVerifiedBorder)
                 ) {
                     Text(
-                        text = "${summary.totalCount} credentials  ·  ${summary.verifiedCount} verified  ·  ${summary.pendingCount} pending",
+                        text = "${summary.totalCount} cachets  ·  ${summary.verifiedCount} verified  ·  ${summary.pendingCount} pending",
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = TrustVerifiedText
@@ -96,7 +99,12 @@ private fun MyCachetsGrid(
 
             // Cachet grid cards
             items(credentials, key = { it.localId }) { card ->
-                CachetGridCard(card = card)
+                CachetGridCard(card = card, onClick = { onCardTapped(card) })
+            }
+
+            // Empty slot — "Get a new cachet"
+            item {
+                EmptySlotCard(onClick = onStartVerification)
             }
 
             // ── "Cache it" section ── full width
@@ -134,7 +142,7 @@ private fun MyCachetsGrid(
             contentColor = TextOnBrand,
             shape = CircleShape
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add credential")
+            Icon(Icons.Default.Add, contentDescription = "Add cachet")
         }
     }
 }
@@ -174,9 +182,11 @@ private fun CachPackCard(pack: CachPackUi, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CachetGridCard(card: CredentialCardUi) {
+private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (card.isRevoked) SurfaceElevated else SurfaceCard
@@ -264,10 +274,17 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Verify your identity to get your first\ncredential. It takes about 2 minutes.",
+            text = "Verify your identity to get your first\ncachet. It takes about 2 minutes.",
             style = MaterialTheme.typography.bodyLarge,
             color = TextSecondary,
             textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SealButton(
+            text = "Verify My Identity",
+            onClick = onStartVerification
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -282,45 +299,13 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StepRow(number = "1", label = "Take a selfie")
-                StepRow(number = "2", label = "Scan your ID document")
-                StepRow(number = "3", label = "Receive your credential")
+                StepIndicator(number = "1", label = "Take a selfie")
+                StepIndicator(number = "2", label = "Scan your ID document")
+                StepIndicator(number = "3", label = "Receive your first cachet")
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        SealButton(
-            text = "Verify My Identity",
-            onClick = onStartVerification
-        )
 
         Spacer(modifier = Modifier.weight(0.3f))
     }
 }
 
-@Composable
-private fun StepRow(number: String, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(
-            modifier = Modifier.size(24.dp),
-            shape = CircleShape,
-            color = TrustVerifiedBg
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = number,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TrustVerifiedText
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = TextPrimary
-        )
-    }
-}

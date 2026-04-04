@@ -14,13 +14,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val demoMode = intent.getBooleanExtra("demo_mode", false)
+        val demoEmpty = intent.getBooleanExtra("demo_empty", false)
         setContent {
             CachetWalletTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WalletApp(demoMode = demoMode)
+                    WalletApp(demoMode = demoMode, demoEmpty = demoEmpty)
                 }
             }
         }

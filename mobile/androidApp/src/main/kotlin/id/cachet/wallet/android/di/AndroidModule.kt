@@ -45,7 +45,8 @@ val androidModule = module {
             issuanceUseCase = get(),
             veriffService = get(),
             consentUseCase = get(),
-            demoMode = params.getOrNull<Boolean>() ?: false
+            demoMode = params.get<Boolean>(0),
+            demoEmpty = params.get<Boolean>(1)
         )
     }
 }

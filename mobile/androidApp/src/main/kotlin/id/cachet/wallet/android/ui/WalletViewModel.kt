@@ -21,7 +21,8 @@ class WalletViewModel(
     private val issuanceUseCase: IssuanceUseCase,
     private val veriffService: VeriffService,
     private val consentUseCase: ConsentUseCase,
-    private val demoMode: Boolean = false
+    private val demoMode: Boolean = false,
+    private val demoEmpty: Boolean = false
 ) : ViewModel() {
 
     companion object {
@@ -35,7 +36,9 @@ class WalletViewModel(
     val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
 
     init {
-        if (demoMode) {
+        if (demoEmpty) {
+            _uiState.value = WalletUiState.Empty
+        } else if (demoMode) {
             _uiState.value = WalletUiState.HasCredentials(
                 credentials = DemoFixtures.credentials,
                 vaultSummary = DemoFixtures.vaultSummary
