@@ -56,7 +56,7 @@ object DemoFixtures {
         pendingCount = 1
     )
 
-    // ── Home / Cache it section ── (inline on My Cachets tab)
+    // ── Home / Verify section ── (inline on My Cachets tab)
 
     val cachPacks: List<CachPackUi> = listOf(
         CachPackUi("Safe for my kids?", "Identity, background check, references", 4, CachetType.CHILDCARE),

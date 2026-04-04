@@ -72,7 +72,7 @@ fun IncomingRequestScreen(
             // ── Title ──
             item {
                 Text(
-                    text = "Caching Request",
+                    text = "Verification Request",
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -197,7 +197,7 @@ fun IncomingRequestScreen(
             // ── Action buttons ──
             item {
                 SealButton(
-                    text = "Cache & Share",
+                    text = "Verify & Share",
                     onClick = onShare
                 )
                 Spacer(modifier = Modifier.height(8.dp))

@@ -33,7 +33,7 @@ Launch the app normally (no `--ez demo_mode true`). For each onboarding wirefram
 - Read the corresponding wireframe SVG from `design/wireframes/`
 - Run the **element-by-element checklist** (see below)
 - Tap "Next" to advance to the next onboarding page
-- After capturing all 3, tap "Skip" or proceed to complete onboarding
+- After capturing all 4, tap "Skip" or proceed to complete onboarding
 
 ### 4. Capture main tab screens (with demo_mode)
 
@@ -56,7 +56,7 @@ Follow the navigation steps in the manifest to reach overlay flows:
 - Empty Vault: `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true`
 - QR Share: tap a cachet card from My Cachets
 - Incoming Request: auto-transitions from QR Share after 4s
-- Cachet Result: tap "Cache & Share" on Incoming Request
+- Cachet Result: tap "Verify & Share" on Incoming Request
 
 ### 6. Compile report
 

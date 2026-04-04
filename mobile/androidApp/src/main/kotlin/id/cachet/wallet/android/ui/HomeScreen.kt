@@ -107,13 +107,13 @@ private fun MyCachetsGrid(
                 EmptySlotCard(onClick = onStartVerification)
             }
 
-            // ── "Cache it" section ── full width
+            // ── "Verify" section ── full width
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
-                    text = "Cache it",
+                    text = "Verify",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )

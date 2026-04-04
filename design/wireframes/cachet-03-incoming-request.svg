@@ -42,7 +42,7 @@
   <circle cx="212" cy="152" r="22" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="2"/>
   <text x="212" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1E293B">?</text>
 
-  <text x="188" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Caching Request</text>
+  <text x="188" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Verification Request</text>
   <text x="188" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Someone wants to know:</text>
 
   <!-- The question -->
@@ -98,7 +98,7 @@
 
   <!-- Action buttons -->
   <rect x="16" y="659" width="343" height="56" rx="28" fill="#10B981"/>
-  <text x="188" y="693" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Cache &amp; Share</text>
+  <text x="188" y="693" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Verify &amp; Share</text>
 
   <rect x="16" y="723" width="343" height="44" rx="22" fill="none"/>
   <text x="188" y="751" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Decline</text>

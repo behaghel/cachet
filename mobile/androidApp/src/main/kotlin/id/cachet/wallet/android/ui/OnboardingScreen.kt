@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,10 +25,19 @@ private data class OnboardingPage(
     val keyIcon: String,
     val keyTitle: String,
     val keySubtitle: String,
-    val ctaLabel: String
+    val ctaLabel: String,
+    val pronunciation: String? = null
 )
 
 private val pages = listOf(
+    OnboardingPage(
+        title = "Don't take their\nword for it",
+        description = "Buying from a stranger? Hiring a babysitter?\nDemand real proof — not promises.",
+        keyIcon = "\uD83D\uDD0D",
+        keyTitle = "You set the rules. They prove it.",
+        keySubtitle = "No platform middleman needed.",
+        ctaLabel = "Next"
+    ),
     OnboardingPage(
         title = "Your trust, portable",
         description = "Prove what matters about you\nwithout exposing what doesn't.",
@@ -38,9 +50,10 @@ private val pages = listOf(
         title = "Cachets, not\ndata breaches",
         description = "Cachets prove specific things —\n\"I'm 18+\", not your whole identity.\nReuse them everywhere.",
         keyIcon = "\u267B\uFE0F",
-        keyTitle = "Cache once, prove many times.",
+        keyTitle = "Verify once, trusted many times.",
         keySubtitle = "No repeated ID checks.",
-        ctaLabel = "Next"
+        ctaLabel = "Next",
+        pronunciation = "Kah-SHAY"
     ),
     OnboardingPage(
         title = "Every share,\non the record",
@@ -91,9 +104,10 @@ fun OnboardingScreen(
 
             // ── Illustration ──
             when (currentPage) {
-                0 -> BrandShieldMark(size = 160.dp)
-                1 -> CachetCardsIllustration()
-                2 -> ReceiptListIllustration()
+                0 -> DemandTrustIllustration()
+                1 -> BrandShieldMark(size = 160.dp)
+                2 -> CachetCardsIllustration()
+                3 -> ReceiptListIllustration()
             }
 
             Spacer(modifier = Modifier.weight(0.3f))
@@ -106,6 +120,36 @@ fun OnboardingScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // ── Pronunciation (if present) ──
+            if (page.pronunciation != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Cachet",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = page.pronunciation,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Light),
+                        color = Color(0xFF94A3B8)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        Icons.Default.VolumeUp,
+                        contentDescription = "Pronunciation",
+                        tint = TrustNeutral,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -131,7 +175,7 @@ fun OnboardingScreen(
 
             // ── Pagination dots ──
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(3) { index ->
+                repeat(pages.size) { index ->
                     Surface(
                         modifier = Modifier.size(8.dp),
                         shape = CircleShape,
@@ -159,7 +203,31 @@ fun OnboardingScreen(
     }
 }
 
-// ── Page 2 illustration: fanned cachet cards ──
+// ── Page 1 illustration: brand shield with magnifying glass ──
+
+@Composable
+private fun DemandTrustIllustration() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        BrandShieldMark(size = 160.dp)
+        // Magnifying glass overlay (lower-right of shield)
+        Icon(
+            Icons.Default.Search,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.9f),
+            modifier = Modifier
+                .size(56.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = (-40).dp, y = (-8).dp)
+        )
+    }
+}
+
+// ── Page 3 illustration: fanned cachet cards ──
 
 @Composable
 private fun CachetCardsIllustration() {
@@ -225,7 +293,7 @@ private fun CachetCardsIllustration() {
     }
 }
 
-// ── Page 3 illustration: receipt list with cachet shields ──
+// ── Page 4 illustration: receipt list with cachet shields ──
 
 @Composable
 private fun ReceiptListIllustration() {

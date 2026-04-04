@@ -34,7 +34,7 @@
 
   <!-- Title -->
   <text x="188" y="120" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Safe for my kids?</text>
-  <text x="188" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#A8A29E">Show this code to the person you want to cache</text>
+  <text x="188" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#A8A29E">Show this code to the person you want to verify</text>
 
   <!-- QR code area (white rounded rectangle simulating QR) -->
   <rect x="60" y="160" width="255" height="255" rx="20" fill="#FFFFFF"/>
@@ -76,7 +76,7 @@
   <rect x="266" y="350" width="24" height="24" fill="#1E293B"/>
 
   <!-- What will be checked -->
-  <text x="188" y="455" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">This will cache:</text>
+  <text x="188" y="455" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">This will verify:</text>
 
   <!-- Predicate chips -->
   <rect x="44" y="472" width="80" height="28" rx="14" fill="#334155"/>

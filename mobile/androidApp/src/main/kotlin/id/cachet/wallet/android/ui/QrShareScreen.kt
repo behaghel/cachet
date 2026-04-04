@@ -80,7 +80,7 @@ fun QrShareScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Show this code to the person you want to cache",
+                text = "Show this code to the person you want to verify",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextTertiary,
                 textAlign = TextAlign.Center
@@ -113,7 +113,7 @@ fun QrShareScreen(
 
             // ── "This will verify" + predicate chips ──
             Text(
-                text = "This will cache:",
+                text = "This will verify:",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
