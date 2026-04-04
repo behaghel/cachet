@@ -48,6 +48,8 @@ data class StoredCredential(
     val localId: String,
     val credential: VerifiableCredential,
     val rawJwt: String? = null,
+    val rawSdJwt: String? = null,
+    val keyAlias: String? = null,
     val createdAt: Instant,
     val isRevoked: Boolean = false
 )

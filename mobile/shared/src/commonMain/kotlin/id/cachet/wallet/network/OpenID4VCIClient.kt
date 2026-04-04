@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 interface OpenID4VCIClient {
     suspend fun requestToken(clientId: String, scope: String, sessionId: String? = null): TokenResponse
     suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
+    suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String): SDJWTCredentialResponse
 }
 
 @Serializable
@@ -37,6 +38,12 @@ data class CredentialRequest(
 @Serializable
 data class CredentialResponse(
     val credential: VerifiableCredential,
+    val format: String
+)
+
+@Serializable
+data class SDJWTCredentialResponse(
+    val credential: String, // raw SD-JWT string (issuerJWT~disc1~...~)
     val format: String
 )
 
@@ -94,6 +101,37 @@ class KtorOpenID4VCIClient(
         } catch (e: Exception) {
             if (e is OpenID4VCIException) throw e
             throw OpenID4VCIException("Network error during credential request", e)
+        }
+    }
+
+    override suspend fun requestSDJWTCredential(
+        accessToken: String,
+        types: List<String>,
+        holderJWK: String
+    ): SDJWTCredentialResponse {
+        try {
+            val request = CredentialRequest(
+                format = "vc+sd-jwt",
+                types = types,
+                proof = mapOf("jwk" to holderJWK)
+            )
+
+            val response: HttpResponse = httpClient.post("$baseUrl/credential") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(request)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<SDJWTCredentialResponse>()
+            } else if (response.status == HttpStatusCode.Unauthorized) {
+                throw OpenID4VCIException("Invalid access token")
+            } else {
+                throw OpenID4VCIException("SD-JWT credential request failed: ${response.status}")
+            }
+        } catch (e: Exception) {
+            if (e is OpenID4VCIException) throw e
+            throw OpenID4VCIException("Network error during SD-JWT credential request", e)
         }
     }
 }
