@@ -57,7 +57,7 @@ The project uses devenv for dependency management including Android SDK. Key com
 Cachet is a microservices-based trust provider with three core services:
 
 1. **Verifier** (`services/verifier/`) - Manages Cach'Pack lists and verifies credential presentations
-   - Endpoints: `/packs` (GET), `/presentations/cache` (POST)
+   - Endpoints: `/packs` (GET), `/presentations/verify` (POST)
    - Returns cachets and predicates
 
 2. **Registry** (`services/registry/`) - Policy/pack registry service

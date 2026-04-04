@@ -9,47 +9,81 @@ import (
 
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
+	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 )
 
 type Server struct {
-	router *chi.Mux
-	packs  []models.CachPack
+	router     *chi.Mux
+	packClient *pack.Client
 }
 
-func NewServer(cfg common.ServerConfig) *Server {
+func NewServer(cfg common.ServerConfig, registryURL string) *Server {
 	s := &Server{
-		router: common.NewRouter(cfg),
-		packs: []models.CachPack{
-			{Id: "pack.childcare.readiness@0.1.0", Version: "0.1.0", Name: "Childcare Readiness"},
-			{Id: "pack.safe.seller@0.1.0", Version: "0.1.0", Name: "Safe Seller"},
-		},
+		router:     common.NewRouter(cfg),
+		packClient: pack.NewClient(registryURL),
 	}
-	s.router.Get("/packs", s.handleListCachPacks)
-	s.router.Post("/presentations/cache", s.handleCachePresentation)
+	s.router.Get("/packs", s.handleListPacks)
+	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
 	return s
 }
 
 func (s *Server) Router() *chi.Mux { return s.router }
 
-func (s *Server) handleListCachPacks(w http.ResponseWriter, r *http.Request) {
-	log.Ctx(r.Context()).Info().Int("pack_count", len(s.packs)).Msg("listing cach'packs")
-	common.WriteJSON(w, r, http.StatusOK, s.packs)
+func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
+	summaries, err := s.packClient.ListSummary()
+	if err != nil {
+		log.Ctx(r.Context()).Error().Err(err).Msg("failed to fetch packs from registry")
+		common.WriteError(w, r, http.StatusBadGateway, "registry_error", "Failed to fetch packs from registry")
+		return
+	}
+	log.Ctx(r.Context()).Info().Int("pack_count", len(summaries)).Msg("listing packs")
+	common.WriteJSON(w, r, http.StatusOK, summaries)
 }
 
-func (s *Server) handleCachePresentation(w http.ResponseWriter, r *http.Request) {
-	var req models.CacheRequest
+func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request) {
+	var req models.VerifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
 		return
 	}
 
-	log.Ctx(r.Context()).Info().Str("policy_id", req.PolicyId).Msg("caching presentation")
+	log.Ctx(r.Context()).Info().Str("policy_id", req.PolicyId).Msg("verifying presentation")
 
-	// Stub implementation
-	resp := models.CacheResponse{
-		Cachet:     "Demo Cachet (stub)",
-		Predicates: []string{"age.ge.18", "identity.verified"},
-		Freshness:  models.CacheResponseFreshnessOk,
+	// Fetch pack definition from registry
+	packDef, err := s.packClient.GetPack(req.PolicyId)
+	if err != nil {
+		log.Ctx(r.Context()).Warn().Err(err).Str("policy_id", req.PolicyId).Msg("pack not found")
+		common.WriteError(w, r, http.StatusBadRequest, "unknown_pack", "Pack not found: "+req.PolicyId)
+		return
+	}
+
+	// Evaluate predicates
+	results, summary := eval.Evaluate(packDef, req.Bundle.Credentials)
+
+	// Check freshness
+	freshness := eval.CheckFreshness(req.Bundle.Credentials)
+
+	// Build satisfied predicate IDs list
+	var satisfied []string
+	for _, res := range results {
+		if res.Status == models.Satisfied {
+			satisfied = append(satisfied, res.PredicateId)
+		}
+	}
+
+	// Determine cachet
+	cachet := ""
+	if summary.CachetGranted {
+		cachet = packDef.Badge.Label
+	}
+
+	resp := models.VerifyResponse{
+		Cachet:           cachet,
+		Predicates:       satisfied,
+		Freshness:        freshness,
+		PredicateResults: results,
+		Summary:          summary,
 	}
 	common.WriteJSON(w, r, http.StatusOK, resp)
 }

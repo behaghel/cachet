@@ -26,6 +26,7 @@ import kotlinx.serialization.Contextual
  * @param firstName 
  * @param lastName 
  * @param dateOfBirth 
+ * @param confidence Person identity confidence score
  */
 @Serializable
 
@@ -38,7 +39,11 @@ data class VeriffSessionPerson (
     val lastName: kotlin.String? = null,
 
     @Contextual @SerialName(value = "dateOfBirth")
-    val dateOfBirth: java.time.LocalDate? = null
+    val dateOfBirth: java.time.LocalDate? = null,
+
+    /* Person identity confidence score */
+    @SerialName(value = "confidence")
+    val confidence: kotlin.Double? = null
 
 ) {
 

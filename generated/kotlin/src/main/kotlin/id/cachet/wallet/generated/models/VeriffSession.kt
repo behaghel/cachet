@@ -17,6 +17,7 @@ package id.cachet.wallet.generated.models
 
 import id.cachet.wallet.generated.models.VeriffSessionDocument
 import id.cachet.wallet.generated.models.VeriffSessionPerson
+import id.cachet.wallet.generated.models.VeriffSessionVerification
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
@@ -26,9 +27,10 @@ import kotlinx.serialization.Contextual
  * 
  *
  * @param sessionId Veriff session identifier
- * @param status Verification status
+ * @param status 
  * @param person 
  * @param document 
+ * @param verification 
  */
 @Serializable
 
@@ -38,7 +40,6 @@ data class VeriffSession (
     @SerialName(value = "session_id")
     val sessionId: kotlin.String,
 
-    /* Verification status */
     @SerialName(value = "status")
     val status: VeriffSession.Status,
 
@@ -46,12 +47,15 @@ data class VeriffSession (
     val person: VeriffSessionPerson? = null,
 
     @SerialName(value = "document")
-    val document: VeriffSessionDocument? = null
+    val document: VeriffSessionDocument? = null,
+
+    @SerialName(value = "verification")
+    val verification: VeriffSessionVerification? = null
 
 ) {
 
     /**
-     * Verification status
+     * 
      *
      * Values: approved,declined,expired,abandoned
      */

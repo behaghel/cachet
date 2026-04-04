@@ -37,65 +37,11 @@ Project-specific addenda for `$spec-driven-tdd`:
 
 ## Architecture
 
-### Service Structure
+For detailed architecture, service structure, data flows, and key concepts, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-Cachet is a microservices-based trust provider with three core services:
+Service ports: Verifier `8081`, Registry `8082`, Receipts `8083`, Issuance Gateway `8090`. Mobile emulator connects via `10.0.2.2:8090`.
 
-1. **Verifier** (`services/verifier/`) - Manages Trust Pack lists and verifies credential presentations
-   - Endpoints: `/packs` (GET), `/presentations/verify` (POST)
-   - Returns verification badges and predicates
-
-2. **Registry** (`services/registry/`) - Policy/pack registry service
-   - Endpoints: `/policy/manifest` (GET)
-   - Serves policy manifests with DID-based signing
-
-3. **Receipts Log** (`services/receipts-log/`) - Consent receipts and transparency logging
-   - Transparency log stub implementation
-
-4. **Issuance Gateway** (`services/issuance-gateway/`) - OpenID4VCI credential issuance
-   - Endpoints: `/oauth/token` (OAuth2), `/credential` (VC issuance), `/webhooks/veriff` (Veriff integration)
-   - Issues SD-JWT VCs with StatusList2021 revocation support
-   - Integrates with Veriff for foundational identity verification
-
-### Technology Stack
-
-- **Backend**: Go 1.22 with Chi router
-- **Logging**: Zerolog for structured logging
-- **Testing**: testify framework with coverage reporting
-- **Common Module**: `services/common/` - Shared Go dependencies
-- **APIs**: OpenAPI 3.0.3 specifications in `api/`
-- **SDKs**: TypeScript (`sdk/typescript/`), Kotlin/Swift stubs (`sdk/kotlin/`, `sdk/swift/`)
-- **Mobile**: KMM wallet placeholder (`mobile/`)
-- **CI/CD**: GitHub Actions with automated testing, linting, security scanning
-
-### Key Concepts
-
-- **Trust Packs**: Reusable, privacy-preserving credential templates (e.g., "Childcare Readiness", "Safe Seller")
-- **Presentations**: Verifiable credential bundles verified against policies
-- **Policy Manifests**: DID-signed policy definitions with versioning
-
-### Data Flow
-
-1. **Issuance**: Veriff webhook → Issuance Gateway → SD-JWT VC issued via OpenID4VCI
-2. **Verification**: Clients request available Trust Packs from Verifier
-3. **Presentation**: Credential presentations are verified against registered policies
-4. **Results**: Verification results include badges, predicates, and freshness status
-5. **Registry**: Provides policy manifests for Trust Pack definitions
-
-### Mobile Wallet
-
-- **Location**: `mobile/` - Kotlin Multiplatform Mobile (KMM) wallet app
-- **Shared module**: `mobile/shared/` - Business logic, networking, data models
-- **Android app**: `mobile/androidApp/` - Android-specific UI and platform integrations
-- **Features**: OpenID4VCI credential issuance, SQLite credential vault, Jetpack Compose UI
-- **Networking**: Uses `10.0.2.2:8090` to connect to local backend from emulator
-
-### Development Files
-
-- Trust Pack definitions: `docs/PACKS/`
-- Receipt samples: `docs/RECEIPTS/`
-- Policy manifest: `docs/POLICY_MANIFEST.yaml`
-- Architecture docs: `docs/ARCHITECTURE.md`, `docs/TRANSPARENCY_LOG_DESIGN.md`
+Key files: `docs/PACKS/` (Trust Pack definitions), `docs/RECEIPTS/` (samples), `docs/POLICY_MANIFEST.yaml`, `docs/VISION.md` (product context).
 
 ## Pre-commit Hooks
 

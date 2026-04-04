@@ -15,7 +15,7 @@ class CredentialTest {
             id = "urn:uuid:test-credential",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = listOf("VerifiableCredential", "IdentityCredential"),
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = now,
             credentialSubject = mapOf(
                 "id" to "did:example:holder",
@@ -25,7 +25,7 @@ class CredentialTest {
         )
         
         assertEquals("urn:uuid:test-credential", credential.id)
-        assertEquals("did:web:cachet.id", credential.issuer)
+        assertEquals("did:veriff:production", credential.issuer)
         assertTrue(credential.credentialSubject.containsKey("verified"))
         assertEquals(true, credential.credentialSubject["verified"])
     }
@@ -53,7 +53,7 @@ class CredentialTest {
             id = "urn:uuid:test-credential",
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = listOf("VerifiableCredential", "IdentityCredential"),
-            issuer = "did:web:cachet.id",
+            issuer = "did:veriff:production",
             issuanceDate = now,
             credentialSubject = mapOf("id" to "did:example:holder"),
             credentialStatus = status

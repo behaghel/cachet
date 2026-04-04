@@ -92,7 +92,8 @@
       "Bash(mv /Users/hubertbehaghel/ws/veriff/cachet/.claude/skills/android-ux-review.md /Users/hubertbehaghel/ws/veriff/cachet/.claude/skills/android-ux-review/SKILL.md)",
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:assembleDebug androidApp:installDebug\" 2>&1)",
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:installDebug\" 2>&1)",
-      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:compileDebugKotlin\")"
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:compileDebugKotlin\")",
+      "Bash(go build:*)"
     ],
     "deny": [],
     "ask": []

@@ -35,6 +35,31 @@ const (
 	Standard CredentialSubjectVerificationLevel = "standard"
 )
 
+// Defines values for PredicateDefinitionOperator.
+const (
+	Boolean          PredicateDefinitionOperator = "boolean"
+	EqualEqual       PredicateDefinitionOperator = "=="
+	GreaterThan      PredicateDefinitionOperator = ">"
+	GreaterThanEqual PredicateDefinitionOperator = ">="
+	LessThan         PredicateDefinitionOperator = "<"
+	LessThanEqual    PredicateDefinitionOperator = "<="
+)
+
+// Defines values for PredicateDefinitionProofType.
+const (
+	SdJwt   PredicateDefinitionProofType = "sd-jwt"
+	VcBbs   PredicateDefinitionProofType = "vc-bbs"
+	ZkSnark PredicateDefinitionProofType = "zk-snark"
+)
+
+// Defines values for PredicateResultStatus.
+const (
+	Failed       PredicateResultStatus = "failed"
+	NoCredential PredicateResultStatus = "no_credential"
+	NotEvaluable PredicateResultStatus = "not_evaluable"
+	Satisfied    PredicateResultStatus = "satisfied"
+)
+
 // Defines values for TokenRequestGrantType.
 const (
 	ClientCredentials TokenRequestGrantType = "client_credentials"
@@ -60,12 +85,24 @@ const (
 	VeriffSessionStatusExpired   VeriffSessionStatus = "expired"
 )
 
-// Defines values for CacheResponseFreshness.
+// Defines values for VerifyResponseFreshness.
 const (
-	CacheResponseFreshnessExpired CacheResponseFreshness = "expired"
-	CacheResponseFreshnessOk      CacheResponseFreshness = "ok"
-	CacheResponseFreshnessStale   CacheResponseFreshness = "stale"
+	VerifyResponseFreshnessExpired VerifyResponseFreshness = "expired"
+	VerifyResponseFreshnessOk      VerifyResponseFreshness = "ok"
+	VerifyResponseFreshnessStale   VerifyResponseFreshness = "stale"
 )
+
+// BadgeDefinition defines model for BadgeDefinition.
+type BadgeDefinition struct {
+	// Jurisdiction Badge jurisdiction
+	Jurisdiction *string `json:"jurisdiction,omitempty"`
+
+	// Label Badge display label
+	Label string `json:"label"`
+
+	// Ttl Badge time-to-live (ISO 8601 duration)
+	Ttl string `json:"ttl"`
+}
 
 // CredentialRequest defines model for CredentialRequest.
 type CredentialRequest struct {
@@ -165,17 +202,83 @@ type InclusionProof struct {
 	Included *bool `json:"included,omitempty"`
 }
 
-// CachPack defines model for CachPack.
-type CachPack struct {
-	// Id Cach'Pack identifier with version suffix
+// Pack defines model for Pack.
+type Pack struct {
+	// Id Pack identifier
 	Id string `json:"id"`
 
-	// Name Human-readable Cach'Pack name
+	// Name Human-readable pack name
 	Name string `json:"name"`
 
 	// Version Semantic version
 	Version string `json:"version"`
 }
+
+// PackDefinition defines model for PackDefinition.
+type PackDefinition struct {
+	Badge BadgeDefinition `json:"badge"`
+
+	// Id Pack identifier
+	Id string `json:"id"`
+
+	// Jurisdictions Applicable jurisdictions (ISO country codes)
+	Jurisdictions *[]string `json:"jurisdictions,omitempty"`
+
+	// Name Human-readable pack name
+	Name       string                `json:"name"`
+	Predicates []PredicateDefinition `json:"predicates"`
+
+	// Purpose Purpose of the pack
+	Purpose string `json:"purpose"`
+
+	// Version Semantic version
+	Version string `json:"version"`
+}
+
+// PredicateDefinition defines model for PredicateDefinition.
+type PredicateDefinition struct {
+	// Claim Claim field name in the credential subject
+	Claim string `json:"claim"`
+
+	// Id Predicate identifier
+	Id string `json:"id"`
+
+	// IssuersAccepted DID patterns of accepted issuers (supports * wildcard)
+	IssuersAccepted []string `json:"issuersAccepted"`
+
+	// Operator Comparison operator
+	Operator PredicateDefinitionOperator `json:"operator"`
+
+	// ProofType Required proof type
+	ProofType PredicateDefinitionProofType `json:"proofType"`
+
+	// Required Whether this predicate is required for badge granting
+	Required *bool `json:"required,omitempty"`
+
+	// Value Expected value (type depends on operator)
+	Value interface{} `json:"value"`
+}
+
+// PredicateDefinitionOperator Comparison operator
+type PredicateDefinitionOperator string
+
+// PredicateDefinitionProofType Required proof type
+type PredicateDefinitionProofType string
+
+// PredicateResult defines model for PredicateResult.
+type PredicateResult struct {
+	// PredicateId Predicate identifier from the pack definition
+	PredicateId string `json:"predicateId"`
+
+	// Reason Human-readable reason (for non-satisfied statuses)
+	Reason *string `json:"reason,omitempty"`
+
+	// Status Evaluation outcome
+	Status PredicateResultStatus `json:"status"`
+}
+
+// PredicateResultStatus Evaluation outcome
+type PredicateResultStatus string
 
 // ReceiptHashRequest defines model for ReceiptHashRequest.
 type ReceiptHashRequest struct {
@@ -291,29 +394,54 @@ type VerifiableCredential struct {
 	Type   []string `json:"type"`
 }
 
-// CacheRequest defines model for CacheRequest.
-type CacheRequest struct {
-	// Bundle Credential presentation bundle
-	Bundle map[string]interface{} `json:"bundle"`
+// VerificationSummary defines model for VerificationSummary.
+type VerificationSummary struct {
+	// CachetGranted Whether the badge was granted (all required predicates satisfied)
+	CachetGranted bool `json:"cachetGranted"`
 
-	// PolicyId Policy identifier to verify against
+	// OptionalSatisfied Number of optional predicates that were satisfied
+	OptionalSatisfied *int `json:"optionalSatisfied,omitempty"`
+
+	// OptionalTotal Total number of optional predicates
+	OptionalTotal *int `json:"optionalTotal,omitempty"`
+
+	// RequiredSatisfied Number of required predicates that were satisfied
+	RequiredSatisfied int `json:"requiredSatisfied"`
+
+	// RequiredTotal Total number of required predicates
+	RequiredTotal int `json:"requiredTotal"`
+}
+
+// VerifyRequest defines model for VerifyRequest.
+type VerifyRequest struct {
+	// Bundle Credential presentation bundle
+	Bundle struct {
+		// Credentials Verifiable credentials to evaluate
+		Credentials []VerifiableCredential `json:"credentials"`
+	} `json:"bundle"`
+
+	// PolicyId Pack identifier to verify against
 	PolicyId string `json:"policyId"`
 }
 
-// CacheResponse defines model for CacheResponse.
-type CacheResponse struct {
-	// Cachet Cachet result
+// VerifyResponse defines model for VerifyResponse.
+type VerifyResponse struct {
+	// Cachet Cachet label if granted, empty string otherwise
 	Cachet string `json:"cachet"`
 
 	// Freshness Freshness status of the credentials
-	Freshness CacheResponseFreshness `json:"freshness"`
+	Freshness VerifyResponseFreshness `json:"freshness"`
 
-	// Predicates Predicates that were proven
-	Predicates []string `json:"predicates"`
+	// PredicateResults Per-predicate evaluation results
+	PredicateResults []PredicateResult `json:"predicateResults"`
+
+	// Predicates Predicate IDs that were satisfied
+	Predicates []string            `json:"predicates"`
+	Summary    VerificationSummary `json:"summary"`
 }
 
-// CacheResponseFreshness Freshness status of the credentials
-type CacheResponseFreshness string
+// VerifyResponseFreshness Freshness status of the credentials
+type VerifyResponseFreshness string
 
 // GetInclusionProofParams defines parameters for GetInclusionProof.
 type GetInclusionProofParams struct {
@@ -327,8 +455,8 @@ type RequestCredentialJSONRequestBody = CredentialRequest
 // RequestTokenFormdataRequestBody defines body for RequestToken for application/x-www-form-urlencoded ContentType.
 type RequestTokenFormdataRequestBody = TokenRequest
 
-// CachePresentationJSONRequestBody defines body for CachePresentation for application/json ContentType.
-type CachePresentationJSONRequestBody = CacheRequest
+// VerifyPresentationJSONRequestBody defines body for VerifyPresentation for application/json ContentType.
+type VerifyPresentationJSONRequestBody = VerifyRequest
 
 // SubmitReceiptHashJSONRequestBody defines body for SubmitReceiptHash for application/json ContentType.
 type SubmitReceiptHashJSONRequestBody = ReceiptHashRequest

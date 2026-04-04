@@ -44,7 +44,7 @@ class CredentialRepositoryTest {
     
     @Test
     fun testGetCredentialsByIssuer() = runTest {
-        val issuer = "did:web:cachet.id"
+        val issuer = "did:veriff:production"
         val credential1 = createTestCredential("cred-1", issuer)
         val credential2 = createTestCredential("cred-2", "did:web:other.id")
         
@@ -91,7 +91,7 @@ class CredentialRepositoryTest {
     
     private fun createTestCredential(
         id: String = "urn:uuid:test-credential",
-        issuer: String = "did:web:cachet.id"
+        issuer: String = "did:veriff:production"
     ): VerifiableCredential {
         return VerifiableCredential(
             id = id,

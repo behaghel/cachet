@@ -5,7 +5,7 @@
 | Name | Type | Description | Notes |
 | ------------ | ------------- | ------------- | ------------- |
 | **id** | [**java.net.URI**](java.net.URI.md) | Status list entry URI |  |
-| **type** | [**inline**](#Type) | Status mechanism type |  |
+| **type** | [**inline**](#Type) |  |  |
 
 
 <a id="Type"></a>

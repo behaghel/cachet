@@ -94,11 +94,12 @@ tasks.register("updateNetworkSecurityConfig") {
     doLast {
         val networkConfigFile = file("src/main/res/xml/network_security_config.xml")
         
-        // Get local IP address using shell command
-        val getIpCommand = if (System.getProperty("os.name").lowercase().contains("windows")) {
-            listOf("powershell", "-Command", "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' | Where-Object {\$_.IPAddress -like '192.168.*' -or \$_.IPAddress -like '10.*' -or \$_.IPAddress -like '172.*'}).IPAddress")
-        } else {
-            listOf("bash", "-c", "ip route get 8.8.8.8 | grep -oP 'src \\K[\\d.]+'")
+        // Get local IP address using shell command (cross-platform)
+        val osName = System.getProperty("os.name").lowercase()
+        val getIpCommand = when {
+            osName.contains("windows") -> listOf("powershell", "-Command", "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' | Where-Object {\$_.IPAddress -like '192.168.*' -or \$_.IPAddress -like '10.*' -or \$_.IPAddress -like '172.*'}).IPAddress")
+            osName.contains("mac") || osName.contains("darwin") -> listOf("bash", "-c", "ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo ''")
+            else -> listOf("bash", "-c", "ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \\K[\\d.]+' || hostname -I 2>/dev/null | awk '{print \$1}' || echo ''")
         }
         
         try {
