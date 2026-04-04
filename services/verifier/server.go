@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"net/http"
 
@@ -13,19 +14,42 @@ import (
 	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 )
 
+// VerifierConfig holds injectable dependencies for the verifier.
+type VerifierConfig struct {
+	Common      common.ServerConfig
+	RegistryURL string
+	DIDResolver eval.DIDResolver // resolves issuer DIDs to public keys
+}
+
 type Server struct {
-	router     *chi.Mux
-	packClient *pack.Client
+	router      *chi.Mux
+	packClient  *pack.Client
+	didResolver eval.DIDResolver
 }
 
 func NewServer(cfg common.ServerConfig, registryURL string) *Server {
+	return NewServerWithConfig(VerifierConfig{
+		Common:      cfg,
+		RegistryURL: registryURL,
+	})
+}
+
+func NewServerWithConfig(cfg VerifierConfig) *Server {
 	s := &Server{
-		router:     common.NewRouter(cfg),
-		packClient: pack.NewClient(registryURL),
+		router:      common.NewRouter(cfg.Common),
+		packClient:  pack.NewClient(cfg.RegistryURL),
+		didResolver: cfg.DIDResolver,
 	}
 	s.router.Get("/packs", s.handleListPacks)
 	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
 	return s
+}
+
+// WithIssuerKey configures the verifier with a known issuer public key for DID resolution.
+func WithIssuerKey(did string, key *ecdsa.PublicKey) func(*VerifierConfig) {
+	return func(cfg *VerifierConfig) {
+		cfg.DIDResolver = eval.NewStaticDIDResolver(map[string]*ecdsa.PublicKey{did: key})
+	}
 }
 
 func (s *Server) Router() *chi.Mux { return s.router }
@@ -41,8 +65,17 @@ func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
 	common.WriteJSON(w, r, http.StatusOK, summaries)
 }
 
+// verifyRequest extends the generated VerifyRequest with SD-JWT credentials.
+type verifyRequest struct {
+	PolicyId string `json:"policyId"`
+	Bundle   struct {
+		Credentials []models.VerifiableCredential `json:"credentials"`
+	} `json:"bundle"`
+	SDJWTCredentials []string `json:"sdJwtCredentials,omitempty"`
+}
+
 func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request) {
-	var req models.VerifyRequest
+	var req verifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
 		return
@@ -58,10 +91,28 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Evaluate predicates
-	results, summary := eval.Evaluate(packDef, req.Bundle.Credentials)
+	var results []models.PredicateResult
+	var summary models.VerificationSummary
 
-	// Check freshness
+	// SD-JWT path: cryptographically verify credentials, then evaluate
+	if len(req.SDJWTCredentials) > 0 && s.didResolver != nil {
+		var verifiedClaims []*eval.VerifiedClaims
+		for i, sdJWT := range req.SDJWTCredentials {
+			vc, err := eval.VerifySDJWT(sdJWT, s.didResolver)
+			if err != nil {
+				log.Ctx(r.Context()).Warn().Err(err).Int("credential_index", i).Msg("SD-JWT verification failed")
+				common.WriteError(w, r, http.StatusBadRequest, "verification_failed", "Credential verification failed: "+err.Error())
+				return
+			}
+			verifiedClaims = append(verifiedClaims, vc)
+		}
+		results, summary = eval.EvaluateWithVerifiedClaims(packDef, verifiedClaims)
+	} else {
+		// Legacy path: no cryptographic verification (backward compatible)
+		results, summary = eval.Evaluate(packDef, req.Bundle.Credentials)
+	}
+
+	// Check freshness (works with both paths)
 	freshness := eval.CheckFreshness(req.Bundle.Credentials)
 
 	// Build satisfied predicate IDs list

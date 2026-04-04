@@ -8,14 +8,33 @@ type PredicateEvaluator interface {
 }
 
 // Evaluate evaluates all predicates in a pack against the provided credentials.
+// Supports both legacy JSON credentials and verified SD-JWT claims.
 func Evaluate(pack models.PackDefinition, credentials []models.VerifiableCredential) ([]models.PredicateResult, models.VerificationSummary) {
+	return evaluateWithClaims(pack, credentials, nil)
+}
+
+// EvaluateWithVerifiedClaims evaluates predicates using cryptographically verified SD-JWT claims.
+// The verifiedClaims are produced by VerifySDJWT and contain only claims whose
+// disclosure hashes and issuer signatures have been checked.
+func EvaluateWithVerifiedClaims(pack models.PackDefinition, verifiedClaims []*VerifiedClaims) ([]models.PredicateResult, models.VerificationSummary) {
+	return evaluateWithClaims(pack, nil, verifiedClaims)
+}
+
+func evaluateWithClaims(pack models.PackDefinition, credentials []models.VerifiableCredential, verifiedClaims []*VerifiedClaims) ([]models.PredicateResult, models.VerificationSummary) {
 	var results []models.PredicateResult
 	requiredTotal, requiredSatisfied := 0, 0
 	optionalTotal, optionalSatisfied := 0, 0
 
 	for _, pred := range pack.Predicates {
-		evaluator := evaluatorFor(pred.ProofType)
-		result := evaluator.Evaluate(pred, credentials)
+		var result models.PredicateResult
+
+		if len(verifiedClaims) > 0 {
+			evaluator := &VerifiedSDJWTEvaluator{}
+			result = evaluator.EvaluateVerified(pred, verifiedClaims)
+		} else {
+			evaluator := evaluatorFor(pred.ProofType)
+			result = evaluator.Evaluate(pred, credentials)
+		}
 		results = append(results, result)
 
 		required := pred.Required == nil || *pred.Required // default true
