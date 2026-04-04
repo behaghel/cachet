@@ -1,7 +1,8 @@
 # Verification Protocol
 
-> Revision 2 — 2026-04-04
-> Previous revision: 2026-03-28 (v1, flow sketch only)
+> Revision 2.1 — 2026-04-05 (implementation status update)
+> Revision 2 — 2026-04-04 (full spec rewrite: threat model, crypto requirements, phases)
+> Revision 1 — 2026-03-28 (flow sketch only)
 
 ## 1. Foundational Principles
 
@@ -355,18 +356,21 @@ When fully implemented, the protocol provides:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| SD-JWT VC parsing (issuer JWT + disclosures + KB-JWT) | Planned | Replace current JSON-only credential handling |
-| Issuer signature verification (DID resolution → pubkey → JWS verify) | Planned | Currently: string matching on `issuer` field |
-| KB-JWT generation (holder side) with hardware-backed key | Planned | Currently: no holder binding |
-| KB-JWT verification (verifier side) with nonce + aud + sd_hash | Planned | Currently: no nonce/replay protection |
-| Nonce generation and session binding | Planned | |
-| E2E encryption (JWE with ephemeral X25519) | Planned | Currently: plaintext on relay |
-| Signed Request Objects (verifier authentication) | Planned | Currently: unsigned request in QR |
-| StatusList2021 fetch and check | Planned | Type exists, no fetch logic |
-| Consent screen with exact claim list | Implemented | Mobile wallet shows "Only these facts" |
-| Biometric gate for KB-JWT signing | Planned | |
-| HMAC webhook verification (fail-closed) | Planned | Code exists as TODO |
-| Predicate evaluation engine | Implemented | Works correctly for supported operators |
+| SD-JWT VC issuance (ES256 signing, `_sd` arrays, disclosures) | **Implemented** | `sdjwt.go` in issuance-gateway (Slice 1) |
+| SD-JWT VC parsing (issuer JWT + disclosures + KB-JWT) | **Implemented** | `sdjwt_parser.go` in verifier (Slice 2) |
+| Issuer signature verification (DID resolution → pubkey → JWS verify) | **Implemented** | `StaticDIDResolver` + JWS verify (Slice 2) |
+| KB-JWT generation (holder side) with hardware-backed key | **Implemented** | `KBJWTBuilder.kt` + Android KeyStore `KeyManager` (Slice 3b) |
+| KB-JWT verification (verifier side) with sd_hash | **Implemented** | `kbjwt.go` in verifier (Slice 3a) |
+| Nonce generation and session binding | **Implemented** | `session.go` + `POST /sessions` endpoint (Slice 4) |
+| Nonce + audience validation in KB-JWT | **Implemented** | Verifier checks nonce + aud from session (Slice 4) |
+| End-to-end SD-JWT presentation flow (mobile) | **Implemented** | `VerificationUseCase` orchestrates session → KB-JWT → verify (Slice 5) |
+| HMAC webhook verification (fail-closed) | **Implemented** | Rejects when secret unset (Slice 0) |
+| Predicate evaluation engine | **Implemented** | Works with both legacy JSON and verified SD-JWT claims |
+| Consent screen with exact claim list | **Implemented** | Mobile wallet shows "Only these facts" |
+| E2E encryption (JWE with ephemeral X25519) | Planned | Currently: plaintext on relay (Slice 6) |
+| Signed Request Objects (verifier authentication) | Planned | Currently: unsigned request (Slice 7) |
+| StatusList2021 fetch and check | Planned | Type exists, no fetch logic (Slice 8) |
+| Biometric gate for KB-JWT signing | Planned | KeyStore supports it, not yet wired |
 
 ### Phase 2 — v2
 
