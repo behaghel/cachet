@@ -9,9 +9,17 @@ import kotlinx.serialization.Serializable
 
 interface VerifierClient {
     suspend fun listPacks(): List<PackSummary>
+    suspend fun createSession(): VerificationSession
     suspend fun verifyPresentation(policyId: String, credentials: List<VerifiableCredentialDTO>): VerifyResponseDTO
-    suspend fun verifySDJWTPresentation(policyId: String, sdJwtCredentials: List<String>): VerifyResponseDTO
+    suspend fun verifySDJWTPresentation(policyId: String, sdJwtCredentials: List<String>, sessionId: String? = null): VerifyResponseDTO
 }
+
+@Serializable
+data class VerificationSession(
+    val sessionId: String,
+    val nonce: String,
+    val verifierDid: String
+)
 
 @Serializable
 data class PackSummary(
@@ -23,6 +31,7 @@ data class PackSummary(
 @Serializable
 data class VerifyRequestDTO(
     val policyId: String,
+    val sessionId: String? = null,
     val bundle: BundleDTO = BundleDTO(),
     val sdJwtCredentials: List<String>? = null
 )
@@ -90,6 +99,21 @@ class KtorVerifierClient(
     private val baseUrl: String
 ) : VerifierClient {
 
+    override suspend fun createSession(): VerificationSession {
+        try {
+            val response: HttpResponse = httpClient.post("$baseUrl/sessions") {
+                contentType(ContentType.Application.Json)
+            }
+            if (response.status.isSuccess()) {
+                return response.body<VerificationSession>()
+            }
+            throw VerifierException("Failed to create session: ${response.status}")
+        } catch (e: Exception) {
+            if (e is VerifierException) throw e
+            throw VerifierException("Network error creating session", e)
+        }
+    }
+
     override suspend fun listPacks(): List<PackSummary> {
         try {
             val response: HttpResponse = httpClient.get("$baseUrl/packs")
@@ -128,11 +152,13 @@ class KtorVerifierClient(
 
     override suspend fun verifySDJWTPresentation(
         policyId: String,
-        sdJwtCredentials: List<String>
+        sdJwtCredentials: List<String>,
+        sessionId: String?
     ): VerifyResponseDTO {
         try {
             val request = VerifyRequestDTO(
                 policyId = policyId,
+                sessionId = sessionId,
                 sdJwtCredentials = sdJwtCredentials
             )
             val response: HttpResponse = httpClient.post("$baseUrl/presentations/verify") {
