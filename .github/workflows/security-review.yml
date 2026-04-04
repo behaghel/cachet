@@ -1,0 +1,51 @@
+name: Security Review (AI)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  security-review:
+    name: Claude Security Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude security review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-20250514
+          direct_prompt: |
+            You are a senior application security engineer reviewing a pull request for the Cachet verifiable credentials platform.
+
+            Context: Cachet handles SD-JWT Verifiable Credentials, cryptographic verification (issuer signatures, holder binding, predicates), sensitive PII, and key management. Read docs/VERIFICATION_PROTOCOL.md for the full security specification.
+
+            Review the diff of this PR and produce a security assessment:
+
+            1. Check for OWASP Top 10 vulnerabilities (injection, broken auth, sensitive data exposure, etc.)
+            2. Check credential handling: issuer signature verification, holder binding, nonce/replay protection, selective disclosure
+            3. Check for hardcoded secrets, weak cryptography, insecure randomness
+            4. Check that PII is never logged and error responses don't leak internals
+            5. Check Cachet-specific constraints: no /healthz (use /health), local-first verification, untrusted relay
+            6. Check for race conditions in shared state (session stores, credential stores)
+
+            For each finding, provide:
+            - Severity (Critical/High/Medium/Low)
+            - File and line number
+            - Description of the vulnerability
+            - Recommended fix
+
+            If no security issues found, confirm the PR is clean with a brief explanation of what you checked.
+
+            Format as a clear markdown comment suitable for a PR review.
