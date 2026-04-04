@@ -17,6 +17,7 @@ in
   languages.java.enable = true;            # Needed for Gradle/Kotlin mobile builds
   languages.java.gradle.enable = true;
   claude.code.enable = true;
+  claude.code.hooks.git-hooks-run.enable = false; # prek runs at commit time via git hooks, not on every edit
 
   # Android SDK + emulator (optional, heavy — ~2GB)
   # Enable with: export DEVENV_ENABLE_ANDROID=1
