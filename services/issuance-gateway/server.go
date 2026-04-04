@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
@@ -26,16 +28,22 @@ import (
 // ServerConfig holds injectable dependencies for the issuance gateway.
 type ServerConfig struct {
 	Common        common.ServerConfig
-	SigningKey    *rsa.PrivateKey
+	SigningKey    *rsa.PrivateKey   // RSA key for OAuth2 access tokens
+	IssuerKey     *ecdsa.PrivateKey // ES256 key for SD-JWT VC signing
+	IssuerKeyID   string            // kid header for the issuer key (e.g., "did:veriff:production#key-1")
 	Sessions      veriff.SessionStore
 	WebhookSecret string // HMAC-SHA256 secret for Veriff webhook signature verification
 }
 
-// DefaultServerConfig creates a config with generated key and in-memory store.
+// DefaultServerConfig creates a config with generated keys and in-memory store.
 func DefaultServerConfig() ServerConfig {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to generate RSA key")
+	}
+	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to generate ES256 issuer key")
 	}
 	return ServerConfig{
 		Common: common.ServerConfig{
@@ -43,14 +51,18 @@ func DefaultServerConfig() ServerConfig {
 			Version: "0.1.0",
 			Port:    "8090",
 		},
-		SigningKey: key,
-		Sessions:   veriff.NewInMemoryStore(),
+		SigningKey:  rsaKey,
+		IssuerKey:   ecKey,
+		IssuerKeyID: "did:veriff:production#key-1",
+		Sessions:    veriff.NewInMemoryStore(),
 	}
 }
 
 type Server struct {
 	router        *chi.Mux
 	signingKey    *rsa.PrivateKey
+	issuerKey     *ecdsa.PrivateKey
+	issuerKeyID   string
 	sessions      veriff.SessionStore
 	webhookSecret string
 }
@@ -63,6 +75,8 @@ func NewServerWithConfig(cfg ServerConfig) *Server {
 	s := &Server{
 		router:        common.NewRouter(cfg.Common),
 		signingKey:    cfg.SigningKey,
+		issuerKey:     cfg.IssuerKey,
+		issuerKeyID:   cfg.IssuerKeyID,
 		sessions:      cfg.Sessions,
 		webhookSecret: cfg.WebhookSecret,
 	}
@@ -149,11 +163,27 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp := credential.Build(session, validation, req.Types, string(req.Format))
-
 	credentialsIssued.Add(r.Context(), 1, metric.WithAttributes(attribute.String("format", string(req.Format))))
 	qualityTierGauge.Add(r.Context(), 1, metric.WithAttributes(attribute.String("tier", validation.QualityLevel)))
 
+	// SD-JWT format: return signed SD-JWT string
+	if req.Format == models.VcSdJwt && s.issuerKey != nil {
+		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID)
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err).Msg("SD-JWT credential building failed")
+			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to build credential")
+			return
+		}
+		log.Ctx(r.Context()).Info().Str("format", "vc+sd-jwt").Msg("SD-JWT credential issued")
+		common.WriteJSON(w, r, http.StatusOK, map[string]string{
+			"credential": sdJWT,
+			"format":     "vc+sd-jwt",
+		})
+		return
+	}
+
+	// Legacy JSON format
+	resp := credential.Build(session, validation, req.Types, string(req.Format))
 	log.Ctx(r.Context()).Info().Str("credential_id", resp.Credential.Id).Msg("credential issued")
 	common.WriteJSON(w, r, http.StatusOK, resp)
 }
@@ -165,20 +195,23 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify HMAC-SHA256 signature when webhook secret is configured
-	if s.webhookSecret != "" {
-		sig := r.Header.Get("X-HMAC-Signature")
-		if sig == "" {
-			common.WriteError(w, r, http.StatusUnauthorized, "missing_signature", "Missing X-HMAC-Signature header")
-			return
-		}
-		mac := hmac.New(sha256.New, []byte(s.webhookSecret))
-		mac.Write(body)
-		expected := hex.EncodeToString(mac.Sum(nil))
-		if !hmac.Equal([]byte(sig), []byte(expected)) {
-			common.WriteError(w, r, http.StatusUnauthorized, "invalid_signature", "Webhook signature verification failed")
-			return
-		}
+	// HMAC-SHA256 signature verification — fail-closed: reject if secret not configured
+	if s.webhookSecret == "" {
+		log.Ctx(r.Context()).Error().Msg("webhook secret not configured — rejecting request")
+		common.WriteError(w, r, http.StatusInternalServerError, "server_misconfigured", "Webhook verification unavailable")
+		return
+	}
+	sig := r.Header.Get("X-HMAC-Signature")
+	if sig == "" {
+		common.WriteError(w, r, http.StatusUnauthorized, "missing_signature", "Missing X-HMAC-Signature header")
+		return
+	}
+	mac := hmac.New(sha256.New, []byte(s.webhookSecret))
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(sig), []byte(expected)) {
+		common.WriteError(w, r, http.StatusUnauthorized, "invalid_signature", "Webhook signature verification failed")
+		return
 	}
 
 	var session veriff.Session
