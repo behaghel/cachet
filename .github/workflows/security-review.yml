@@ -1,8 +1,12 @@
 name: Security Review (AI)
 
+# Suspended: requires ANTHROPIC_API_KEY secret (not available on Enterprise Claude.ai).
+# Re-enable by uncommenting the trigger below when API access is available.
+# on:
+#   pull_request:
+#     branches: [main]
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch: # manual-only for now
 
 permissions:
   contents: read
