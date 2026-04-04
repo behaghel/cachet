@@ -14,7 +14,9 @@ import (
 // BuildSDJWTCredential constructs an SD-JWT VC from a verified session.
 // Selectively disclosable claims: age, nationality, documentType, verified, verification metrics.
 // Non-disclosable claims: iss, sub, iat, exp, _sd_alg, cnf, status, vct.
-func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string) (string, error) {
+// holderJWK is the holder's public key as a JWK map — embedded in cnf for holder binding.
+// If nil, cnf is omitted (no holder binding).
+func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string, holderJWK map[string]interface{}) (string, error) {
 	now := time.Now()
 	expiration := now.Add(90 * 24 * time.Hour)
 
@@ -23,16 +25,20 @@ func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationRe
 	// Non-disclosable claims (always visible in the issuer JWT)
 	nonDisclosable := map[string]interface{}{
 		"iss": "did:veriff:production",
-		"sub": "did:example:holder", // placeholder — Slice 3 binds real holder via cnf
+		"sub": "did:example:holder",
 		"iat": now.Unix(),
 		"exp": expiration.Unix(),
 		"jti": credentialID,
 		"vct": types,
-		"cnf": map[string]interface{}{}, // placeholder — Slice 3 adds holder's public key JWK
 		"status": map[string]interface{}{
 			"id":   fmt.Sprintf("https://cachet.id/status/1#%s", uuid.New().String()),
 			"type": "StatusList2021Entry",
 		},
+	}
+
+	// Embed holder's public key for holder binding (KB-JWT verification)
+	if holderJWK != nil {
+		nonDisclosable["cnf"] = map[string]interface{}{"jwk": holderJWK}
 	}
 
 	// Selectively disclosable claims

@@ -29,11 +29,14 @@ type ParsedDisclosure struct {
 
 // VerifiedClaims contains the claims extracted from a verified SD-JWT.
 type VerifiedClaims struct {
-	Issuer     string
-	Subject    string
-	IssuedAt   int64
-	Expiration int64
-	Claims     map[string]interface{} // merged non-disclosable + verified disclosures
+	Issuer      string
+	Subject     string
+	IssuedAt    int64
+	Expiration  int64
+	Claims      map[string]interface{} // merged non-disclosable + verified disclosures
+	HolderBound bool                   // true if KB-JWT was verified
+	KBJWTNonce  string                 // nonce from KB-JWT (checked in Slice 4)
+	KBJWTAud    string                 // audience from KB-JWT (checked in Slice 4)
 }
 
 // ParseSDJWT splits an SD-JWT string into its components without verifying signatures.
@@ -140,18 +143,49 @@ func VerifySDJWT(raw string, resolver DIDResolver) (*VerifiedClaims, error) {
 		mergedClaims[d.ClaimName] = d.Value
 	}
 
+	// Verify KB-JWT if present (holder binding)
+	var kbResult *KBJWTResult
+	if parsed.KBJWT != "" {
+		cnf, _ := claims["cnf"].(map[string]interface{})
+		if cnf == nil {
+			return nil, fmt.Errorf("KB-JWT present but credential has no cnf claim for holder binding")
+		}
+
+		// Compute expected sd_hash: hash of everything before the KB-JWT
+		// Format: issuerJWT~disc1~disc2~...~ (the trailing ~ is included)
+		sdContent := parsed.RawIssuerJWT
+		for _, d := range parsed.Disclosures {
+			sdContent += "~" + d.Encoded
+		}
+		sdContent += "~"
+		expectedSDHash := ComputeSDHash(sdContent)
+
+		kbResult, err = VerifyKBJWT(parsed.KBJWT, cnf, expectedSDHash)
+		if err != nil {
+			return nil, fmt.Errorf("verify KB-JWT: %w", err)
+		}
+	}
+
 	// Extract non-disclosable claims
 	sub, _ := claims["sub"].(string)
 	iat, _ := claims["iat"].(float64)
 	exp, _ := claims["exp"].(float64)
 
-	return &VerifiedClaims{
+	result := &VerifiedClaims{
 		Issuer:     issuer,
 		Subject:    sub,
 		IssuedAt:   int64(iat),
 		Expiration: int64(exp),
 		Claims:     mergedClaims,
-	}, nil
+	}
+
+	if kbResult != nil {
+		result.HolderBound = true
+		result.KBJWTNonce = kbResult.Nonce
+		result.KBJWTAud = kbResult.Aud
+	}
+
+	return result, nil
 }
 
 // decodeDisclosure decodes a base64url-encoded disclosure into its components.

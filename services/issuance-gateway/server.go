@@ -168,7 +168,17 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 
 	// SD-JWT format: return signed SD-JWT string
 	if req.Format == models.VcSdJwt && s.issuerKey != nil {
-		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID)
+		// Extract holder JWK from proof field for holder binding (cnf)
+		var holderJWK map[string]interface{}
+		if req.Proof != nil {
+			if jwk, ok := (*req.Proof)["jwk"]; ok {
+				if jwkMap, ok := jwk.(map[string]interface{}); ok {
+					holderJWK = jwkMap
+				}
+			}
+		}
+
+		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID, holderJWK)
 		if err != nil {
 			log.Ctx(r.Context()).Error().Err(err).Msg("SD-JWT credential building failed")
 			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to build credential")
