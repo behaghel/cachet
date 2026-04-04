@@ -30,24 +30,24 @@
   <use href="#brand-shield" x="88" y="140" width="200" height="240"/>
 
   <!-- Text content -->
-  <text x="188" y="440" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Your trust, portable</text>
+  <text x="188" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Your trust, portable</text>
 
-  <text x="188" y="478" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Prove what matters about you</text>
-  <text x="188" y="498" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">without exposing what doesn't.</text>
+  <text x="188" y="438" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Prove what matters about you</text>
+  <text x="188" y="458" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">without exposing what doesn't.</text>
 
   <!-- Key point -->
-  <rect x="40" y="536" width="295" height="56" rx="16" fill="#334155"/>
-  <text x="64" y="560" font-family="Inter, sans-serif" font-size="20" fill="#10B981">&#x1F512;</text>
-  <text x="92" y="558" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Your data never leaves your phone.</text>
-  <text x="92" y="576" font-family="Inter, sans-serif" font-size="12" fill="#64748B">Not even Cachet can see it.</text>
+  <rect x="40" y="484" width="295" height="56" rx="16" fill="#334155"/>
+  <text x="64" y="508" font-family="Inter, sans-serif" font-size="20" fill="#10B981">&#x1F512;</text>
+  <text x="92" y="506" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Your data never leaves your phone.</text>
+  <text x="92" y="524" font-family="Inter, sans-serif" font-size="12" fill="#64748B">Not even Cachet can see it.</text>
 
   <!-- Pagination dots -->
-  <circle cx="164" cy="650" r="4" fill="#64748B"/>
-  <circle cx="180" cy="650" r="4" fill="#FFFFFF"/>
-  <circle cx="196" cy="650" r="4" fill="#64748B"/>
-  <circle cx="212" cy="650" r="4" fill="#64748B"/>
+  <circle cx="164" cy="568" r="4" fill="#64748B"/>
+  <circle cx="180" cy="568" r="4" fill="#FFFFFF"/>
+  <circle cx="196" cy="568" r="4" fill="#64748B"/>
+  <circle cx="212" cy="568" r="4" fill="#64748B"/>
 
   <!-- CTA -->
-  <rect x="24" y="700" width="327" height="56" rx="28" fill="#10B981"/>
-  <text x="188" y="734" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Next</text>
+  <rect x="24" y="594" width="327" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="628" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Next</text>
 </svg>

@@ -85,26 +85,26 @@
   <text x="298" y="290" text-anchor="end" font-family="Inter, sans-serif" font-size="9" fill="#F59E0B">Pending</text>
 
   <!-- Text -->
-  <text x="188" y="380" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Every share,</text>
-  <text x="188" y="415" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">on the record</text>
+  <text x="188" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Every share,</text>
+  <text x="188" y="435" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">on the record</text>
 
-  <text x="188" y="458" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Each time you share a proof, a receipt</text>
-  <text x="188" y="478" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">is created and logged publicly.</text>
-  <text x="188" y="498" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">You can audit anytime.</text>
+  <text x="188" y="473" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Each time you share a proof, a receipt</text>
+  <text x="188" y="493" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">is created and logged publicly.</text>
+  <text x="188" y="513" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">You can audit anytime.</text>
 
   <!-- Key point -->
-  <rect x="40" y="530" width="295" height="56" rx="16" fill="#334155"/>
-  <text x="64" y="554" font-family="Inter, sans-serif" font-size="20" fill="#10B981">&#x1F4CB;</text>
-  <text x="92" y="552" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Nobody can deny what happened.</text>
-  <text x="92" y="570" font-family="Inter, sans-serif" font-size="12" fill="#64748B">Tamper-proof transparency log.</text>
+  <rect x="40" y="536" width="295" height="56" rx="16" fill="#334155"/>
+  <text x="64" y="560" font-family="Inter, sans-serif" font-size="20" fill="#10B981">&#x1F4CB;</text>
+  <text x="92" y="558" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Nobody can deny what happened.</text>
+  <text x="92" y="576" font-family="Inter, sans-serif" font-size="12" fill="#64748B">Tamper-proof transparency log.</text>
 
   <!-- Pagination dots -->
-  <circle cx="164" cy="640" r="4" fill="#64748B"/>
-  <circle cx="180" cy="640" r="4" fill="#64748B"/>
-  <circle cx="196" cy="640" r="4" fill="#64748B"/>
-  <circle cx="212" cy="640" r="4" fill="#FFFFFF"/>
+  <circle cx="164" cy="620" r="4" fill="#64748B"/>
+  <circle cx="180" cy="620" r="4" fill="#64748B"/>
+  <circle cx="196" cy="620" r="4" fill="#64748B"/>
+  <circle cx="212" cy="620" r="4" fill="#FFFFFF"/>
 
   <!-- CTA: Get started -->
-  <rect x="24" y="690" width="327" height="56" rx="28" fill="#10B981"/>
-  <text x="188" y="724" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Get Started</text>
+  <rect x="24" y="646" width="327" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="680" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Get Started</text>
 </svg>

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,7 +47,7 @@ private val pages = listOf(
     ),
     OnboardingPage(
         title = "Cachets, not\ndata breaches",
-        description = "Cachets prove specific things —\n\"I'm 18+\", not your whole identity.\nReuse them everywhere.",
+        description = "Cachets prove specific things —\n\"I'm 18+\" without revealing\nyour date of birth.",
         keyIcon = "\u267B\uFE0F",
         keyTitle = "Verify once, trusted many times.",
         keySubtitle = "No repeated ID checks.",
@@ -82,12 +81,39 @@ fun OnboardingScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Skip ──
+            // ── Top bar: pronunciation (left) + Skip (right) ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
             ) {
+                // Pronunciation — discrete, docked top-left on cachets page
+                if (page.pronunciation != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Text(
+                            text = "Cachet",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TrustNeutral
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "[${page.pronunciation}]",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TrustNeutral
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Pronunciation",
+                            tint = TrustNeutral,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
                 if (currentPage < pages.lastIndex) {
                     Text(
                         text = "Skip",
@@ -121,36 +147,6 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // ── Pronunciation (if present) ──
-            if (page.pronunciation != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Cachet",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = page.pronunciation,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Light),
-                        color = Color(0xFF94A3B8)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        Icons.Default.VolumeUp,
-                        contentDescription = "Pronunciation",
-                        tint = TrustNeutral,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── Description ──
@@ -170,6 +166,7 @@ fun OnboardingScreen(
                 title = page.keyTitle,
                 subtitle = page.keySubtitle
             )
+
 
             Spacer(modifier = Modifier.weight(0.4f))
 
@@ -203,28 +200,11 @@ fun OnboardingScreen(
     }
 }
 
-// ── Page 1 illustration: brand shield with magnifying glass ──
+// ── Page 1 illustration: brand shield, pure ──
 
 @Composable
 private fun DemandTrustIllustration() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        BrandShieldMark(size = 160.dp)
-        // Magnifying glass overlay (lower-right of shield)
-        Icon(
-            Icons.Default.Search,
-            contentDescription = null,
-            tint = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier
-                .size(56.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = (-40).dp, y = (-8).dp)
-        )
-    }
+    BrandShieldMark(size = 160.dp)
 }
 
 // ── Page 3 illustration: fanned cachet cards ──

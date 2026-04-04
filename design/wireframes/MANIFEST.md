@@ -27,10 +27,19 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
 | 7 | `holder-05-empty-vault.svg` | Empty Vault | `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true` |
-| 8 | `cachet-02-qr-share.svg` | QR Share | From My Cachets: tap any cachet card |
-| 9 | `cachet-03-incoming-request.svg` | Incoming Request | Auto-transitions from QR Share after 4s (or tap "Scan simulated") |
-| 10 | `cachet-04-result-pass.svg` | Cachet Result (pass) | Tap "Verify & Share" on Incoming Request |
-| 11 | `cachet-05-result-fail.svg` | Cachet Result (fail) | Requires fail scenario data |
+| 8 | `cachet-01-detail.svg` | Cachet Detail | From My Cachets: tap any cachet card |
+| 9 | `cachet-02-qr-scan.svg` | QR Scanner (holder) | Tap FAB on Activity tab → "Scan" |
+| 10 | `cachet-03-incoming-request.svg` | Incoming Request | After scanning a verifier's QR |
+| 11 | `cachet-04-result-pass.svg` | Cachet Result (pass) | Tap "Verify & Share" on Incoming Request |
+| 12 | `cachet-05-result-fail.svg` | Cachet Result (fail) | Requires fail scenario data |
+
+## Verifier Flow (reachable in demo mode)
+
+| # | Wireframe | Screen | Nav Steps |
+|---|-----------|--------|-----------|
+| 13 | `verify-01-new-request.svg` | New Request (pick pack) | Tap FAB on Activity tab → "New request" |
+| 14 | `verify-02-show-qr.svg` | Show QR (verifier waits) | Tap a Cach'Pack on New Request |
+| 15 | `cachet-04-result-pass.svg` | Result (pass) | After holder scans and consents |
 
 ## Deprecated Wireframes
 
@@ -38,6 +47,7 @@ These wireframes are no longer canonical and should be skipped during reviews.
 
 | Wireframe | Reason |
 |-----------|--------|
+| `cachet-02-qr-share.svg` | Deprecated — holder-shows-QR flow replaced by verifier-shows-QR |
 | `home-a-split.svg` | Variant — not implemented |
 | `home-b-credentials-fab.svg` | Variant — not implemented |
 | `home-c-dual-tabs.svg` | Deprecated — replaced by My Cachets tab |

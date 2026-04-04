@@ -37,39 +37,37 @@
 
   <!-- Empty state -->
 
-  <!-- Illustration: empty vault with dotted outline card -->
-  <rect x="56" y="175" width="263" height="160" rx="20" fill="none" stroke="#E7E5E4" stroke-width="2" stroke-dasharray="8 6"/>
+  <!-- Illustration: empty vault with dotted outline card + message inside -->
+  <rect x="56" y="175" width="263" height="220" rx="20" fill="none" stroke="#E7E5E4" stroke-width="2" stroke-dasharray="8 6"/>
   <!-- Ghost card lines -->
-  <rect x="80" y="205" width="120" height="12" rx="6" fill="#F5F5F4"/>
-  <rect x="80" y="227" width="180" height="8" rx="4" fill="#F5F5F4"/>
-  <rect x="80" y="245" width="60" height="20" rx="10" fill="#F5F5F4"/>
-  <rect x="148" y="245" width="60" height="20" rx="10" fill="#F5F5F4"/>
-  <!-- Plus icon in center-bottom -->
-  <circle cx="188" cy="300" r="18" fill="#F5F5F4"/>
-  <text x="188" y="307" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" fill="#A8A29E">+</text>
-
-  <!-- Text -->
-  <text x="188" y="380" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Your vault is empty</text>
-  <text x="188" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Verify your identity to get your first</text>
-  <text x="188" y="425" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">credential. It takes about 2 minutes.</text>
+  <rect x="80" y="200" width="120" height="12" rx="6" fill="#F5F5F4"/>
+  <rect x="80" y="222" width="180" height="8" rx="4" fill="#F5F5F4"/>
+  <rect x="80" y="240" width="60" height="20" rx="10" fill="#F5F5F4"/>
+  <rect x="148" y="240" width="60" height="20" rx="10" fill="#F5F5F4"/>
+  <!-- Text inside the card -->
+  <text x="188" y="300" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1C1917">Your vault is empty</text>
+  <text x="188" y="322" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#57534E">Verify your identity to get your first</text>
+  <text x="188" y="340" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#57534E">cachet. It only takes 30 seconds.</text>
+  <!-- Plus icon -->
+  <circle cx="188" cy="370" r="16" fill="#F5F5F4"/>
+  <text x="188" y="377" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#A8A29E">+</text>
 
   <!-- CTA -->
-  <rect x="24" y="455" width="327" height="56" rx="28" fill="#10B981"/>
-  <text x="188" y="489" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Verify My Identity</text>
+  <rect x="24" y="420" width="327" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="454" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Verify My Identity</text>
 
   <!-- Steps preview -->
-  <rect x="40" y="530" width="295" height="112" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="40" y="496" width="295" height="112" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
-  <text x="68" y="558" font-family="Inter, sans-serif" font-size="12" fill="#10B981">1</text>
-  <circle cx="68" cy="554" r="10" fill="#ECFDF5"/>
-  <text x="68" y="558" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">1</text>
-  <text x="88" y="559" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Take a selfie</text>
+  <circle cx="68" cy="520" r="10" fill="#ECFDF5"/>
+  <text x="68" y="524" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">1</text>
+  <text x="88" y="525" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Take a selfie</text>
 
-  <circle cx="68" cy="586" r="10" fill="#ECFDF5"/>
-  <text x="68" y="590" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">2</text>
-  <text x="88" y="591" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Scan your ID document</text>
+  <circle cx="68" cy="552" r="10" fill="#ECFDF5"/>
+  <text x="68" y="556" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">2</text>
+  <text x="88" y="557" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Scan your ID document</text>
 
-  <circle cx="68" cy="618" r="10" fill="#ECFDF5"/>
-  <text x="68" y="622" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">3</text>
-  <text x="88" y="623" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Receive your credential</text>
+  <circle cx="68" cy="584" r="10" fill="#ECFDF5"/>
+  <text x="68" y="588" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#065F46">3</text>
+  <text x="88" y="589" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Receive your first cachet</text>
 </svg>

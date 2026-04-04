@@ -240,11 +240,10 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
     ) {
         Spacer(modifier = Modifier.weight(0.3f))
 
-        // Dotted ghost card
+        // Dotted ghost card with empty-state message inside
         Surface(
             modifier = Modifier
                 .width(263.dp)
-                .height(160.dp)
                 .border(
                     width = 2.dp,
                     color = SurfaceBorder,
@@ -255,30 +254,37 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(Modifier.size(120.dp, 12.dp), shape = RoundedCornerShape(6.dp), color = SurfaceElevated) {}
-                Surface(Modifier.size(180.dp, 8.dp), shape = RoundedCornerShape(4.dp), color = SurfaceElevated) {}
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(Modifier.size(60.dp, 20.dp), shape = RoundedCornerShape(10.dp), color = SurfaceElevated) {}
-                    Surface(Modifier.size(60.dp, 20.dp), shape = RoundedCornerShape(10.dp), color = SurfaceElevated) {}
+                // Ghost lines
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(Modifier.size(120.dp, 12.dp), shape = RoundedCornerShape(6.dp), color = SurfaceElevated) {}
+                    Surface(Modifier.size(180.dp, 8.dp), shape = RoundedCornerShape(4.dp), color = SurfaceElevated) {}
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(Modifier.size(60.dp, 20.dp), shape = RoundedCornerShape(10.dp), color = SurfaceElevated) {}
+                        Surface(Modifier.size(60.dp, 20.dp), shape = RoundedCornerShape(10.dp), color = SurfaceElevated) {}
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Your vault is empty",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Verify your identity to get your first\ncachet. It only takes 30 seconds.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
             }
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Your vault is empty",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Verify your identity to get your first\ncachet. It takes about 2 minutes.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = TextSecondary,
-            textAlign = TextAlign.Center
-        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
