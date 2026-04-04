@@ -1,5 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
 
+  <defs>
+    <symbol id="brand-shield" viewBox="0 0 400 480">
+      <path d="M 200 32 C 240 55, 348 58, 366 59 V 221 C 366 311, 296 382, 200 418 C 104 382, 34 311, 34 221 V 59 C 52 58, 160 55, 200 32 Z" fill="#34D399"/>
+      <path d="M 200 40 C 238 54, 340 63, 362 63 V 219 C 362 307, 294 376, 200 412 C 106 376, 38 307, 38 219 V 63 C 60 63, 162 54, 200 40 Z" fill="#10B981"/>
+      <path d="M 200 47 C 234 63, 334 68, 354 71 V 218 C 354 301, 288 367, 200 401 C 112 367, 46 301, 46 218 V 71 C 66 68, 166 63, 200 47 Z" fill="#059669"/>
+      <path d="M 200 54 C 230 64, 328 74, 350 73 V 218 C 350 297, 286 363, 200 397 C 114 363, 50 297, 50 218 V 73 C 72 74, 170 64, 200 54 Z" fill="#6EE7B7"/>
+      <path d="M 200 62 C 228 71, 322 78, 342 81 V 218 C 342 294, 280 356, 200 388 C 120 356, 58 294, 58 218 V 81 C 78 78, 172 71, 200 62 Z" fill="#1E293B"/>
+      <path d="M 200 62 C 172 71, 78 78, 58 81 V 218 C 58 294, 120 356, 200 388 Z" fill="#253347"/>
+      <path d="M 200 131 C 280 131, 330 152, 326 257 C 324 320, 268 358, 200 390 Z" fill="#0EA572"/>
+      <path d="M 200 131 C 120 131, 70 152, 74 257 C 76 320, 132 358, 200 390 Z" fill="#10B981"/>
+      <path d="M 274 308 A 108 108 0 1 0 126 308" fill="none" stroke="white" stroke-width="56" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
+
   <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
 
   <!-- Status bar -->
@@ -7,142 +38,116 @@
   <circle cx="320" cy="48" r="4" fill="#10B981"/>
   <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
 
-  <!-- Header -->
-  <text x="24" y="100" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Activity</text>
+  <!-- Header: mini logo + wordmark -->
+  <use href="#brand-shield" x="132" y="78" width="14" height="17"/>
+  <text x="198" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
 
-  <!-- ··· menu -->
-  <circle cx="338" cy="94" r="3" fill="#57534E"/>
-  <circle cx="348" cy="94" r="3" fill="#57534E"/>
-  <circle cx="358" cy="94" r="3" fill="#57534E"/>
+  <!-- Segmented control — Activity active -->
+  <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
+  <rect x="180" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
+  <text x="112" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">My Cachets</text>
+  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Activity</text>
 
-  <!-- Filter pills -->
-  <rect x="24" y="116" width="50" height="28" rx="14" fill="#1E293B"/>
-  <text x="49" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">All</text>
+  <!-- Filter pills (shifted down by 56: was y=116, now y=172) -->
+  <rect x="24" y="172" width="50" height="28" rx="14" fill="#1E293B"/>
+  <text x="49" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">All</text>
 
-  <rect x="82" y="116" width="68" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="116" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Given</text>
+  <rect x="82" y="172" width="68" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="116" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Given</text>
 
-  <rect x="158" y="116" width="82" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="199" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Received</text>
+  <rect x="158" y="172" width="82" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="199" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Received</text>
 
-  <rect x="248" y="116" width="76" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="286" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Cachets</text>
+  <rect x="248" y="172" width="76" height="28" rx="14" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="286" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E">Cachets</text>
 
-  <!-- ═══ DATE HEADER ═══ -->
-  <text x="24" y="172" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E" letter-spacing="1">TODAY</text>
+  <!-- Date header (shifted down by 56: was y=172, now y=228) -->
+  <text x="24" y="228" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E" letter-spacing="1">TODAY</text>
 
-  <!-- ═══ CACHET EARNED CARD ═══ -->
+  <!-- Cachet earned card (shifted down by 56: was y=184, now y=240) -->
+  <rect x="16" y="240" width="343" height="132" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
-  <rect x="16" y="184" width="343" height="132" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <use href="#childcare-shield" x="23" y="248" width="54" height="70"/>
 
-  <!--
-    Cachet: exact copy from approved badge-v5-system.svg (Childcare Ready)
-    Original centered at (200, ~205). Scaled uniformly to fit ~54px wide.
-    transform: translate to card position, scale 0.19, recenter from (200,200)
-  -->
-  <g transform="translate(50, 250) scale(0.19) translate(-200, -200)">
-    <circle cx="200" cy="172" r="135" fill="#7C3AED"/>
-    <circle cx="200" cy="237" r="110" fill="#F472B6"/>
-    <circle cx="200" cy="215" r="44" fill="none" stroke="white" stroke-width="7" opacity="0.9"/>
-    <circle cx="185" cy="206" r="5.5" fill="white" opacity="0.85"/>
-    <circle cx="215" cy="206" r="5.5" fill="white" opacity="0.85"/>
-    <path d="M 185 228 Q 200 242 215 228"
-          fill="none" stroke="white" stroke-width="4.5" stroke-linecap="round" opacity="0.8"/>
-    <path d="M 181 173 Q 190 155 200 165 Q 210 155 219 173"
-          fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round" opacity="0.9"/>
-    <path d="M 139.8 296.0 A 105 105 0 1 1 260.2 296.0"
-          fill="none" stroke="white" stroke-width="50" stroke-linecap="round"/>
-  </g>
+  <!-- Content (shifted down by 56) -->
+  <text x="88" y="266" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7C3AED">CACHET EARNED</text>
+  <text x="88" y="288" font-family="Fredoka, sans-serif" font-size="17" font-weight="550" fill="#1C1917">Childcare Ready</text>
+  <text x="88" y="308" font-family="Inter, sans-serif" font-size="12" fill="#57534E">All 4 proofs passed · Parents Association</text>
+  <text x="88" y="328" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">10:32 AM · Valid 90 days</text>
+  <text x="88" y="346" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 28 · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
-  <!-- Content -->
-  <text x="88" y="210" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#7C3AED">CACHET EARNED</text>
-  <text x="88" y="232" font-family="Fredoka, sans-serif" font-size="17" font-weight="550" fill="#1C1917">Childcare Ready</text>
-  <text x="88" y="252" font-family="Inter, sans-serif" font-size="12" fill="#57534E">All 4 proofs passed · Parents Association</text>
-  <text x="88" y="272" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">10:32 AM · Valid 90 days</text>
-  <text x="88" y="290" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Expires Jun 28 · <tspan fill="#065F46">✓ Logged</tspan></text>
+  <text x="344" y="306" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
 
-  <text x="344" y="250" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">›</text>
-
-  <!-- ═══ REGULAR ENTRY: Received verification ═══ -->
-
-  <rect x="16" y="328" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <!-- Regular entry: Received verification (shifted down by 56: was y=328, now y=384) -->
+  <rect x="16" y="384" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
   <!-- Direction: received — thick bold arrow -->
-  <circle cx="42" cy="368" r="18" fill="#10B981"/>
-  <path d="M 50 360 L 34 376" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 34 376 L 34 366" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 34 376 L 44 376" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="42" cy="424" r="18" fill="#10B981"/>
+  <path d="M 50 416 L 34 432" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 34 432 L 34 422" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 34 432 L 44 432" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
 
-  <text x="72" y="358" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Age verification</text>
-  <text x="72" y="376" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Festival Entrada verified you</text>
-  <text x="72" y="394" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">9:15 AM · 1 proof · <tspan fill="#065F46">✓ Logged</tspan></text>
+  <text x="72" y="414" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Age verification</text>
+  <text x="72" y="432" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Festival Entrada verified you</text>
+  <text x="72" y="450" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">9:15 AM · 1 proof · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
-  <!-- Cartridge: vertically centered in the 80px card (328+40-11=357) -->
-  <rect x="280" y="357" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
-  <text x="308" y="372" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <!-- Cartridge (shifted: was y=357, now y=413) -->
+  <rect x="280" y="413" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="308" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
 
-  <text x="344" y="372" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">›</text>
+  <text x="344" y="428" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
 
-  <!-- ═══ DATE HEADER ═══ -->
-  <text x="24" y="434" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E" letter-spacing="1">MAR 28</text>
+  <!-- Date header (shifted: was y=434, now y=490) -->
+  <text x="24" y="490" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E" letter-spacing="1">MAR 28</text>
 
-  <!-- ═══ REGULAR ENTRY: Given — incomplete ═══ -->
-
-  <rect x="16" y="446" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <!-- Regular entry: Given — incomplete (shifted: was y=446, now y=502) -->
+  <rect x="16" y="502" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
   <!-- Direction: given — thick bold arrow -->
-  <circle cx="42" cy="486" r="18" fill="#1E293B"/>
-  <path d="M 34 494 L 50 478" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 50 478 L 50 488" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 50 478 L 40 478" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="42" cy="542" r="18" fill="#1E293B"/>
+  <path d="M 34 550 L 50 534" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 50 534 L 50 544" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 50 534 L 40 534" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
 
-  <text x="72" y="476" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Trusted seller check</text>
-  <text x="72" y="494" font-family="Inter, sans-serif" font-size="12" fill="#57534E">You verified someone</text>
-  <text x="72" y="512" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">2:45 PM · 2 of 4 passed · <tspan fill="#065F46">✓ Logged</tspan></text>
+  <text x="72" y="532" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Trusted seller check</text>
+  <text x="72" y="550" font-family="Inter, sans-serif" font-size="12" fill="#57534E">You verified someone</text>
+  <text x="72" y="568" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">2:45 PM · 2 of 4 passed · <tspan fill="#065F46">&#x2713; Logged</tspan></text>
 
-  <!-- Cartridge: vertically centered (446+40-11=475) -->
-  <rect x="260" y="475" width="76" height="22" rx="11" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
-  <text x="298" y="490" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Incomplete</text>
+  <!-- Cartridge (shifted: was y=475, now y=531) -->
+  <rect x="260" y="531" width="76" height="22" rx="11" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="298" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Incomplete</text>
 
-  <text x="344" y="490" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">›</text>
+  <text x="344" y="546" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
 
-  <!-- ═══ REGULAR ENTRY: Received — passed ═══ -->
+  <!-- Regular entry: Received — passed (shifted: was y=538, now y=594) -->
+  <rect x="16" y="594" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
-  <rect x="16" y="538" width="343" height="80" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="42" cy="634" r="18" fill="#10B981"/>
+  <path d="M 50 626 L 34 642" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 34 642 L 34 632" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 34 642 L 44 642" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
 
-  <circle cx="42" cy="578" r="18" fill="#10B981"/>
-  <path d="M 50 570 L 34 586" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 34 586 L 34 576" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M 34 586 L 44 586" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <text x="72" y="624" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Identity check</text>
+  <text x="72" y="642" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Freelance platform verified you</text>
+  <text x="72" y="660" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">11:20 AM · 2 proofs · <tspan fill="#92400E">&#x231B; Pending</tspan></text>
 
-  <text x="72" y="568" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">Identity check</text>
-  <text x="72" y="586" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Freelance platform verified you</text>
-  <text x="72" y="604" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">11:20 AM · 2 proofs · <tspan fill="#92400E">⏳ Pending</tspan></text>
+  <!-- Cartridge (shifted: was y=567, now y=623) -->
+  <rect x="280" y="623" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="308" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
 
-  <!-- Cartridge: vertically centered (538+40-11=567) -->
-  <rect x="280" y="567" width="56" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
-  <text x="308" y="582" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">Passed</text>
+  <text x="344" y="638" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">></text>
 
-  <text x="344" y="582" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#A8A29E">›</text>
+  <!-- Declined (muted) (shifted: was y=630, now y=686) -->
+  <rect x="16" y="686" width="343" height="48" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="42" cy="710" r="14" fill="#F5F5F4"/>
+  <path d="M 48 704 L 36 716" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 36 716 L 36 710" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 36 716 L 42 716" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
+  <text x="68" y="707" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Background check — you declined</text>
+  <text x="68" y="723" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Unknown requester · 3:10 PM</text>
 
-  <!-- ═══ DECLINED (muted) ═══ -->
-
-  <rect x="16" y="630" width="343" height="48" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
-  <circle cx="42" cy="654" r="14" fill="#F5F5F4"/>
-  <path d="M 48 648 L 36 660" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
-  <path d="M 36 660 L 36 654" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
-  <path d="M 36 660 L 42 660" stroke="#A8A29E" stroke-width="3" stroke-linecap="round"/>
-  <text x="68" y="651" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Background check — you declined</text>
-  <text x="68" y="667" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Unknown requester · 3:10 PM</text>
-
-  <!-- ═══ AUDIT SUMMARY BAR ═══ -->
-  <rect x="16" y="694" width="343" height="34" rx="10" fill="#022C22"/>
-  <text x="32" y="716" font-family="Inter, sans-serif" font-size="11" fill="#34D399">✓ Last audit: 100% verified</text>
-  <text x="340" y="716" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#64748B">2d ago</text>
-
-  <!-- ═══ BOTTOM NAV ═══ -->
-  <rect x="0" y="752" width="375" height="60" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="125" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Home</text>
-  <text x="250" y="782" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#10B981">Activity</text>
-  <circle cx="250" cy="770" r="2" fill="#10B981"/>
+  <!-- Audit summary bar (shifted: was y=694, now y=750) -->
+  <rect x="16" y="750" width="343" height="34" rx="10" fill="#022C22"/>
+  <text x="32" y="772" font-family="Inter, sans-serif" font-size="11" fill="#34D399">&#x2713; Last audit: 100% verified</text>
+  <text x="340" y="772" text-anchor="end" font-family="Inter, sans-serif" font-size="10" fill="#64748B">2d ago</text>
 </svg>

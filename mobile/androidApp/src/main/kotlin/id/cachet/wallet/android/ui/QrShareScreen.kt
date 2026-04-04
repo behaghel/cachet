@@ -238,19 +238,19 @@ private fun CachetLogoMini() {
         val cy = size.height / 2
         // Back circle
         drawCircle(BrandPrimary, radius = size.minDimension / 2, center = Offset(cx, cy))
-        // Front circle
-        drawCircle(BrandAccent, radius = size.minDimension * 0.38f, center = Offset(cx, cy + 3.dp.toPx()))
-        // C arc
+        // Front circle — shifted down to match shield proportions
+        drawCircle(BrandAccent, radius = size.minDimension * 0.40f, center = Offset(cx, cy + 4.dp.toPx()))
+        // C arc — thicker, positioned lower with wider opening
         val arcPath = Path().apply {
             addArc(
                 oval = androidx.compose.ui.geometry.Rect(
-                    cx - 8.dp.toPx(), cy - 5.dp.toPx(),
-                    cx + 8.dp.toPx(), cy + 11.dp.toPx()
+                    cx - 9.dp.toPx(), cy - 3.dp.toPx(),
+                    cx + 9.dp.toPx(), cy + 15.dp.toPx()
                 ),
-                startAngleDegrees = 55f,
-                sweepAngleDegrees = 290f
+                startAngleDegrees = 50f,
+                sweepAngleDegrees = 260f
             )
         }
-        drawPath(arcPath, Color.White, style = Stroke(width = 4.5.dp.toPx(), cap = StrokeCap.Round))
+        drawPath(arcPath, Color.White, style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round))
     }
 }

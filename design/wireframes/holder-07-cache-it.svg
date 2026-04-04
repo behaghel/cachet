@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    HOME VARIANT C: "Dual Tabs"
+    Top segmented control: "My Cachets" | "Activity"
+    Currently showing the "My Cachets" tab with Cache it section below.
+  -->
+
+  <defs>
+    <symbol id="brand-shield" viewBox="0 0 400 480">
+      <path d="M 200 32 C 240 55, 348 58, 366 59 V 221 C 366 311, 296 382, 200 418 C 104 382, 34 311, 34 221 V 59 C 52 58, 160 55, 200 32 Z" fill="#34D399"/>
+      <path d="M 200 40 C 238 54, 340 63, 362 63 V 219 C 362 307, 294 376, 200 412 C 106 376, 38 307, 38 219 V 63 C 60 63, 162 54, 200 40 Z" fill="#10B981"/>
+      <path d="M 200 47 C 234 63, 334 68, 354 71 V 218 C 354 301, 288 367, 200 401 C 112 367, 46 301, 46 218 V 71 C 66 68, 166 63, 200 47 Z" fill="#059669"/>
+      <path d="M 200 54 C 230 64, 328 74, 350 73 V 218 C 350 297, 286 363, 200 397 C 114 363, 50 297, 50 218 V 73 C 72 74, 170 64, 200 54 Z" fill="#6EE7B7"/>
+      <path d="M 200 62 C 228 71, 322 78, 342 81 V 218 C 342 294, 280 356, 200 388 C 120 356, 58 294, 58 218 V 81 C 78 78, 172 71, 200 62 Z" fill="#1E293B"/>
+      <path d="M 200 62 C 172 71, 78 78, 58 81 V 218 C 58 294, 120 356, 200 388 Z" fill="#253347"/>
+      <path d="M 200 131 C 280 131, 330 152, 326 257 C 324 320, 268 358, 200 390 Z" fill="#0EA572"/>
+      <path d="M 200 131 C 120 131, 70 152, 74 257 C 76 320, 132 358, 200 390 Z" fill="#10B981"/>
+      <path d="M 274 308 A 108 108 0 1 0 126 308" fill="none" stroke="white" stroke-width="56" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+    <symbol id="seller-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4A44E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B87820"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D8B468"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D89420"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E0A838"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <line x1="200" y1="192" x2="200" y2="254" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+        <path d="M 218,202 C 210,190 180,192 180,208 C 180,224 220,224 220,240 C 220,256 190,260 182,248" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+    <symbol id="age-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D47470"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85250"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D89090"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B55"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E07068"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <line x1="176" y1="204" x2="176" y2="244" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+        <line x1="168" y1="204" x2="176" y2="204" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.9"/>
+        <circle cx="198" cy="214" r="8" fill="none" stroke="#fff" stroke-width="4.5" opacity="0.9"/>
+        <circle cx="198" cy="234" r="9" fill="none" stroke="#fff" stroke-width="4.5" opacity="0.9"/>
+        <line x1="218" y1="224" x2="236" y2="224" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+        <line x1="227" y1="215" x2="227" y2="233" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Header: mini logo + wordmark -->
+  <use href="#brand-shield" x="132" y="78" width="14" height="17"/>
+  <text x="198" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+
+  <!-- Segmented control — My Cachets active -->
+  <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
+  <rect x="29" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
+  <text x="112" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">My Cachets</text>
+  <text x="263" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#57534E">Activity</text>
+
+  <!-- Cache it section -->
+
+  <text x="24" y="196" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#1C1917">What do you need to know?</text>
+  <text x="24" y="216" font-family="Inter, sans-serif" font-size="13" fill="#57534E">Pick a question — we'll handle the proof</text>
+
+  <!-- Cach'Pack as question cards with mini shield cachets -->
+
+  <!-- Question 1: Childcare — childcare shield (pink) -->
+  <rect x="16" y="236" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <use href="#childcare-shield" x="28" y="252" width="32" height="42"/>
+  <text x="80" y="262" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Safe for my kids?</text>
+  <text x="80" y="280" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Identity, background check, references</text>
+  <rect x="80" y="292" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="305" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">4 proofs</text>
+  <text x="340" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">></text>
+
+  <!-- Question 2: Seller — seller shield (amber) -->
+  <rect x="16" y="336" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <use href="#seller-shield" x="28" y="352" width="32" height="42"/>
+  <text x="80" y="362" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Trusted seller?</text>
+  <text x="80" y="380" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Identity, platform history, fulfilment rate</text>
+  <rect x="80" y="392" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">4 proofs</text>
+  <text x="340" y="370" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">></text>
+
+  <!-- Question 3: Age — age shield (coral) -->
+  <rect x="16" y="436" width="343" height="88" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <use href="#age-shield" x="28" y="452" width="32" height="42"/>
+  <text x="80" y="462" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Old enough?</text>
+  <text x="80" y="480" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Age verification (18+ or 21+)</text>
+  <rect x="80" y="492" width="48" height="18" rx="9" fill="#ECFDF5"/>
+  <text x="104" y="505" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#065F46">1 proof</text>
+  <text x="340" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#10B981">></text>
+
+  <!-- Question 4: Custom -->
+  <rect x="16" y="536" width="343" height="88" rx="16" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="1" stroke-dasharray="6 4"/>
+  <circle cx="48" cy="568" r="20" fill="#E7E5E4"/>
+  <text x="48" y="574" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" fill="#A8A29E">+</text>
+  <text x="80" y="565" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#57534E">Something else</text>
+  <text x="80" y="583" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Browse all available cach'packs</text>
+
+  <!-- OR: Scan QR -->
+  <text x="188" y="660" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">-- or --</text>
+
+  <rect x="100" y="674" width="175" height="48" rx="24" fill="none" stroke="#1E293B" stroke-width="2"/>
+  <text x="188" y="703" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1E293B">Scan a QR code</text>
+
+  <!-- Label -->
+  <rect x="100" y="14" width="175" height="22" rx="11" fill="#1E293B"/>
+  <text x="188" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FFFFFF" letter-spacing="1">C — DUAL TABS (Cache it view)</text>
+</svg>

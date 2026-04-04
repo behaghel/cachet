@@ -207,34 +207,34 @@ private fun LogoIllustration() {
             center = Offset(cx, cy),
             style = Stroke(width = 1.dp.toPx())
         )
-        // Back circle
+        // Back circle (shield body)
         drawCircle(
             color = BrandPrimary,
             radius = 72.dp.toPx(),
-            center = Offset(cx, cy - 10.dp.toPx())
+            center = Offset(cx, cy - 6.dp.toPx())
         )
-        // Front circle (emerald)
+        // Front circle (emerald) — shifted down to match shield proportions
         drawCircle(
             color = BrandAccent,
-            radius = 58.dp.toPx(),
-            center = Offset(cx, cy + 10.dp.toPx())
+            radius = 60.dp.toPx(),
+            center = Offset(cx, cy + 14.dp.toPx())
         )
-        // White C arc
+        // White C arc — thicker, positioned lower with wider opening
         val arcPath = Path().apply {
             addArc(
                 oval = androidx.compose.ui.geometry.Rect(
-                    left = cx - 55.dp.toPx(),
-                    top = cy - 45.dp.toPx(),
-                    right = cx + 55.dp.toPx(),
-                    bottom = cy + 65.dp.toPx()
+                    left = cx - 50.dp.toPx(),
+                    top = cy - 30.dp.toPx(),
+                    right = cx + 50.dp.toPx(),
+                    bottom = cy + 70.dp.toPx()
                 ),
-                startAngleDegrees = 55f,
-                sweepAngleDegrees = 290f
+                startAngleDegrees = 50f,
+                sweepAngleDegrees = 260f
             )
         }
         drawPath(
             arcPath, Color.White,
-            style = Stroke(width = 26.dp.toPx(), cap = StrokeCap.Round)
+            style = Stroke(width = 28.dp.toPx(), cap = StrokeCap.Round)
         )
     }
 }

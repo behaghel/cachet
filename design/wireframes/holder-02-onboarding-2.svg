@@ -1,8 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
   <!--
-    ONBOARDING 2/3: "Cachets, not data breaches"
+    ONBOARDING 2/3: "Collect cachets, avoid data breaches"
     Explains the Cach'Pack / Cachet concept in human terms.
   -->
+
+  <defs>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
 
   <rect width="375" height="812" rx="40" fill="#1E293B"/>
 
@@ -12,31 +32,33 @@
   <!-- Skip -->
   <text x="338" y="95" text-anchor="end" font-family="Inter, sans-serif" font-size="14" fill="#64748B">Skip</text>
 
-  <!-- Illustration: three cachet cards fanned -->
+  <!-- Illustration: three cachet cards fanned, front card has childcare shield -->
   <!-- Card 3 (back) -->
   <rect x="72" y="160" width="230" height="140" rx="16" fill="#334155" transform="rotate(-6 188 230)"/>
   <!-- Card 2 (mid) -->
   <rect x="72" y="170" width="230" height="140" rx="16" fill="#064E3B" transform="rotate(2 188 240)"/>
-  <!-- Card 1 (front) -->
+  <!-- Card 1 (front) with childcare shield -->
   <rect x="72" y="180" width="230" height="140" rx="16" fill="#10B981"/>
-  <text x="96" y="214" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">Childcare Ready</text>
-  <text x="96" y="234" font-family="Inter, sans-serif" font-size="12" fill="#D1FAE5">Valid 90 days</text>
+  <!-- Childcare shield on front card -->
+  <use href="#childcare-shield" x="84" y="186" width="88" height="114"/>
+  <text x="168" y="214" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">Childcare Ready</text>
+  <text x="168" y="234" font-family="Inter, sans-serif" font-size="12" fill="#D1FAE5">Valid 90 days</text>
   <!-- Mini predicate list -->
-  <text x="96" y="264" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">✓ Age 18+</text>
-  <text x="96" y="282" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">✓ Identity verified</text>
-  <text x="96" y="300" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">✓ Background clear</text>
+  <text x="168" y="264" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">Age 18+</text>
+  <text x="168" y="282" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">Identity verified</text>
+  <text x="168" y="300" font-family="Inter, sans-serif" font-size="11" fill="#FFFFFF" opacity="0.8">Background clear</text>
 
   <!-- Text -->
-  <text x="188" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Cachets, not</text>
-  <text x="188" y="435" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">data breaches</text>
+  <text x="188" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Collect cachets,</text>
+  <text x="188" y="435" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">avoid data breaches</text>
 
   <text x="188" y="478" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Cachets prove specific things —</text>
-  <text x="188" y="498" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">"I'm 18+", not your whole identity.</text>
-  <text x="188" y="518" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">Reuse them everywhere.</text>
+  <text x="188" y="498" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">"I'm 18+" without even revealing</text>
+  <text x="188" y="518" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" fill="#94A3B8">your date of birth. Reuse them everywhere.</text>
 
   <!-- Key point -->
   <rect x="40" y="550" width="295" height="56" rx="16" fill="#334155"/>
-  <text x="64" y="574" font-family="Inter, sans-serif" font-size="20" fill="#10B981">♻️</text>
+  <text x="64" y="574" font-family="Inter, sans-serif" font-size="20" fill="#10B981">&#x267B;&#xFE0F;</text>
   <text x="92" y="572" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Cache once, prove many times.</text>
   <text x="92" y="590" font-family="Inter, sans-serif" font-size="12" fill="#64748B">No repeated ID checks.</text>
 

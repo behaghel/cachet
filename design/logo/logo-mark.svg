@@ -2,59 +2,85 @@
   <!--
     Cachet logo mark — Shield shape
     Brand colors: Midnight Slate #1E293B + Vivid Emerald #10B981
-    Based on badge-as-shield concept with brand palette.
+    Angled shield top (peaks at center, slopes to sides) with beveled border.
+    Bold C mark — thick stroke, edges near inner rim.
+    All paths symmetric around x=200.
   -->
 
   <!-- ═══ SHIELD BORDER — beveled 3D effect ═══ -->
-  <!-- Outer rim: light emerald highlight -->
-  <path d="M 200 16 C 240 16, 340 20, 356 24 L 356 200
-           C 356 300, 290 380, 200 420
-           C 110 380, 44 300, 44 200 L 44 24
-           C 60 20, 160 16, 200 16 Z"
+  <!-- Outer rim: lightest emerald highlight (top-left bevel) -->
+  <path d="M 200 32
+           C 240 55, 348 58, 366 59
+           V 221
+           C 366 311, 296 382, 200 418
+           C 104 382, 34 311, 34 221
+           V 59
+           C 52 58, 160 55, 200 32 Z"
         fill="#34D399"/>
 
   <!-- Mid rim: emerald -->
-  <path d="M 200 26 C 236 26, 332 30, 346 33 L 346 200
-           C 346 294, 284 372, 200 410
-           C 116 372, 54 294, 54 200 L 54 33
-           C 68 30, 164 26, 200 26 Z"
+  <path d="M 200 40
+           C 238 54, 340 63, 362 63
+           V 219
+           C 362 307, 294 376, 200 412
+           C 106 376, 38 307, 38 219
+           V 63
+           C 60 63, 162 54, 200 40 Z"
         fill="#10B981"/>
 
-  <!-- Inner rim: deeper emerald shadow -->
-  <path d="M 200 36 C 232 36, 324 40, 336 42 L 336 200
-           C 336 288, 278 364, 200 400
-           C 122 364, 64 288, 64 200 L 64 42
-           C 76 40, 168 36, 200 36 Z"
+  <!-- Inner rim: deep emerald shadow (bottom-right bevel) -->
+  <path d="M 200 47
+           C 234 63, 334 68, 354 71
+           V 218
+           C 354 301, 288 367, 200 401
+           C 112 367, 46 301, 46 218
+           V 71
+           C 66 68, 166 63, 200 47 Z"
         fill="#059669"/>
 
-  <!-- Lisere: light emerald accent -->
-  <path d="M 200 44 C 228 44, 318 48, 328 50 L 328 200
-           C 328 282, 272 356, 200 392
-           C 128 356, 72 282, 72 200 L 72 50
-           C 82 48, 172 44, 200 44 Z"
+  <!-- Liseré: light emerald accent line -->
+  <path d="M 200 54
+           C 230 64, 328 74, 350 73
+           V 218
+           C 350 297, 286 363, 200 397
+           C 114 363, 50 297, 50 218
+           V 73
+           C 72 74, 170 64, 200 54 Z"
         fill="#6EE7B7"/>
 
-  <!-- ═══ SHIELD BODY — dark slate ═══ -->
-  <path d="M 200 54 C 224 54, 310 57, 320 59 L 320 200
-           C 320 276, 266 348, 200 382
-           C 134 348, 80 276, 80 200 L 80 59
-           C 90 57, 176 54, 200 54 Z"
+  <!-- ═══ SHIELD BODY — dark slate with center fold ═══ -->
+  <!-- Base: dark slate -->
+  <path d="M 200 62
+           C 228 71, 322 78, 342 81
+           V 218
+           C 342 294, 280 356, 200 388
+           C 120 356, 58 294, 58 218
+           V 81
+           C 78 78, 172 71, 200 62 Z"
         fill="#1E293B" id="shield-body"/>
 
   <!-- Left half: slightly lighter for center-fold effect -->
-  <path d="M 200 54 C 176 54, 90 57, 80 59 L 80 200
-           C 80 276, 134 348, 200 382 Z"
+  <path d="M 200 62
+           C 172 71, 78 78, 58 81
+           V 218
+           C 58 294, 120 356, 200 388 Z"
         fill="#253347"/>
 
-  <!-- ═══ FRONT CIRCLE — Vivid Emerald ═══ -->
-  <circle cx="200" cy="230" r="110" fill="#10B981"/>
+  <!-- ═══ FRONT FACE — Vivid Emerald ═══ -->
+  <!-- Right half (shadow side) -->
+  <path d="M 200 131
+           C 280 131, 330 152, 326 257
+           C 324 320, 268 358, 200 390 Z"
+        fill="#0EA572"/>
 
-  <!-- Left half lighter for fold -->
-  <path d="M 200 120 C 139 120, 90 169, 90 230
-           C 90 291, 139 340, 200 340 Z"
-        fill="#34D399" opacity="0.3"/>
+  <!-- Left half (reflection, brighter) -->
+  <path d="M 200 131
+           C 120 131, 70 152, 74 257
+           C 76 320, 132 358, 200 390 Z"
+        fill="#10B981"/>
 
   <!-- ═══ WHITE C ARC ═══ -->
-  <path d="M 260 296 A 90 90 0 1 0 140 296"
-        fill="none" stroke="white" stroke-width="40" stroke-linecap="round"/>
+  <!-- Radius 108, stroke 56, opening at bottom. ~30px top gap, caps ~5px from liseré. -->
+  <path d="M 274 308 A 108 108 0 1 0 126 308"
+        fill="none" stroke="white" stroke-width="56" stroke-linecap="round"/>
 </svg>

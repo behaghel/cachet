@@ -2,8 +2,28 @@
   <!--
     SCREEN 4: Cachet Result
     Back on the VERIFIER's phone. The person scanned, consented, proofs verified.
-    Full-screen celebration: the cachet. Unambiguous, satisfying.
+    Full-screen celebration: the cachet shield. Unambiguous, satisfying.
   -->
+
+  <defs>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
 
   <!-- Phone background — dark for drama -->
   <rect width="375" height="812" rx="40" fill="#0F172A"/>
@@ -14,53 +34,53 @@
   <rect x="332" y="44" width="20" height="8" rx="2" fill="#FFFFFF"/>
 
   <!-- Close -->
-  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#64748B">✕</text>
+  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#64748B">&#x2715;</text>
 
-  <!-- ═══ CELEBRATION: BIG CACHET ═══ -->
+  <!-- Celebration: Big cachet shield -->
 
-  <!-- Outer glow ring -->
-  <circle cx="188" cy="260" r="110" fill="none" stroke="#10B981" stroke-width="1" opacity="0.15"/>
-  <circle cx="188" cy="260" r="95" fill="none" stroke="#10B981" stroke-width="1" opacity="0.25"/>
+  <!-- Outer glow rings centered on shield -->
+  <circle cx="188" cy="280" r="110" fill="none" stroke="#10B981" stroke-width="1" opacity="0.15"/>
+  <circle cx="188" cy="280" r="95" fill="none" stroke="#10B981" stroke-width="1" opacity="0.25"/>
 
-  <!-- Cachet circle -->
-  <circle cx="188" cy="260" r="80" fill="#10B981"/>
+  <!-- Childcare shield -->
+  <use href="#childcare-shield" x="128" y="180" width="120" height="156"/>
 
-  <!-- Checkmark -->
-  <path d="M 155 260 L 178 283 L 222 238"
-        fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Green checkmark badge in SE quadrant -->
+  <circle cx="240" cy="310" r="24" fill="#10B981"/>
+  <path d="M 228 310 L 236 318 L 252 302" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Result text -->
-  <text x="188" y="385" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">Childcare Ready</text>
+  <text x="188" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">Childcare Ready</text>
 
-  <rect x="128" y="400" width="120" height="28" rx="14" fill="#064E3B"/>
-  <text x="188" y="419" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#34D399">All 4 proofs passed</text>
+  <rect x="128" y="415" width="120" height="28" rx="14" fill="#064E3B"/>
+  <text x="188" y="434" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#34D399">All 4 proofs passed</text>
 
-  <!-- ═══ WHAT WAS PROVEN ═══ -->
-  <text x="188" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748B">Verified just now</text>
+  <!-- What was proven -->
+  <text x="188" y="478" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#64748B">Verified just now</text>
 
-  <rect x="24" y="490" width="327" height="180" rx="16" fill="#1E293B"/>
+  <rect x="24" y="498" width="327" height="180" rx="16" fill="#1E293B"/>
 
   <!-- Predicate results -->
-  <text x="48" y="520" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
-  <text x="68" y="520" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Age 18 or older</text>
+  <text x="48" y="528" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="528" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Age 18 or older</text>
 
-  <text x="48" y="550" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
-  <text x="68" y="550" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Identity verified</text>
+  <text x="48" y="558" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="558" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">Identity verified</text>
 
-  <text x="48" y="580" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
-  <text x="68" y="580" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">No criminal record</text>
+  <text x="48" y="588" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="588" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">No criminal record</text>
 
-  <text x="48" y="610" font-family="Inter, sans-serif" font-size="13" fill="#10B981">✓</text>
-  <text x="68" y="610" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">2+ verified references</text>
+  <text x="48" y="618" font-family="Inter, sans-serif" font-size="13" fill="#10B981">&#x2713;</text>
+  <text x="68" y="618" font-family="Inter, sans-serif" font-size="13" fill="#FFFFFF">2+ verified references</text>
 
   <!-- Trust metadata -->
-  <line x1="48" y1="632" x2="327" y2="632" stroke="#334155" stroke-width="1"/>
-  <text x="48" y="654" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Cachet valid for</text>
-  <text x="300" y="654" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E">90 days</text>
+  <line x1="48" y1="640" x2="327" y2="640" stroke="#334155" stroke-width="1"/>
+  <text x="48" y="662" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Cachet valid for</text>
+  <text x="300" y="662" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#A8A29E">90 days</text>
 
-  <!-- ═══ RECEIPT CONFIRMATION ═══ -->
+  <!-- Receipt confirmation -->
   <rect x="24" y="690" width="327" height="44" rx="12" fill="#022C22"/>
-  <text x="48" y="716" font-family="Inter, sans-serif" font-size="12" fill="#34D399">✓  Consent receipt logged</text>
+  <text x="48" y="716" font-family="Inter, sans-serif" font-size="12" fill="#34D399">&#x2713;  Consent receipt logged</text>
   <text x="312" y="716" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#64748B">View</text>
 
   <!-- Done button -->
