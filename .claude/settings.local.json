@@ -93,7 +93,10 @@
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:assembleDebug androidApp:installDebug\" 2>&1)",
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:installDebug\" 2>&1)",
       "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon androidApp:compileDebugKotlin\")",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(open:*)",
+      "Skill(update-config)",
+      "Bash(DEVENV_ENABLE_ANDROID=1 devenv shell -- bash -c \"cd mobile && ./gradlew --no-daemon shared:compileDebugKotlinAndroid\")"
     ],
     "deny": [],
     "ask": []
