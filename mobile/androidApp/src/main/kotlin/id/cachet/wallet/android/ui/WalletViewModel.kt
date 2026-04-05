@@ -135,12 +135,14 @@ class WalletViewModel(
             Log.e(TAG, "Relay verification failed", e)
             activeVerifierSession = null
             CachetResult(
-                cachetName = "Verification Failed",
+                cachetName = "Error",
                 allPassed = false,
                 passedCount = 0,
                 totalCount = 0,
                 predicates = emptyList(),
-                cachetType = CachetType.IDENTITY
+                cachetType = CachetType.IDENTITY,
+                isError = true,
+                errorMessage = e.message ?: "Verification could not be completed"
             )
         }
     }

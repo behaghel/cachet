@@ -76,7 +76,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 LaunchedEffect(screen) {
                     // Start verifier session via relay
                     val relayQr = viewModel.createVerifierSession(
-                        packId = screen.pack.cachetType.name.lowercase(),
+                        packId = screen.pack.id,
                         question = screen.question,
                         predicates = screen.predicates
                     )

@@ -34,5 +34,7 @@ data class CachetResult(
     val totalCount: Int,
     val predicates: List<PredicateResult>,
     val validityLabel: String? = null,
-    val cachetType: CachetType = CachetType.IDENTITY
+    val cachetType: CachetType = CachetType.IDENTITY,
+    val isError: Boolean = false,
+    val errorMessage: String? = null
 )
