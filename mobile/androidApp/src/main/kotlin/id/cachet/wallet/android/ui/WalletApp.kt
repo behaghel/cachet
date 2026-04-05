@@ -12,26 +12,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
-import id.cachet.wallet.android.ui.fixtures.DemoFixtures
-import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.theme.*
-import kotlinx.serialization.json.*
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-
-/** Build a static JSON payload for the QR code (fallback when relay unavailable). */
-private fun packToQrPayload(pack: CachPackUi): String {
-    val obj = buildJsonObject {
-        put("type", "cachet_verification_request")
-        put("version", 1)
-        put("question", pack.question)
-        putJsonArray("predicates") {
-            pack.description.split(", ").forEach { add(it) }
-        }
-    }
-    return obj.toString()
-}
 
 /**
  * Overlay screens that sit on top of the main tab navigation.
@@ -72,31 +56,42 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     overlay?.let { screen ->
         when (screen) {
             is OverlayScreen.QrShare -> {
-                // Try relay flow: create relay session → real QR → poll for response
+                // Create relay session → real QR → poll for holder response
                 LaunchedEffect(screen) {
-                    // Start verifier session via relay
                     val relayQr = viewModel.createVerifierSession(
                         packId = screen.pack.id,
                         question = screen.question,
                         predicates = screen.predicates
                     )
-                    qrPayload = relayQr ?: packToQrPayload(screen.pack)
 
-                    if (relayQr != null) {
-                        // Relay available: simulate holder scanning after a short delay
-                        kotlinx.coroutines.delay(3000)
+                    if (relayQr == null) {
+                        // Relay unavailable — show error, never fake a result
+                        overlay = OverlayScreen.CachetResultOverlay(CachetResult(
+                            cachetName = "Error",
+                            allPassed = false, passedCount = 0, totalCount = 0,
+                            predicates = emptyList(),
+                            isError = true,
+                            errorMessage = "Could not connect to the verification service. Check that backend services are running."
+                        ))
+                        return@LaunchedEffect
+                    }
 
-                        // Holder side: fetch request from relay → build consent screen
-                        val request = viewModel.fetchRequestFromRelay(relayQr)
-                        if (request != null) {
-                            overlay = OverlayScreen.IncomingRequest(request)
-                        }
+                    qrPayload = relayQr
+
+                    // Simulate holder scanning after a short delay
+                    kotlinx.coroutines.delay(3000)
+
+                    val request = viewModel.fetchRequestFromRelay(relayQr)
+                    if (request != null) {
+                        overlay = OverlayScreen.IncomingRequest(request)
                     } else {
-                        // Relay unavailable: fall back to static demo flow
-                        kotlinx.coroutines.delay(4000)
-                        overlay = OverlayScreen.IncomingRequest(
-                            CachPackMapper.toVerificationRequest(screen.pack)
-                        )
+                        overlay = OverlayScreen.CachetResultOverlay(CachetResult(
+                            cachetName = "Error",
+                            allPassed = false, passedCount = 0, totalCount = 0,
+                            predicates = emptyList(),
+                            isError = true,
+                            errorMessage = "Failed to fetch verification request from relay."
+                        ))
                     }
                 }
                 QrShareScreen(
@@ -118,16 +113,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                     },
                     onScanSimulated = {
                         scope.launch {
-                            val relayQr = qrPayload
-                            if (relayQr.startsWith("cachet://")) {
-                                val request = viewModel.fetchRequestFromRelay(relayQr)
+                            if (qrPayload.startsWith("cachet://")) {
+                                val request = viewModel.fetchRequestFromRelay(qrPayload)
                                 if (request != null) {
                                     overlay = OverlayScreen.IncomingRequest(request)
                                 }
-                            } else {
-                                overlay = OverlayScreen.IncomingRequest(
-                                    CachPackMapper.toVerificationRequest(screen.pack)
-                                )
                             }
                         }
                     }
@@ -137,17 +127,9 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 request = screen.request,
                 onShare = {
                     scope.launch {
-                        // Holder side: post presentation to relay
-                        if (qrPayload.startsWith("cachet://")) {
-                            viewModel.holderRespondViaRelay(qrPayload)
-                            // Verifier side: poll relay and verify
-                            val result = viewModel.awaitVerifierResult()
-                            overlay = OverlayScreen.CachetResultOverlay(result)
-                        } else {
-                            // Legacy direct flow
-                            val result = viewModel.shareCredential(screen.request)
-                            overlay = OverlayScreen.CachetResultOverlay(result)
-                        }
+                        viewModel.holderRespondViaRelay(qrPayload)
+                        val result = viewModel.awaitVerifierResult()
+                        overlay = OverlayScreen.CachetResultOverlay(result)
                         qrPayload = ""
                     }
                 },
