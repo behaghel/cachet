@@ -1,0 +1,30 @@
+{
+  "cachet": "Childcare-Ready (ES)",
+  "freshness": "ok",
+  "predicateResults": [
+    {
+      "predicateId": "age.ge.18",
+      "status": "satisfied"
+    },
+    {
+      "predicateId": "identity.verified",
+      "status": "satisfied"
+    },
+    {
+      "predicateId": "criminal.clear.es",
+      "reason": "no credential from an accepted issuer",
+      "status": "no_credential"
+    }
+  ],
+  "predicates": [
+    "age.ge.18",
+    "identity.verified"
+  ],
+  "summary": {
+    "cachetGranted": true,
+    "optionalSatisfied": 0,
+    "optionalTotal": 1,
+    "requiredSatisfied": 2,
+    "requiredTotal": 2
+  }
+}

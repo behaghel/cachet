@@ -1,0 +1,6 @@
+{
+  "ephemeralPubKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "nonce": "dGVzdC1ub25jZQ",
+  "sessionId": "test-session-123",
+  "verifierDid": "did:web:verifier.cachet.id"
+}

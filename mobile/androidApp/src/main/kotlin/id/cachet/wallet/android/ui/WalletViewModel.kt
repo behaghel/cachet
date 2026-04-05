@@ -118,7 +118,7 @@ class WalletViewModel(
 
             CachetResult(
                 cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
-                allPassed = result.summary?.badgeGranted ?: result.badge.isNotEmpty(),
+                allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty(),
                 passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
                 totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
                 predicates = result.predicateResults.map { p ->

@@ -90,7 +90,7 @@ data class VerificationSummaryDTO(
     val requiredTotal: Int = 0,
     val optionalSatisfied: Int? = null,
     val optionalTotal: Int? = null,
-    val badgeGranted: Boolean = false
+    val cachetGranted: Boolean = false
 )
 
 class VerifierException(message: String, cause: Throwable? = null) : Exception(message, cause)

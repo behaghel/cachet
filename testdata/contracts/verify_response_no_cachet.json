@@ -1,0 +1,26 @@
+{
+  "cachet": "",
+  "freshness": "ok",
+  "predicateResults": [
+    {
+      "predicateId": "age.ge.18",
+      "reason": "expected \u003e= 18, got 0",
+      "status": "failed"
+    },
+    {
+      "predicateId": "identity.verified",
+      "status": "satisfied"
+    },
+    {
+      "predicateId": "criminal.clear.es",
+      "reason": "no credential from an accepted issuer",
+      "status": "no_credential"
+    }
+  ],
+  "predicates": null,
+  "summary": {
+    "cachetGranted": false,
+    "requiredSatisfied": 1,
+    "requiredTotal": 3
+  }
+}
