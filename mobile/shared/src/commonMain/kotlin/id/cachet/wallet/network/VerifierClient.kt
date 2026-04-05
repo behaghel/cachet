@@ -169,7 +169,8 @@ class KtorVerifierClient(
             if (response.status.isSuccess()) {
                 return response.body<VerifyResponseDTO>()
             }
-            throw VerifierException("SD-JWT verification failed: ${response.status}")
+            val errorBody = response.bodyAsText()
+            throw VerifierException("SD-JWT verification failed: ${response.status} — $errorBody")
         } catch (e: Exception) {
             if (e is VerifierException) throw e
             throw VerifierException("Network error during SD-JWT verification", e)
