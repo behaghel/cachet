@@ -209,6 +209,6 @@ func TestPublicKeyToJWK_RoundTrip(t *testing.T) {
 
 	recovered, err := JWKToPublicKey(jwk)
 	require.NoError(t, err)
-	assert.Equal(t, key.PublicKey.X.Bytes(), recovered.X.Bytes())
-	assert.Equal(t, key.PublicKey.Y.Bytes(), recovered.Y.Bytes())
+	assert.Equal(t, key.X.Bytes(), recovered.X.Bytes())
+	assert.Equal(t, key.Y.Bytes(), recovered.Y.Bytes())
 }
