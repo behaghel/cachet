@@ -738,8 +738,22 @@ EOF
     hooks = {
       # Go formatting and linting
       gofmt.enable = true;
-      # golangci-lint disabled at root level - runs per-service in lint:go script
-      # golangci-lint.enable = true;
+
+      # golangci-lint per-service (errcheck, staticcheck, etc.)
+      golangci-lint-services = {
+        enable = true;
+        name = "golangci-lint (per service)";
+        entry = "${pkgs.writeShellScript "lint-go-services" ''
+          set -euo pipefail
+          ${forEachService (svc: ''
+          echo "Linting ${svc}..."
+          (cd services/${svc} && ${pkgs.golangci-lint}/bin/golangci-lint run)
+          '')}
+        ''}";
+        files = "\\.go$";
+        language = "system";
+        pass_filenames = false;
+      };
       
       # Schema validation
       check-yaml.enable = true;
