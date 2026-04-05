@@ -30,6 +30,8 @@ class CredentialRepositoryImpl(
                 issuer = credential.credential.issuer,
                 credential_json = credentialJson,
                 raw_jwt = credential.rawJwt,
+                raw_sd_jwt = credential.rawSdJwt,
+                key_alias = credential.keyAlias,
                 created_at = credential.createdAt.epochSeconds,
                 is_revoked = if (credential.isRevoked) 1L else 0L
             )
@@ -46,6 +48,8 @@ class CredentialRepositoryImpl(
                         localId = row.local_id,
                         credential = credential,
                         rawJwt = row.raw_jwt,
+                        rawSdJwt = row.raw_sd_jwt,
+                        keyAlias = row.key_alias,
                         createdAt = Instant.fromEpochSeconds(row.created_at),
                         isRevoked = row.is_revoked == 1L
                     )
@@ -63,6 +67,8 @@ class CredentialRepositoryImpl(
                         localId = row.local_id,
                         credential = credential,
                         rawJwt = row.raw_jwt,
+                        rawSdJwt = row.raw_sd_jwt,
+                        keyAlias = row.key_alias,
                         createdAt = Instant.fromEpochSeconds(row.created_at),
                         isRevoked = row.is_revoked == 1L
                     )
@@ -80,6 +86,8 @@ class CredentialRepositoryImpl(
                         localId = row.local_id,
                         credential = credential,
                         rawJwt = row.raw_jwt,
+                        rawSdJwt = row.raw_sd_jwt,
+                        keyAlias = row.key_alias,
                         createdAt = Instant.fromEpochSeconds(row.created_at),
                         isRevoked = row.is_revoked == 1L
                     )

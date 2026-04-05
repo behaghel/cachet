@@ -23,8 +23,8 @@ func holderKeyAndCNF(t *testing.T) (*ecdsa.PrivateKey, map[string]interface{}) {
 		"jwk": map[string]interface{}{
 			"kty": "EC",
 			"crv": "P-256",
-			"x":   base64.RawURLEncoding.EncodeToString(key.PublicKey.X.Bytes()),
-			"y":   base64.RawURLEncoding.EncodeToString(key.PublicKey.Y.Bytes()),
+			"x":   base64.RawURLEncoding.EncodeToString(key.X.Bytes()),
+			"y":   base64.RawURLEncoding.EncodeToString(key.Y.Bytes()),
 		},
 	}
 	return key, cnf
