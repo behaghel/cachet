@@ -36,7 +36,7 @@ func mockStatusListServer(t *testing.T, encoded string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "max-age=300")
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"encodedList": encoded,
 		})
 	}))
@@ -69,7 +69,7 @@ func TestCacheHit(t *testing.T) {
 	encoded := buildTestBitstring(t, 16, []int{0})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		json.NewEncoder(w).Encode(map[string]string{"encodedList": encoded})
+		_ = json.NewEncoder(w).Encode(map[string]string{"encodedList": encoded})
 	}))
 	defer srv.Close()
 
@@ -91,7 +91,7 @@ func TestCacheExpiry(t *testing.T) {
 	encoded := buildTestBitstring(t, 16, []int{0})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		json.NewEncoder(w).Encode(map[string]string{"encodedList": encoded})
+		_ = json.NewEncoder(w).Encode(map[string]string{"encodedList": encoded})
 	}))
 	defer srv.Close()
 

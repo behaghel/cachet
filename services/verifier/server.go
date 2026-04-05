@@ -156,7 +156,9 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 				slIdxStr, _ := vc.Status["statusListIndex"].(string)
 				if slURL != "" && slIdxStr != "" {
 					var slIdx int
-					fmt.Sscanf(slIdxStr, "%d", &slIdx)
+					if _, err := fmt.Sscanf(slIdxStr, "%d", &slIdx); err != nil {
+						log.Ctx(r.Context()).Warn().Err(err).Str("index", slIdxStr).Msg("invalid statusListIndex")
+					}
 					revoked, err := s.statusChecker.IsRevoked(slURL, slIdx)
 					if err != nil {
 						log.Ctx(r.Context()).Warn().Err(err).Str("url", slURL).Msg("revocation check failed")

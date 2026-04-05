@@ -67,7 +67,7 @@ func (c *Checker) fetchAndCache(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("HTTP GET %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP GET %s returned %d", url, resp.StatusCode)
@@ -102,6 +102,6 @@ func decodeBitstring(encoded string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("gzip reader: %w", err)
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 	return io.ReadAll(gz)
 }
