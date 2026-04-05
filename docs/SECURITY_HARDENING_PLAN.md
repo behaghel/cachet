@@ -6,47 +6,17 @@ Slices 0-5 + 8 delivered the minimum viable secure system: SD-JWT issuance, issu
 
 ---
 
-## Phase A: Ship Current PR
+## Phase A: Ship Current PR — DONE
 
-1. Wait for CI green on behaghel/cachet#55
-2. Fix any remaining lint/build issues
-3. Merge to main
+Merged as behaghel/cachet#55.
 
 ---
 
-## Phase B: Relay Mobile Integration
+## Phase B: Relay Mobile Integration — DONE
 
-**Goal:** The wallet can scan a verifier's QR, fetch the request from the relay, build a presentation, and post it back. The verifier polls the relay for the response.
-
-### B1: RelayClient (Kotlin)
-
-**New:** `mobile/shared/.../network/RelayClient.kt`
-- `fetchRequest(requestUri: String): String` — GET the signed request object
-- `postResponse(responseUri: String, body: ByteArray)` — POST the encrypted VP (or SD-JWT presentation)
-
-**Modified:** `mobile/shared/.../config/AppConfig.kt` — add `relayUrl`
-**Modified:** `mobile/shared/.../di/SharedModule.kt` — register RelayClient
-
-### B2: QR Content Generation
-
-**Modified:** QR share screen — encode `cachet://verify?request_uri=<relay>/sessions/{id}/request` instead of current static content. The verifier-side flow creates a relay session first, then generates QR from the session URL.
-
-### B3: VerificationUseCase Relay Flow
-
-**Modified:** `VerificationUseCase.kt`
-
-Verifier path (person demanding trust):
-1. Create relay session (POST to relay with request object)
-2. Generate QR from session URL
-3. Poll `GET /sessions/{id}/response` until holder responds
-4. Verify the response locally
-
-Holder path (person proving themselves):
-1. Scan QR → parse `request_uri`
-2. Fetch request from relay
-3. Display consent screen with verifier identity + requested claims
-4. Build SD-JWT presentation with selective disclosure + KB-JWT
-5. POST to relay's response endpoint
+`KtorRelayClient` + `VerificationUseCase` relay flow + WalletApp wiring.
+QR now encodes `cachet://verify?request_uri={relay}/sessions/{id}/request`.
+Verifier creates relay session → holder fetches → builds KB-JWT presentation → posts to relay → verifier polls and verifies. Falls back to static QR if relay unavailable.
 
 ---
 
