@@ -85,7 +85,7 @@ func (b *Bitstring) Decode(encoded string) error {
 	if err != nil {
 		return fmt.Errorf("gzip reader: %w", err)
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 
 	decompressed, err := io.ReadAll(gz)
 	if err != nil {
