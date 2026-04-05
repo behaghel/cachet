@@ -72,9 +72,9 @@ runs:
           ~/.cache/nix
           /nix/var/cache/nix
           /nix/store
-        key: ${{ runner.os }}-nix-${{ hashFiles('devenv.nix', 'devenv.lock') }}
+        key: ${{ runner.os }}-nix-v2-${{ hashFiles('devenv.nix', 'devenv.lock') }}
         restore-keys: |
-          ${{ runner.os }}-nix-
+          ${{ runner.os }}-nix-v2-
 
     - name: Install Nix
       uses: cachix/install-nix-action@v31
