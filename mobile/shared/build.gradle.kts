@@ -48,6 +48,9 @@ kotlin {
                 implementation("io.ktor:ktor-client-android:2.3.7")
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+                // JWE/JWS for E2E encryption and signed request verification
+                implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+                implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
             }
         }
         val iosMain by getting {

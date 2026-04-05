@@ -96,11 +96,12 @@ class WalletViewModel(
      */
     suspend fun holderRespondViaRelay(qrPayload: String) {
         val requestUri = parseRequestUri(qrPayload) ?: return
+        val verifierPubKey = parseVerifierPubKey(qrPayload)
         val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: return
         val credential = credentials.firstOrNull { !it.isRevoked && it.rawSdJwt != null } ?: return
 
-        verificationUseCase.respondViaRelay(requestUri, credential.localId)
-        Log.d(TAG, "Holder response posted to relay")
+        verificationUseCase.respondViaRelay(requestUri, credential.localId, verifierPubKey)
+        Log.d(TAG, "Holder response posted to relay (encrypted=${verifierPubKey != null})")
     }
 
     /**
@@ -144,13 +145,18 @@ class WalletViewModel(
         }
     }
 
-    private fun parseRequestUri(qrPayload: String): String? {
-        // cachet://verify?request_uri=http://...
-        val prefix = "request_uri="
+    private fun parseQrParam(qrPayload: String, param: String): String? {
+        // cachet://verify?request_uri=http://...&vk=...
+        val prefix = "$param="
         val idx = qrPayload.indexOf(prefix)
         if (idx < 0) return null
-        return qrPayload.substring(idx + prefix.length)
+        val start = idx + prefix.length
+        val end = qrPayload.indexOf('&', start)
+        return if (end < 0) qrPayload.substring(start) else qrPayload.substring(start, end)
     }
+
+    private fun parseRequestUri(qrPayload: String): String? = parseQrParam(qrPayload, "request_uri")
+    private fun parseVerifierPubKey(qrPayload: String): String? = parseQrParam(qrPayload, "vk")
 
     // ── Existing flows ──
 

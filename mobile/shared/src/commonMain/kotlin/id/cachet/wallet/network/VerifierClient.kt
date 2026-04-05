@@ -18,7 +18,8 @@ interface VerifierClient {
 data class VerificationSession(
     val sessionId: String,
     val nonce: String,
-    val verifierDid: String
+    val verifierDid: String,
+    val ephemeralPubKey: String? = null // base64url X25519 public key for E2E encryption
 )
 
 @Serializable

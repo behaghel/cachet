@@ -1,6 +1,7 @@
 package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.config.AppConfig
+import id.cachet.wallet.domain.crypto.JWEEncryptor
 import id.cachet.wallet.domain.crypto.KBJWTBuilder
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.crypto.SDJWTParser
@@ -52,8 +53,13 @@ class VerificationUseCase(
 
         val requestUri = "${AppConfig.relayUrl}${relaySession.requestUri}"
 
+        var qr = "cachet://verify?request_uri=$requestUri"
+        if (session.ephemeralPubKey != null) {
+            qr += "&vk=${session.ephemeralPubKey}"
+        }
+
         return VerifierSessionInfo(
-            qrPayload = "cachet://verify?request_uri=$requestUri",
+            qrPayload = qr,
             relayResponseUri = relaySession.responseUri,
             verificationSessionId = session.sessionId,
             packId = packId
@@ -97,7 +103,7 @@ class VerificationUseCase(
     /**
      * Holder builds an SD-JWT presentation and posts it to the relay.
      */
-    suspend fun respondViaRelay(requestUri: String, credentialId: String) {
+    suspend fun respondViaRelay(requestUri: String, credentialId: String, verifierPubKey: String? = null) {
         val request = fetchVerificationRequest(requestUri)
 
         val stored = credentialRepository.getCredentialById(credentialId)
@@ -105,9 +111,17 @@ class VerificationUseCase(
 
         val presentation = buildSDJWTPresentation(stored, request.nonce, request.verifierDid)
 
+        // Encrypt to verifier's ephemeral key if available (E2E encryption)
+        val payload: ByteArray = if (verifierPubKey != null) {
+            val encryptor = JWEEncryptor()
+            encryptor.encrypt(presentation.encodeToByteArray(), verifierPubKey).encodeToByteArray()
+        } else {
+            presentation.encodeToByteArray()
+        }
+
         // Derive response URI from request URI: /sessions/{id}/request → /sessions/{id}/response
         val responseUri = requestUri.replace("/request", "/response")
-        relayClient.postResponse(responseUri, presentation.encodeToByteArray())
+        relayClient.postResponse(responseUri, payload)
     }
 
     // ── Direct flow (existing) ──
