@@ -130,8 +130,8 @@ func TestVerifySDJWT_WithKBJWT(t *testing.T) {
 		"jwk": map[string]interface{}{
 			"kty": "EC",
 			"crv": "P-256",
-			"x":   base64.RawURLEncoding.EncodeToString(holderKey.PublicKey.X.Bytes()),
-			"y":   base64.RawURLEncoding.EncodeToString(holderKey.PublicKey.Y.Bytes()),
+			"x":   base64.RawURLEncoding.EncodeToString(holderKey.X.Bytes()),
+			"y":   base64.RawURLEncoding.EncodeToString(holderKey.Y.Bytes()),
 		},
 	}
 	raw := buildTestSDJWTWithCNF(t, issuerKey, "did:veriff:production", map[string]interface{}{"age": float64(34)}, cnfClaim)
@@ -164,8 +164,8 @@ func TestVerifySDJWT_WithKBJWT_WrongHolderKey(t *testing.T) {
 		"jwk": map[string]interface{}{
 			"kty": "EC",
 			"crv": "P-256",
-			"x":   base64.RawURLEncoding.EncodeToString(holderKey.PublicKey.X.Bytes()),
-			"y":   base64.RawURLEncoding.EncodeToString(holderKey.PublicKey.Y.Bytes()),
+			"x":   base64.RawURLEncoding.EncodeToString(holderKey.X.Bytes()),
+			"y":   base64.RawURLEncoding.EncodeToString(holderKey.Y.Bytes()),
 		},
 	}
 	raw := buildTestSDJWTWithCNF(t, issuerKey, "did:veriff:production", map[string]interface{}{"age": float64(34)}, cnfClaim)
