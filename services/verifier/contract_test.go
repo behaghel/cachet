@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cachet-id/cachet/generated/go/models"
-	"github.com/cachet-id/cachet/services/verifier/internal/session"
 	"github.com/stretchr/testify/require"
 )
 
@@ -84,16 +83,13 @@ func TestGenerateContractJSON(t *testing.T) {
 	})
 
 	t.Run("verification_session", func(t *testing.T) {
-		sess := session.Session{}
-		// Manually construct the JSON to match what the server returns,
-		// since the Session struct has unexported fields
 		sessJSON := map[string]interface{}{
 			"sessionId":       "test-session-123",
 			"nonce":           "dGVzdC1ub25jZQ",
 			"verifierDid":     "did:web:verifier.cachet.id",
 			"ephemeralPubKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"requestObject":   "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dmVyaWZpZXIuY2FjaGV0LmlkI2tleS0xIiwidHlwIjoib2F1dGgtYXV0aHotcmVxK2p3dCJ9.eyJjbGllbnRfaWQiOiJkaWQ6d2ViOnZlcmlmaWVyLmNhY2hldC5pZCJ9.fake-sig",
 		}
-		_ = sess // avoid unused
 		writeContract(t, "verification_session.json", sessJSON)
 	})
 

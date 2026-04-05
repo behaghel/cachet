@@ -14,6 +14,7 @@ import (
 
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/identity"
 )
 
 func main() {
@@ -43,11 +44,16 @@ func main() {
 	// Discover issuer public key from issuance gateway JWKS endpoint
 	resolver := fetchIssuerKeys(issuanceURL)
 
+	// Identity signer for Request Objects (dev mode: ephemeral key)
+	identitySigner := identity.NewDevSigner(verifierDID)
+	log.Info().Str("did", verifierDID).Msg("using dev identity key for Request Object signing")
+
 	server := NewServerWithConfig(VerifierConfig{
-		Common:      cfg,
-		RegistryURL: registryURL,
-		VerifierDID: verifierDID,
-		DIDResolver: resolver,
+		Common:         cfg,
+		RegistryURL:    registryURL,
+		VerifierDID:    verifierDID,
+		DIDResolver:    resolver,
+		IdentitySigner: identitySigner,
 	})
 	common.ListenAndServe(server.Router(), cfg)
 }

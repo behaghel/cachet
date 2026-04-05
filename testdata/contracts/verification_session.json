@@ -1,6 +1,7 @@
 {
   "ephemeralPubKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "nonce": "dGVzdC1ub25jZQ",
+  "requestObject": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dmVyaWZpZXIuY2FjaGV0LmlkI2tleS0xIiwidHlwIjoib2F1dGgtYXV0aHotcmVxK2p3dCJ9.eyJjbGllbnRfaWQiOiJkaWQ6d2ViOnZlcmlmaWVyLmNhY2hldC5pZCJ9.fake-sig",
   "sessionId": "test-session-123",
   "verifierDid": "did:web:verifier.cachet.id"
 }

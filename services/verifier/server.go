@@ -13,6 +13,7 @@ import (
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/identity"
 	"github.com/cachet-id/cachet/services/verifier/internal/jwe"
 	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 	"github.com/cachet-id/cachet/services/verifier/internal/session"
@@ -21,19 +22,21 @@ import (
 
 // VerifierConfig holds injectable dependencies for the verifier.
 type VerifierConfig struct {
-	Common      common.ServerConfig
-	RegistryURL string
-	VerifierDID string           // this verifier's DID for audience binding
-	DIDResolver eval.DIDResolver // resolves issuer DIDs to public keys
+	Common         common.ServerConfig
+	RegistryURL    string
+	VerifierDID    string           // this verifier's DID for audience binding
+	DIDResolver    eval.DIDResolver // resolves issuer DIDs to public keys
+	IdentitySigner *identity.Signer // signs Request Objects (nil = unsigned)
 }
 
 type Server struct {
-	router        *chi.Mux
-	packClient    *pack.Client
-	didResolver   eval.DIDResolver
-	sessions      *session.Manager
-	verifierDID   string
-	statusChecker *statuslist.Checker
+	router         *chi.Mux
+	packClient     *pack.Client
+	didResolver    eval.DIDResolver
+	sessions       *session.Manager
+	verifierDID    string
+	statusChecker  *statuslist.Checker
+	identitySigner *identity.Signer
 }
 
 func NewServer(cfg common.ServerConfig, registryURL string) *Server {
@@ -45,16 +48,18 @@ func NewServer(cfg common.ServerConfig, registryURL string) *Server {
 
 func NewServerWithConfig(cfg VerifierConfig) *Server {
 	s := &Server{
-		router:        common.NewRouter(cfg.Common),
-		packClient:    pack.NewClient(cfg.RegistryURL),
-		didResolver:   cfg.DIDResolver,
-		sessions:      session.NewManager(5 * time.Minute),
-		verifierDID:   cfg.VerifierDID,
-		statusChecker: statuslist.NewChecker(),
+		router:         common.NewRouter(cfg.Common),
+		packClient:     pack.NewClient(cfg.RegistryURL),
+		didResolver:    cfg.DIDResolver,
+		sessions:       session.NewManager(5 * time.Minute),
+		verifierDID:    cfg.VerifierDID,
+		statusChecker:  statuslist.NewChecker(),
+		identitySigner: cfg.IdentitySigner,
 	}
 	s.router.Get("/packs", s.handleListPacks)
 	s.router.Post("/sessions", s.handleCreateSession)
 	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
+	s.router.Get("/.well-known/did.json", s.handleDIDDocument)
 	return s
 }
 
@@ -78,11 +83,71 @@ func (s *Server) handleListPacks(w http.ResponseWriter, r *http.Request) {
 	common.WriteJSON(w, r, http.StatusOK, summaries)
 }
 
+// createSessionRequest is the optional body for POST /sessions.
+type createSessionRequest struct {
+	PackID     string   `json:"packId,omitempty"`
+	Question   string   `json:"question,omitempty"`
+	Predicates []string `json:"predicates,omitempty"`
+}
+
 // handleCreateSession creates a verification session with a fresh nonce.
+// If an identity signer is configured, includes a signed Request Object.
 func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
+	// Parse optional request body (pack metadata for the signed request object)
+	var reqBody createSessionRequest
+	if r.Body != nil && r.ContentLength > 0 {
+		_ = json.NewDecoder(r.Body).Decode(&reqBody)
+	}
+
 	sess := s.sessions.Create(s.verifierDID)
 	log.Ctx(r.Context()).Info().Str("session_id", sess.ID).Msg("verification session created")
-	common.WriteJSON(w, r, http.StatusOK, sess)
+
+	response := map[string]interface{}{
+		"sessionId":       sess.ID,
+		"nonce":           sess.Nonce,
+		"verifierDid":     sess.VerifierDID,
+		"ephemeralPubKey": sess.EphemeralPubKey,
+	}
+
+	// Sign Request Object if identity signer is available
+	if s.identitySigner != nil {
+		signedJWT, err := s.identitySigner.SignRequestObject(identity.RequestObjectClaims{
+			Nonce:      sess.Nonce,
+			State:      sess.ID,
+			PackID:     reqBody.PackID,
+			Question:   reqBody.Question,
+			Predicates: reqBody.Predicates,
+		})
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err).Msg("failed to sign request object")
+		} else {
+			response["requestObject"] = signedJWT
+		}
+	}
+
+	common.WriteJSON(w, r, http.StatusOK, response)
+}
+
+// handleDIDDocument serves the verifier's DID document with its public key.
+func (s *Server) handleDIDDocument(w http.ResponseWriter, r *http.Request) {
+	if s.identitySigner == nil {
+		common.WriteError(w, r, http.StatusNotFound, "not_configured", "No identity key configured")
+		return
+	}
+	doc := map[string]interface{}{
+		"@context": []string{"https://www.w3.org/ns/did/v1"},
+		"id":       s.verifierDID,
+		"verificationMethod": []map[string]interface{}{
+			{
+				"id":           s.verifierDID + "#key-1",
+				"type":         "JsonWebKey2020",
+				"controller":   s.verifierDID,
+				"publicKeyJwk": s.identitySigner.PublicKeyJWK(),
+			},
+		},
+		"authentication": []string{s.verifierDID + "#key-1"},
+	}
+	common.WriteJSON(w, r, http.StatusOK, doc)
 }
 
 // verifyRequest extends the generated VerifyRequest with SD-JWT credentials and session binding.
