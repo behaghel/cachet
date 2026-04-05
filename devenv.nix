@@ -57,12 +57,12 @@ in
     secretspec
   ];
 
-  # Port env vars derived from process port allocation (single source of truth)
-  env.CACHET_VERIFIER_PORT = toString config.processes.verifier.ports.http.value;
-  env.CACHET_REGISTRY_PORT = toString config.processes.registry.ports.http.value;
-  env.CACHET_RECEIPTS_PORT = toString config.processes.receipts.ports.http.value;
-  env.CACHET_ISSUANCE_PORT = toString config.processes.issuance-gateway.ports.http.value;
-  env.CACHET_RELAY_PORT = toString config.processes.relay.ports.http.value;
+  # Fixed port env vars — must match the PORT= values in process exec commands above
+  env.CACHET_VERIFIER_PORT = "8081";
+  env.CACHET_REGISTRY_PORT = "8082";
+  env.CACHET_RECEIPTS_PORT = "8083";
+  env.CACHET_ISSUANCE_PORT = "8090";
+  env.CACHET_RELAY_PORT = "8084";
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -711,27 +711,24 @@ EOF
 
   # Service processes with automatic port allocation.
   # Ports default to the values below; devenv finds a free port if taken.
-  # Use `devenv up` to start all, or `devenv up verifier` for one.
-  processes.verifier = {
-    ports.http.allocate = 8081;
-    exec = "cd services/verifier && PORT=${toString config.processes.verifier.ports.http.value} go run .";
+  # Kill orphan Go binaries from previous runs before starting services.
+  # `go run` forks a child binary that survives `devenv processes down`.
+  tasks."devenv:processes:cleanup-orphans" = {
+    exec = ''
+      pkill -f 'go-build.*(verifier|registry|receipts|issuance|relay)' 2>/dev/null || true
+      sleep 0.5
+    '';
+    before = [ "devenv:processes:verifier" "devenv:processes:registry" "devenv:processes:receipts" "devenv:processes:issuance-gateway" "devenv:processes:relay" ];
   };
-  processes.registry = {
-    ports.http.allocate = 8082;
-    exec = "cd services/registry && PORT=${toString config.processes.registry.ports.http.value} go run .";
-  };
-  processes.receipts = {
-    ports.http.allocate = 8083;
-    exec = "cd services/receipts-log && PORT=${toString config.processes.receipts.ports.http.value} go run .";
-  };
-  processes.issuance-gateway = {
-    ports.http.allocate = 8090;
-    exec = "cd services/issuance-gateway && VERIFF_WEBHOOK_SECRET=dev-secret-do-not-use-in-production PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
-  };
-  processes.relay = {
-    ports.http.allocate = 8084;
-    exec = "cd services/relay && PORT=${toString config.processes.relay.ports.http.value} go run .";
-  };
+
+  # Fixed ports — mobile app hardcodes these (10.0.2.2:<port> from emulator).
+  # We hardcode PORT in exec instead of using ports.http.allocate, because
+  # allocate silently picks a different port if an orphan holds ours.
+  processes.verifier.exec = "cd services/verifier && PORT=8081 go run .";
+  processes.registry.exec = "cd services/registry && PORT=8082 go run .";
+  processes.receipts.exec = "cd services/receipts-log && PORT=8083 go run .";
+  processes.issuance-gateway.exec = "cd services/issuance-gateway && VERIFF_WEBHOOK_SECRET=dev-secret-do-not-use-in-production PORT=8090 go run .";
+  processes.relay.exec = "cd services/relay && PORT=8084 go run .";
 
   # Pre-commit hooks for consistent build cycle
   git-hooks = {
