@@ -396,8 +396,8 @@ type VerifiableCredential struct {
 
 // VerificationSummary defines model for VerificationSummary.
 type VerificationSummary struct {
-	// BadgeGranted Whether the badge was granted (all required predicates satisfied)
-	BadgeGranted bool `json:"badgeGranted"`
+	// CachetGranted Whether the badge was granted (all required predicates satisfied)
+	CachetGranted bool `json:"cachetGranted"`
 
 	// OptionalSatisfied Number of optional predicates that were satisfied
 	OptionalSatisfied *int `json:"optionalSatisfied,omitempty"`
@@ -426,8 +426,8 @@ type VerifyRequest struct {
 
 // VerifyResponse defines model for VerifyResponse.
 type VerifyResponse struct {
-	// Badge Badge label if granted, empty string otherwise
-	Badge string `json:"badge"`
+	// Cachet Cachet label if granted, empty string otherwise
+	Cachet string `json:"cachet"`
 
 	// Freshness Freshness status of the credentials
 	Freshness VerifyResponseFreshness `json:"freshness"`

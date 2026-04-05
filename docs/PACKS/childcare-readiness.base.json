@@ -4,7 +4,7 @@
   "name": "Childcare Readiness",
   "purpose": "Assess suitability for paid childcare work in private homes",
   "jurisdictions": ["EU"],
-  "badge": {
+  "cachet": {
     "label": "Childcare‑Ready (EU)",
     "ttl": "P90D",
     "jurisdiction": "EU"

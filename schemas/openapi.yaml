@@ -617,11 +617,11 @@ components:
 
     VerifyResponse:
       type: object
-      required: [badge, predicates, freshness, predicateResults, summary]
+      required: [cachet, predicates, freshness, predicateResults, summary]
       properties:
-        badge:
+        cachet:
           type: string
-          description: Badge label if granted, empty string otherwise
+          description: Cachet label if granted, empty string otherwise
           example: "Childcare‑Ready (ES)"
         predicates:
           type: array
@@ -660,7 +660,7 @@ components:
 
     VerificationSummary:
       type: object
-      required: [requiredSatisfied, requiredTotal, badgeGranted]
+      required: [requiredSatisfied, requiredTotal, cachetGranted]
       properties:
         requiredSatisfied:
           type: integer
@@ -674,7 +674,7 @@ components:
         optionalTotal:
           type: integer
           description: Total number of optional predicates
-        badgeGranted:
+        cachetGranted:
           type: boolean
           description: Whether the badge was granted (all required predicates satisfied)
 
@@ -706,7 +706,7 @@ components:
             type: string
           description: Applicable jurisdictions (ISO country codes)
           example: ["ES"]
-        badge:
+        cachet:
           $ref: "#/components/schemas/BadgeDefinition"
         predicates:
           type: array

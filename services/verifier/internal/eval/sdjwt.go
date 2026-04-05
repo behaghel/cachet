@@ -6,7 +6,45 @@ import (
 	"github.com/cachet-id/cachet/generated/go/models"
 )
 
-// SDJWTEvaluator evaluates predicates that require SD-JWT proof.
+// VerifiedSDJWTEvaluator evaluates predicates against cryptographically verified SD-JWT claims.
+// Unlike SDJWTEvaluator, the claims have already been verified (issuer sig + disclosure hashes).
+type VerifiedSDJWTEvaluator struct{}
+
+// EvaluateVerified evaluates a predicate against verified claims from VerifySDJWT.
+func (e *VerifiedSDJWTEvaluator) EvaluateVerified(pred models.PredicateDefinition, verifiedClaims []*VerifiedClaims) models.PredicateResult {
+	for _, vc := range verifiedClaims {
+		if !matchesIssuer(vc.Issuer, pred.IssuersAccepted) {
+			continue
+		}
+
+		val, ok := vc.Claims[pred.Claim]
+		if !ok {
+			continue
+		}
+
+		satisfied, reason := evaluateOperator(pred.Operator, val, pred.Value)
+		if satisfied {
+			return models.PredicateResult{
+				PredicateId: pred.Id,
+				Status:      models.Satisfied,
+			}
+		}
+		return models.PredicateResult{
+			PredicateId: pred.Id,
+			Status:      models.Failed,
+			Reason:      &reason,
+		}
+	}
+
+	reason := "no credential from an accepted issuer"
+	return models.PredicateResult{
+		PredicateId: pred.Id,
+		Status:      models.NoCredential,
+		Reason:      &reason,
+	}
+}
+
+// SDJWTEvaluator evaluates predicates that require SD-JWT proof (legacy, no crypto verification).
 type SDJWTEvaluator struct{}
 
 func (e *SDJWTEvaluator) Evaluate(pred models.PredicateDefinition, credentials []models.VerifiableCredential) models.PredicateResult {

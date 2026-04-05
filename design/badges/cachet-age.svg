@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" width="400" height="520">
+  <!--
+    AGE VERIFIED badge — Shield concept
+    Accent: Coral. Geometry symmetric around x=200, angled top.
+  -->
+
+  <!-- ═══ SHIELD BORDER — coral bevel ═══ -->
+  <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D47470"/>
+  <path d="M 200 43 C 238 59, 340 68, 362 68 V 237 C 362 333, 294 407, 200 446 C 106 407, 38 333, 38 237 V 68 C 60 68, 162 59, 200 43 Z" fill="#C45E5A"/>
+  <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85250"/>
+  <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D89090"/>
+
+  <!-- ═══ SHIELD BODY ═══ -->
+  <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+  <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+
+  <!-- ═══ FRONT — coral ═══ -->
+  <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B55"/>
+  <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E07068"/>
+
+  <!-- ═══ WHITE C ARC ═══ -->
+  <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#ffffff" stroke-width="61" stroke-linecap="round"/>
+
+  <!-- ═══ 18+ ICON ═══ -->
+  <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+    <line x1="176" y1="204" x2="176" y2="244" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+    <line x1="168" y1="204" x2="176" y2="204" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" opacity="0.9"/>
+    <circle cx="198" cy="214" r="8" fill="none" stroke="#ffffff" stroke-width="4.5" opacity="0.9"/>
+    <circle cx="198" cy="234" r="9" fill="none" stroke="#ffffff" stroke-width="4.5" opacity="0.9"/>
+    <line x1="218" y1="224" x2="236" y2="224" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <line x1="227" y1="215" x2="227" y2="233" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  </g>
+
+  <!-- ═══ TEXT ═══ -->
+  <text x="200" y="486" text-anchor="middle" font-family="Inter, sans-serif" font-size="28px" font-weight="700" fill="#1c1917">Age Verified</text>
+  <text x="200" y="510" text-anchor="middle" font-family="Inter, sans-serif" font-size="18px" fill="#57534e">90 days</text>
+</svg>

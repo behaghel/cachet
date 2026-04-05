@@ -4,7 +4,7 @@
   "name": "Childcare Readiness (France)",
   "purpose": "Assess suitability for paid childcare work in private homes",
   "jurisdictions": ["FR"],
-  "badge": {
+  "cachet": {
     "label": "Childcare‑Ready (FR)",
     "ttl": "P90D",
     "jurisdiction": "FR"

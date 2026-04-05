@@ -10,33 +10,76 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Cachet brand colors
-private val CachetPrimary = Color(0xFF2196F3)
-private val CachetPrimaryVariant = Color(0xFF1976D2)
-private val CachetSecondary = Color(0xFF4CAF50)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = CachetPrimary,
-    secondary = CachetSecondary,
-    tertiary = Color(0xFFFF9800)
-)
+/**
+ * Cachet theme — Palette B ("Warm Accent")
+ * Generated from design/tokens/colors.json
+ *
+ * Brand: Midnight Slate #1E293B + Vivid Emerald #10B981 + Warm Coral #F97068
+ */
 
 private val LightColorScheme = lightColorScheme(
-    primary = CachetPrimary,
-    secondary = CachetSecondary,
-    tertiary = Color(0xFFFF9800)
+    primary = BrandAccent,
+    onPrimary = TextOnBrand,
+    primaryContainer = TrustVerifiedBg,
+    onPrimaryContainer = TrustVerifiedText,
+    secondary = BrandPrimary,
+    onSecondary = TextOnBrand,
+    secondaryContainer = SurfaceElevated,
+    onSecondaryContainer = TextPrimary,
+    tertiary = TrustPending,
+    onTertiary = TextOnBrand,
+    tertiaryContainer = TrustPendingBg,
+    onTertiaryContainer = TrustPendingText,
+    error = BrandWarm,
+    onError = TextOnBrand,
+    errorContainer = TrustRevokedBg,
+    onErrorContainer = TrustRevokedText,
+    background = SurfaceBackground,
+    onBackground = TextPrimary,
+    surface = SurfaceCard,
+    onSurface = TextPrimary,
+    surfaceVariant = SurfaceElevated,
+    onSurfaceVariant = TextSecondary,
+    outline = SurfaceBorder,
+    outlineVariant = SurfaceBorder
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = BrandAccentLight,
+    onPrimary = BrandPrimaryDark,
+    primaryContainer = SurfaceAccentTintDark,
+    onPrimaryContainer = BrandAccentLight,
+    secondary = BrandPrimary,
+    onSecondary = TextOnBrand,
+    secondaryContainer = SurfaceElevatedDark,
+    onSecondaryContainer = TextPrimaryDark,
+    tertiary = TrustPending,
+    onTertiary = BrandPrimaryDark,
+    tertiaryContainer = TrustPendingBg,
+    onTertiaryContainer = TrustPendingText,
+    error = BrandWarm,
+    onError = BrandPrimaryDark,
+    errorContainer = TrustRevokedBg,
+    onErrorContainer = TrustRevokedText,
+    background = SurfaceBackgroundDark,
+    onBackground = TextPrimaryDark,
+    surface = SurfaceCardDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceElevatedDark,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = SurfaceBorderDark,
+    outlineVariant = SurfaceBorderDark
 )
 
 @Composable
 fun CachetWalletTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -44,7 +87,6 @@ fun CachetWalletTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -52,8 +94,8 @@ fun CachetWalletTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

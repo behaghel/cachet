@@ -52,25 +52,87 @@ The project uses devenv for dependency management including Android SDK. Key com
 
 ## Architecture
 
-For detailed architecture, service structure, data flows, and key concepts, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+### Service Structure
 
-Quick reference for service locations:
+Cachet is a microservices-based trust provider with three core services:
 
-| Service | Code | Endpoints |
-|---------|------|-----------|
-| Verifier | `services/verifier/` | `/packs` (GET), `/presentations/verify` (POST) |
-| Registry | `services/registry/` | `/policy/manifest` (GET) |
-| Receipts Log | `services/receipts-log/` | Consent receipts + transparency log |
-| Issuance Gateway | `services/issuance-gateway/` | `/oauth/token`, `/credential`, `/webhooks/veriff` |
-| Mobile Wallet | `mobile/` | KMM + Jetpack Compose; connects to backend via `10.0.2.2:8090` |
+1. **Verifier** (`services/verifier/`) - Manages Cach'Pack lists and verifies credential presentations
+   - Endpoints: `/packs` (GET), `/presentations/verify` (POST)
+   - Returns cachets and predicates
 
-### Key files
+2. **Registry** (`services/registry/`) - Policy/pack registry service
+   - Endpoints: `/policy/manifest` (GET)
+   - Serves policy manifests with DID-based signing
 
-- Trust Pack definitions: `docs/PACKS/`
+3. **Receipts Log** (`services/receipts-log/`) - Consent receipts and transparency logging
+   - Transparency log stub implementation
+
+4. **Issuance Gateway** (`services/issuance-gateway/`) - OpenID4VCI credential issuance
+   - Endpoints: `/oauth/token` (OAuth2), `/credential` (VC issuance), `/webhooks/veriff` (Veriff integration)
+   - Issues SD-JWT VCs with StatusList2021 revocation support
+   - Integrates with Veriff for foundational identity verification
+
+### Technology Stack
+
+- **Backend**: Go 1.22 with Chi router
+- **Logging**: Zerolog for structured logging
+- **Testing**: testify framework with coverage reporting
+- **Common Module**: `services/common/` - Shared Go dependencies
+- **APIs**: OpenAPI 3.0.3 specifications in `api/`
+- **SDKs**: TypeScript (`sdk/typescript/`), Kotlin/Swift stubs (`sdk/kotlin/`, `sdk/swift/`)
+- **Mobile**: KMM wallet placeholder (`mobile/`)
+- **CI/CD**: GitHub Actions with automated testing, linting, security scanning
+
+### Key Concepts
+
+- **Cach'Packs**: Reusable, privacy-preserving credential templates (e.g., "Childcare Readiness", "Safe Seller")
+- **Presentations**: Verifiable credential bundles verified against policies
+- **Policy Manifests**: DID-signed policy definitions with versioning
+
+### Data Flow
+
+1. **Issuance**: Veriff webhook → Issuance Gateway → SD-JWT VC issued via OpenID4VCI
+2. **Verification**: Clients request available Cach'Packs from Verifier
+3. **Presentation**: Credential presentations are verified against registered policies
+4. **Results**: Verification results include cachets, predicates, and freshness status
+5. **Registry**: Provides policy manifests for Cach'Pack definitions
+
+### Mobile Wallet
+
+- **Location**: `mobile/` - Kotlin Multiplatform Mobile (KMM) wallet app
+- **Shared module**: `mobile/shared/` - Business logic, networking, data models
+- **Android app**: `mobile/androidApp/` - Android-specific UI and platform integrations
+- **Features**: OpenID4VCI credential issuance, SQLite credential vault, Jetpack Compose UI
+- **Networking**: Uses `10.0.2.2:8090` to connect to local backend from emulator
+
+### Development Files
+
+- Cach'Pack definitions: `docs/PACKS/`
 - Receipt samples: `docs/RECEIPTS/`
 - Policy manifest: `docs/POLICY_MANIFEST.yaml`
-- Architecture: `docs/ARCHITECTURE.md`
-- Vision and product context: `docs/VISION.md`
+- Architecture docs: `docs/ARCHITECTURE.md`, `docs/TRANSPARENCY_LOG_DESIGN.md`
+
+## Security Guidelines
+
+This project handles verifiable credentials and identity data. All code changes must follow:
+
+1. **Never hardcode secrets** — use secretspec/env vars (see `.env.ci` for CI pattern)
+2. **Validate all input** — especially JWT claims, webhook payloads, credential presentations
+3. **Local-first verification** — the verifier never trusts the relay/transport layer (see `docs/VERIFICATION_PROTOCOL.md`)
+4. **Minimal PII logging** — never log credential contents, only session IDs and status codes
+5. **Use `/health` not `/healthz`** — Cloud Run intercepts `/healthz`
+6. **Run `ci:security` before merging** — gosec must pass clean
+7. **HMAC-verify webhooks** — Veriff webhook payloads must be HMAC-verified, fail-closed (reject if secret unset)
+8. **SD-JWT cryptographic verification** — never trust credential fields by string matching; verify issuer JWS signature, KB-JWT holder binding, nonce, and audience
+9. **Hardware-backed keys** — holder signing keys must be StrongBox/Secure Enclave backed; no software-only keys for credential operations
+
+Security specification: `docs/VERIFICATION_PROTOCOL.md` (threat model in Section 3, crypto requirements in Section 5)
+
+### Security Tooling
+
+- **CI:** `ci:security` runs gosec on all Go services. The `security-review.yml` GitHub Action runs AI-powered security review on every PR.
+- **On-demand:** Run `/security-review` in Claude Code for a comprehensive security assessment of current changes.
+- **MCP:** Semgrep MCP available for real-time SAST — run `claude mcp add semgrep -- uvx semgrep-mcp` to enable.
 
 ## Pre-commit Hooks
 

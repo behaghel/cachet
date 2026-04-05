@@ -142,9 +142,9 @@ func TestVerifyPresentation_RealEval(t *testing.T) {
 	assert.Equal(t, models.Satisfied, resultMap["identity.verified"])
 	assert.Equal(t, models.NotEvaluable, resultMap["criminal.clear.es"])
 
-	// Badge NOT granted (criminal.clear.es is required but not evaluable)
-	assert.Equal(t, "", resp.Badge)
-	assert.False(t, resp.Summary.BadgeGranted)
+	// Cachet NOT granted (criminal.clear.es is required but not evaluable)
+	assert.Equal(t, "", resp.Cachet)
+	assert.False(t, resp.Summary.CachetGranted)
 	assert.Equal(t, 2, resp.Summary.RequiredSatisfied)
 	assert.Equal(t, 3, resp.Summary.RequiredTotal)
 }

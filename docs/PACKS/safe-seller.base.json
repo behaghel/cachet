@@ -4,7 +4,7 @@
   "name": "Safe Seller",
   "purpose": "Reduce counterparty and fraud risk in peer-to-peer sales",
   "jurisdictions": ["EU"],
-  "badge": {
+  "cachet": {
     "label": "Safe Seller (EU)",
     "ttl": "P60D",
     "jurisdiction": "EU"

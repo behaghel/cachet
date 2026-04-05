@@ -5,7 +5,7 @@ let
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
 
   # Service list — single source of truth for all per-service scripts
-  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" ];
+  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" ];
   forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
 in
 {
@@ -17,6 +17,7 @@ in
   languages.java.enable = true;            # Needed for Gradle/Kotlin mobile builds
   languages.java.gradle.enable = true;
   claude.code.enable = true;
+  claude.code.hooks.git-hooks-run.enable = false; # prek runs at commit time via git hooks, not on every edit
 
   # Android SDK + emulator (optional, heavy — ~2GB)
   # Enable with: export DEVENV_ENABLE_ANDROID=1
@@ -61,6 +62,7 @@ in
   env.CACHET_REGISTRY_PORT = toString config.processes.registry.ports.http.value;
   env.CACHET_RECEIPTS_PORT = toString config.processes.receipts.ports.http.value;
   env.CACHET_ISSUANCE_PORT = toString config.processes.issuance-gateway.ports.http.value;
+  env.CACHET_RELAY_PORT = toString config.processes.relay.ports.http.value;
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -211,6 +213,7 @@ in
     curl -f http://localhost:$CACHET_REGISTRY_PORT/health && echo "✅ Registry healthy"
     curl -f http://localhost:$CACHET_RECEIPTS_PORT/health && echo "✅ Receipts healthy"
     curl -f http://localhost:$CACHET_ISSUANCE_PORT/health && echo "✅ Issuance gateway healthy"
+    curl -f http://localhost:$CACHET_RELAY_PORT/health && echo "✅ Relay healthy"
     devenv processes stop
   '';
   scripts."android:emulator".exec = ''
@@ -725,14 +728,32 @@ EOF
     ports.http.allocate = 8090;
     exec = "cd services/issuance-gateway && PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
   };
+  processes.relay = {
+    ports.http.allocate = 8084;
+    exec = "cd services/relay && PORT=${toString config.processes.relay.ports.http.value} go run .";
+  };
 
   # Pre-commit hooks for consistent build cycle
   git-hooks = {
     hooks = {
       # Go formatting and linting
       gofmt.enable = true;
-      # golangci-lint disabled at root level - runs per-service in lint:go script
-      # golangci-lint.enable = true;
+
+      # golangci-lint per-service (errcheck, staticcheck, etc.)
+      golangci-lint-services = {
+        enable = true;
+        name = "golangci-lint (per service)";
+        entry = "${pkgs.writeShellScript "lint-go-services" ''
+          set -euo pipefail
+          ${forEachService (svc: ''
+          echo "Linting ${svc}..."
+          (cd services/${svc} && ${pkgs.golangci-lint}/bin/golangci-lint run)
+          '')}
+        ''}";
+        files = "\\.go$";
+        language = "system";
+        pass_filenames = false;
+      };
       
       # Schema validation
       check-yaml.enable = true;

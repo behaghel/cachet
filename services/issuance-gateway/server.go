@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
@@ -20,22 +22,29 @@ import (
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/statuslist"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 )
 
 // ServerConfig holds injectable dependencies for the issuance gateway.
 type ServerConfig struct {
 	Common        common.ServerConfig
-	SigningKey    *rsa.PrivateKey
+	SigningKey    *rsa.PrivateKey   // RSA key for OAuth2 access tokens
+	IssuerKey     *ecdsa.PrivateKey // ES256 key for SD-JWT VC signing
+	IssuerKeyID   string            // kid header for the issuer key (e.g., "did:veriff:production#key-1")
 	Sessions      veriff.SessionStore
 	WebhookSecret string // HMAC-SHA256 secret for Veriff webhook signature verification
 }
 
-// DefaultServerConfig creates a config with generated key and in-memory store.
+// DefaultServerConfig creates a config with generated keys and in-memory store.
 func DefaultServerConfig() ServerConfig {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to generate RSA key")
+	}
+	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to generate ES256 issuer key")
 	}
 	return ServerConfig{
 		Common: common.ServerConfig{
@@ -43,16 +52,21 @@ func DefaultServerConfig() ServerConfig {
 			Version: "0.1.0",
 			Port:    "8090",
 		},
-		SigningKey: key,
-		Sessions:   veriff.NewInMemoryStore(),
+		SigningKey:  rsaKey,
+		IssuerKey:   ecKey,
+		IssuerKeyID: "did:veriff:production#key-1",
+		Sessions:    veriff.NewInMemoryStore(),
 	}
 }
 
 type Server struct {
-	router        *chi.Mux
-	signingKey    *rsa.PrivateKey
-	sessions      veriff.SessionStore
-	webhookSecret string
+	router          *chi.Mux
+	signingKey      *rsa.PrivateKey
+	issuerKey       *ecdsa.PrivateKey
+	issuerKeyID     string
+	sessions        veriff.SessionStore
+	webhookSecret   string
+	statusListStore *statuslist.Store
 }
 
 func NewServer() *Server {
@@ -60,15 +74,21 @@ func NewServer() *Server {
 }
 
 func NewServerWithConfig(cfg ServerConfig) *Server {
+	slStore := statuslist.NewStore()
 	s := &Server{
-		router:        common.NewRouter(cfg.Common),
-		signingKey:    cfg.SigningKey,
-		sessions:      cfg.Sessions,
-		webhookSecret: cfg.WebhookSecret,
+		router:          common.NewRouter(cfg.Common),
+		signingKey:      cfg.SigningKey,
+		issuerKey:       cfg.IssuerKey,
+		issuerKeyID:     cfg.IssuerKeyID,
+		sessions:        cfg.Sessions,
+		webhookSecret:   cfg.WebhookSecret,
+		statusListStore: slStore,
 	}
 
 	s.router.Post("/oauth/token", s.handleOAuthToken)
 	s.router.Post("/credential", s.handleCredentialIssuance)
+	s.router.Get("/status/{listId}", s.handleGetStatusList)
+	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 
 	return s
@@ -85,6 +105,7 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	grantType := r.FormValue("grant_type")
 	clientID := r.FormValue("client_id")
 	scope := r.FormValue("scope")
+	sessionID := r.FormValue("session_id")
 
 	if grantType != "client_credentials" {
 		common.WriteError(w, r, http.StatusBadRequest, "unsupported_grant_type", "Only client_credentials is supported")
@@ -95,7 +116,7 @@ func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := oauth.IssueToken(s.signingKey, clientID, scope)
+	resp, err := oauth.IssueToken(s.signingKey, clientID, scope, sessionID)
 	if err != nil {
 		log.Ctx(r.Context()).Error().Err(err).Msg("token signing failed")
 		common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to issue token")
@@ -131,16 +152,11 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	claims, _ := token.Claims.(jwt.MapClaims)
 	sessionID, _ := claims["session_id"].(string)
 
-	// Find a verified session — use session_id from token if available, else first approved
+	// Look up the verified Veriff session bound to this token
 	var session veriff.Session
 	var found bool
 	if sessionID != "" {
 		session, found = s.sessions.Get(sessionID)
-	}
-	if !found {
-		// Fallback: this is temporary until session binding is fully wired
-		// TODO: remove fallback once mobile sends session_id in token request
-		session, found = s.findFirstApprovedSession()
 	}
 	if !found {
 		common.WriteError(w, r, http.StatusBadRequest, "no_session", "No verified identity session found")
@@ -153,11 +169,45 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp := credential.Build(session, validation, req.Types, string(req.Format))
-
 	credentialsIssued.Add(r.Context(), 1, metric.WithAttributes(attribute.String("format", string(req.Format))))
 	qualityTierGauge.Add(r.Context(), 1, metric.WithAttributes(attribute.String("tier", validation.QualityLevel)))
 
+	// SD-JWT format: return signed SD-JWT string
+	if req.Format == models.VcSdJwt && s.issuerKey != nil {
+		// Extract holder JWK from proof field for holder binding (cnf)
+		var holderJWK map[string]interface{}
+		if req.Proof != nil {
+			if jwk, ok := (*req.Proof)["jwk"]; ok {
+				if jwkMap, ok := jwk.(map[string]interface{}); ok {
+					holderJWK = jwkMap
+				}
+			}
+		}
+
+		// Allocate status list index for revocation support
+		statusIndex, err := s.statusListStore.AllocateIndex("1")
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err).Msg("status list index allocation failed")
+			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to allocate credential status")
+			return
+		}
+
+		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID, holderJWK, statusIndex)
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err).Msg("SD-JWT credential building failed")
+			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to build credential")
+			return
+		}
+		log.Ctx(r.Context()).Info().Str("format", "vc+sd-jwt").Msg("SD-JWT credential issued")
+		common.WriteJSON(w, r, http.StatusOK, map[string]string{
+			"credential": sdJWT,
+			"format":     "vc+sd-jwt",
+		})
+		return
+	}
+
+	// Legacy JSON format
+	resp := credential.Build(session, validation, req.Types, string(req.Format))
 	log.Ctx(r.Context()).Info().Str("credential_id", resp.Credential.Id).Msg("credential issued")
 	common.WriteJSON(w, r, http.StatusOK, resp)
 }
@@ -169,20 +219,23 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify HMAC-SHA256 signature when webhook secret is configured
-	if s.webhookSecret != "" {
-		sig := r.Header.Get("X-HMAC-Signature")
-		if sig == "" {
-			common.WriteError(w, r, http.StatusUnauthorized, "missing_signature", "Missing X-HMAC-Signature header")
-			return
-		}
-		mac := hmac.New(sha256.New, []byte(s.webhookSecret))
-		mac.Write(body)
-		expected := hex.EncodeToString(mac.Sum(nil))
-		if !hmac.Equal([]byte(sig), []byte(expected)) {
-			common.WriteError(w, r, http.StatusUnauthorized, "invalid_signature", "Webhook signature verification failed")
-			return
-		}
+	// HMAC-SHA256 signature verification — fail-closed: reject if secret not configured
+	if s.webhookSecret == "" {
+		log.Ctx(r.Context()).Error().Msg("webhook secret not configured — rejecting request")
+		common.WriteError(w, r, http.StatusInternalServerError, "server_misconfigured", "Webhook verification unavailable")
+		return
+	}
+	sig := r.Header.Get("X-HMAC-Signature")
+	if sig == "" {
+		common.WriteError(w, r, http.StatusUnauthorized, "missing_signature", "Missing X-HMAC-Signature header")
+		return
+	}
+	mac := hmac.New(sha256.New, []byte(s.webhookSecret))
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(sig), []byte(expected)) {
+		common.WriteError(w, r, http.StatusUnauthorized, "invalid_signature", "Webhook signature verification failed")
+		return
 	}
 
 	var session veriff.Session
@@ -222,13 +275,40 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// findFirstApprovedSession is a temporary fallback until session binding is wired.
-func (s *Server) findFirstApprovedSession() (veriff.Session, bool) {
-	store, ok := s.sessions.(*veriff.InMemoryStore)
-	if !ok {
-		return veriff.Session{}, false
+func (s *Server) handleGetStatusList(w http.ResponseWriter, r *http.Request) {
+	listID := chi.URLParam(r, "listId")
+	encoded, err := s.statusListStore.GetEncoded(listID)
+	if err != nil {
+		common.WriteError(w, r, http.StatusNotFound, "not_found", "Status list not found")
+		return
 	}
-	return store.FindFirst(func(sess veriff.Session) bool {
-		return sess.Status == "approved"
+	purpose, _ := s.statusListStore.GetPurpose(listID)
+
+	w.Header().Set("Cache-Control", "max-age=300")
+	common.WriteJSON(w, r, http.StatusOK, map[string]string{
+		"id":          "https://cachet.id/status/" + listID,
+		"type":        "BitstringStatusListCredential",
+		"purpose":     purpose,
+		"encodedList": encoded,
 	})
+}
+
+func (s *Server) handleRevoke(w http.ResponseWriter, r *http.Request) {
+	listID := chi.URLParam(r, "listId")
+
+	var req struct {
+		Index int `json:"index"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
+		return
+	}
+
+	if err := s.statusListStore.Revoke(listID, req.Index); err != nil {
+		common.WriteError(w, r, http.StatusBadRequest, "revoke_failed", err.Error())
+		return
+	}
+
+	log.Ctx(r.Context()).Info().Str("list_id", listID).Int("index", req.Index).Msg("credential revoked")
+	w.WriteHeader(http.StatusOK)
 }

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 76" width="64" height="76">
+  <!--
+    Cachet favicon — Shield mark simplified for small sizes.
+    Geometry scaled from 400x480 template with angled top.
+  -->
+  <!-- Outer rim -->
+  <path d="M 32 5 C 38 9, 56 9, 59 10 V 35
+           C 59 50, 47 61, 32 67
+           C 17 61, 5 50, 5 35 V 10
+           C 8 9, 26 9, 32 5 Z"
+        fill="#10B981"/>
+  <!-- Inner rim -->
+  <path d="M 32 8 C 37 11, 53 12, 56 13 V 35
+           C 56 48, 46 58, 32 63
+           C 18 58, 8 48, 8 35 V 13
+           C 11 12, 27 11, 32 8 Z"
+        fill="#059669"/>
+  <!-- Liseré -->
+  <path d="M 32 9 C 37 11, 53 13, 55 13 V 35
+           C 55 47, 46 57, 32 62
+           C 18 57, 9 47, 9 35 V 13
+           C 11 13, 27 11, 32 9 Z"
+        fill="#6EE7B7"/>
+  <!-- Body -->
+  <path d="M 32 10 C 37 11, 52 13, 55 13 V 35
+           C 55 47, 45 57, 32 62
+           C 19 57, 9 47, 9 35 V 13
+           C 12 13, 27 11, 32 10 Z"
+        fill="#1E293B"/>
+  <!-- Emerald front -->
+  <circle cx="32" cy="37" r="19" fill="#10B981"/>
+  <!-- C arc -->
+  <path d="M 44 49 A 17 17 0 1 0 20 49"
+        fill="none" stroke="white" stroke-width="9" stroke-linecap="round"/>
+</svg>

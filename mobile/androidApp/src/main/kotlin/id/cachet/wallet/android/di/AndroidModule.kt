@@ -5,6 +5,8 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import id.cachet.wallet.android.data.CredentialRepositoryImpl
 import id.cachet.wallet.android.ui.WalletViewModel
+import id.cachet.wallet.android.verification.MockVeriffService
+import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.domain.repository.CredentialRepository
 import org.koin.android.ext.koin.androidContext
@@ -34,11 +36,17 @@ val androidModule = module {
         CredentialRepositoryImpl(get()) 
     }
     
+    // Verification — swap MockVeriffService for real Veriff SDK later
+    single<VeriffService> { MockVeriffService() }
+
     // ViewModels
-    viewModel {
+    viewModel { params ->
         WalletViewModel(
             issuanceUseCase = get(),
-            verificationUseCase = get()
+            veriffService = get(),
+            consentUseCase = get(),
+            demoMode = params.get<Boolean>(0),
+            demoEmpty = params.get<Boolean>(1)
         )
     }
 }

@@ -642,7 +642,7 @@ func TestEvaluate_MixedPredicates(t *testing.T) {
 	assert.Equal(t, 1, *summary.OptionalTotal)
 	require.NotNil(t, summary.OptionalSatisfied)
 	assert.Equal(t, 0, *summary.OptionalSatisfied)
-	assert.True(t, summary.BadgeGranted)
+	assert.True(t, summary.CachetGranted)
 }
 
 func TestEvaluate_BadgeNotGranted(t *testing.T) {
@@ -694,7 +694,7 @@ func TestEvaluate_BadgeNotGranted(t *testing.T) {
 
 	assert.Equal(t, 2, summary.RequiredTotal)
 	assert.Equal(t, 1, summary.RequiredSatisfied)
-	assert.False(t, summary.BadgeGranted)
+	assert.False(t, summary.CachetGranted)
 }
 
 func TestEvaluate_EmptyPredicates(t *testing.T) {
@@ -712,7 +712,7 @@ func TestEvaluate_EmptyPredicates(t *testing.T) {
 	assert.Empty(t, results)
 	assert.Equal(t, 0, summary.RequiredTotal)
 	assert.Equal(t, 0, summary.RequiredSatisfied)
-	assert.True(t, summary.BadgeGranted) // 0 == 0
+	assert.True(t, summary.CachetGranted) // 0 == 0
 }
 
 func TestEvaluate_RequiredExplicitlyTrue(t *testing.T) {
@@ -748,7 +748,7 @@ func TestEvaluate_RequiredExplicitlyTrue(t *testing.T) {
 	_, summary := Evaluate(pack, []models.VerifiableCredential{cred})
 	assert.Equal(t, 1, summary.RequiredTotal)
 	assert.Equal(t, 1, summary.RequiredSatisfied)
-	assert.True(t, summary.BadgeGranted)
+	assert.True(t, summary.CachetGranted)
 }
 
 // --- evaluatorFor dispatch tests ---

@@ -1,6 +1,7 @@
 package credential
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"time"
 
@@ -10,7 +11,59 @@ import (
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 )
 
-// Build constructs a VerifiableCredential from a verified session.
+// BuildSDJWTCredential constructs an SD-JWT VC from a verified session.
+// Selectively disclosable claims: age, nationality, documentType, verified, verification metrics.
+// Non-disclosable claims: iss, sub, iat, exp, _sd_alg, cnf, status, vct.
+// holderJWK is the holder's public key as a JWK map — embedded in cnf for holder binding.
+// If nil, cnf is omitted (no holder binding).
+func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string, holderJWK map[string]interface{}, statusListIndex int) (string, error) {
+	now := time.Now()
+	expiration := now.Add(90 * 24 * time.Hour)
+
+	credentialID := fmt.Sprintf("urn:uuid:%s", uuid.New().String())
+
+	// Non-disclosable claims (always visible in the issuer JWT)
+	nonDisclosable := map[string]interface{}{
+		"iss": "did:veriff:production",
+		"sub": "did:example:holder",
+		"iat": now.Unix(),
+		"exp": expiration.Unix(),
+		"jti": credentialID,
+		"vct": types,
+		"status": map[string]interface{}{
+			"id":                   fmt.Sprintf("https://cachet.id/status/1#%d", statusListIndex),
+			"type":                 "StatusList2021Entry",
+			"statusPurpose":        "revocation",
+			"statusListIndex":      fmt.Sprintf("%d", statusListIndex),
+			"statusListCredential": "https://cachet.id/status/1",
+		},
+	}
+
+	// Embed holder's public key for holder binding (KB-JWT verification)
+	if holderJWK != nil {
+		nonDisclosable["cnf"] = map[string]interface{}{"jwk": holderJWK}
+	}
+
+	// Selectively disclosable claims
+	age := CalculateAge(session.Person.DateOfBirth)
+	sdClaims := map[string]interface{}{
+		"age":                  age,
+		"nationality":          session.Document.Country,
+		"documentType":         session.Document.Type,
+		"verified":             true,
+		"verificationLevel":    string(models.CredentialSubjectVerificationLevel(validation.QualityLevel)),
+		"verificationMethod":   "veriff",
+		"overallConfidence":    validation.Confidence,
+		"livenessScore":        session.Verification.LivenessScore,
+		"documentAuthenticity": session.Document.Authenticity,
+		"riskScore":            session.Verification.RiskScore,
+	}
+
+	return BuildSDJWT(nonDisclosable, sdClaims, issuerKey, issuerKeyID)
+}
+
+// Build constructs a VerifiableCredential as JSON (legacy format).
+// Kept for backward compatibility during the transition to SD-JWT.
 func Build(session veriff.Session, validation veriff.ValidationResult, types []string, format string) models.CredentialResponse {
 	now := time.Now()
 	expiration := now.Add(90 * 24 * time.Hour)

@@ -14,7 +14,9 @@ import (
 )
 
 // IssueToken creates a signed JWT access token.
-func IssueToken(signingKey *rsa.PrivateKey, clientID, scope string) (models.TokenResponse, error) {
+// If sessionID is non-empty it is embedded as a "session_id" claim so the
+// credential endpoint can look up the corresponding Veriff session.
+func IssueToken(signingKey *rsa.PrivateKey, clientID, scope, sessionID string) (models.TokenResponse, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Hour)
 
@@ -25,6 +27,9 @@ func IssueToken(signingKey *rsa.PrivateKey, clientID, scope string) (models.Toke
 		"iat":       now.Unix(),
 		"exp":       expiresAt.Unix(),
 		"jti":       uuid.New().String(),
+	}
+	if sessionID != "" {
+		claims["session_id"] = sessionID
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

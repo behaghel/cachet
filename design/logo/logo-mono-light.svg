@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="400" height="480">
+  <!--
+    Cachet monochrome shield — light greys on transparent (for dark backgrounds)
+    Geometry matches logo-mark.svg template. Symmetric around x=200.
+  -->
+  <!-- Border -->
+  <path d="M 200 32 C 240 55, 348 58, 366 59 V 221
+           C 366 311, 296 382, 200 418
+           C 104 382, 34 311, 34 221 V 59
+           C 52 58, 160 55, 200 32 Z"
+        fill="#D6D3D1" stroke="#A8A29E" stroke-width="2"/>
+  <!-- Liseré -->
+  <path d="M 200 54 C 230 64, 328 74, 350 73 V 218
+           C 350 297, 286 363, 200 397
+           C 114 363, 50 297, 50 218 V 73
+           C 72 74, 170 64, 200 54 Z"
+        fill="#A8A29E"/>
+  <!-- Body -->
+  <path d="M 200 62 C 228 71, 322 78, 342 81 V 218
+           C 342 294, 280 356, 200 388
+           C 120 356, 58 294, 58 218 V 81
+           C 78 78, 172 71, 200 62 Z"
+        fill="#FFFFFF"/>
+  <!-- Front -->
+  <path d="M 200 131 C 280 131, 330 152, 326 257 C 324 320, 268 358, 200 390 Z" fill="#D6D3D1"/>
+  <path d="M 200 131 C 120 131, 70 152, 74 257 C 76 320, 132 358, 200 390 Z" fill="#E7E5E4"/>
+  <!-- C arc -->
+  <path d="M 274 308 A 108 108 0 1 0 126 308"
+        fill="none" stroke="#1C1917" stroke-width="56" stroke-linecap="round"/>
+</svg>

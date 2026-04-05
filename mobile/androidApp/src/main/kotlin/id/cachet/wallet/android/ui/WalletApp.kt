@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -7,94 +8,181 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import id.cachet.wallet.android.ui.components.CachetSegmentedControl
+import id.cachet.wallet.android.ui.fixtures.DemoFixtures
+import id.cachet.wallet.android.ui.mapper.CachPackMapper
+import id.cachet.wallet.android.ui.model.*
+import id.cachet.wallet.android.ui.theme.*
+import kotlinx.serialization.json.*
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+/** Build a JSON payload for the QR code from a CachPackUi. */
+private fun packToQrPayload(pack: CachPackUi): String {
+    val obj = buildJsonObject {
+        put("type", "cachet_verification_request")
+        put("version", 1)
+        put("question", pack.question)
+        putJsonArray("predicates") {
+            pack.description.split(", ").forEach { add(it) }
+        }
+    }
+    return obj.toString()
+}
+
+/**
+ * Overlay screens that sit on top of the main tab navigation.
+ * null = no overlay, show normal tabs.
+ */
+sealed class OverlayScreen {
+    data class QrShare(
+        val question: String,
+        val predicates: List<String>,
+        val pack: CachPackUi
+    ) : OverlayScreen()
+    data class IncomingRequest(val request: VerificationRequest) : OverlayScreen()
+    data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletApp() {
-    val viewModel: WalletViewModel = koinViewModel()
+fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
+    val viewModel: WalletViewModel = koinViewModel { parametersOf(demoMode, demoEmpty) }
     val uiState by viewModel.uiState.collectAsState()
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TopAppBar(
-            title = { 
-                Text(
-                    "Cachet Wallet",
-                    style = MaterialTheme.typography.headlineMedium
-                ) 
-            }
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        val currentState = uiState
-        when (currentState) {
-            is WalletUiState.Loading -> {
-                LoadingScreen()
-            }
-            is WalletUiState.Empty -> {
-                EmptyWalletScreen(
-                    onStartVerification = { viewModel.startVeriffVerification() }
-                )
-            }
-            is WalletUiState.HasCredentials -> {
-                CredentialsScreen(
-                    credentials = currentState.credentials,
-                    onStartVerification = { viewModel.startVeriffVerification() },
-                    onRefresh = { viewModel.loadCredentials() },
-                    onVerifyCredential = { credentialId -> viewModel.showPackSelection(credentialId) }
-                )
-            }
-            is WalletUiState.Error -> {
-                ErrorScreen(
-                    message = currentState.message,
-                    onRetry = { viewModel.loadCredentials() }
-                )
-            }
-            is WalletUiState.VerificationInProgress -> {
-                VerificationScreen()
-            }
-            is WalletUiState.LoadingPacks -> {
-                LoadingScreen()
-            }
-            is WalletUiState.Verifying -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator()
-                        Text("Verifying against Trust Pack...")
-                    }
+    val activityState by viewModel.activityState.collectAsState()
+
+    val scope = rememberCoroutineScope()
+    var isOnboarded by remember { mutableStateOf(demoMode || demoEmpty) }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
+
+    // ── Onboarding gate ──
+    if (!isOnboarded) {
+        OnboardingScreen(onComplete = { isOnboarded = true })
+        return
+    }
+
+    // ── Overlay screens (full-screen, above tabs) ──
+    overlay?.let { screen ->
+        when (screen) {
+            is OverlayScreen.QrShare -> {
+                // Auto-transition: simulate a scan after 4 seconds
+                LaunchedEffect(screen) {
+                    kotlinx.coroutines.delay(4000)
+                    overlay = OverlayScreen.IncomingRequest(
+                        CachPackMapper.toVerificationRequest(screen.pack)
+                    )
                 }
-            }
-            is WalletUiState.PackSelection -> {
-                PackListScreen(
-                    packs = currentState.packs,
-                    onSelectPack = { packId ->
-                        viewModel.verifyAgainstPack(currentState.credentialId, packId)
-                    },
-                    onBack = { viewModel.loadCredentials() }
+                QrShareScreen(
+                    state = QrShareState(
+                        question = screen.question,
+                        predicates = screen.predicates,
+                        qrPayload = packToQrPayload(screen.pack)
+                    ),
+                    onBack = { overlay = null },
+                    onClose = { overlay = null },
+                    onScanSimulated = {
+                        overlay = OverlayScreen.IncomingRequest(
+                            CachPackMapper.toVerificationRequest(screen.pack)
+                        )
+                    }
                 )
             }
-            is WalletUiState.VerificationComplete -> {
-                VerificationResultScreen(
-                    result = currentState.result,
-                    onBack = { viewModel.loadCredentials() }
-                )
+            is OverlayScreen.IncomingRequest -> IncomingRequestScreen(
+                request = screen.request,
+                onShare = {
+                    scope.launch {
+                        val result = viewModel.shareCredential(screen.request)
+                        overlay = OverlayScreen.CachetResultOverlay(result)
+                    }
+                },
+                onDecline = { overlay = null },
+                onClose = { overlay = null }
+            )
+            is OverlayScreen.CachetResultOverlay -> CachetResultScreen(
+                result = screen.result,
+                onDone = { overlay = null },
+                onViewReceipt = {
+                    overlay = null
+                    selectedTab = 1 // Activity tab
+                }
+            )
+        }
+        return
+    }
+
+    // ── Main app shell (no bottom nav) ──
+    Scaffold(containerColor = SurfaceBackground) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Header ──
+            Text(
+                text = "Cachet",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.displaySmall
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ── Top segmented control ──
+            CachetSegmentedControl(
+                tabs = listOf("My Cachets", "Activity"),
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Tab content ──
+            Crossfade(targetState = selectedTab, label = "main-tab") { tab ->
+                when (tab) {
+                    0 -> HomeScreen(
+                        uiState = uiState,
+                        onStartVerification = { viewModel.startVeriffVerification() },
+                        onRefresh = { viewModel.loadCredentials() },
+                        onPackSelected = { pack ->
+                            overlay = OverlayScreen.QrShare(
+                                question = pack.question,
+                                predicates = pack.description.split(", "),
+                                pack = pack
+                            )
+                        },
+                        onCardTapped = { card ->
+                            // Map credential to a QR share overlay using its predicates
+                            val syntheticPack = CachPackUi(
+                                question = card.displayName,
+                                description = card.predicates.joinToString(", "),
+                                proofCount = card.predicates.size,
+                                cachetType = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
+                            )
+                            overlay = OverlayScreen.QrShare(
+                                question = card.displayName,
+                                predicates = card.predicates,
+                                pack = syntheticPack
+                            )
+                        }
+                    )
+                    1 -> ActivityScreen(
+                        historyGroups = activityState.historyGroups,
+                        receipts = activityState.receipts,
+                        auditResult = activityState.auditResult,
+                        onRunAudit = { viewModel.runAudit() }
+                    )
+                }
             }
         }
     }
 }
+
+// ── Transient screens (loading, error, verification) ──
 
 @Composable
 fun LoadingScreen() {
@@ -106,49 +194,13 @@ fun LoadingScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CircularProgressIndicator()
-            Text("Loading wallet...")
+            CircularProgressIndicator(color = BrandAccent)
+            Text("Loading wallet...", color = TextSecondary)
         }
     }
 }
 
 @Composable
-fun EmptyWalletScreen(
-    onStartVerification: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Welcome to Cachet Wallet",
-            style = MaterialTheme.typography.headlineLarge,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = "You don't have any credentials yet.\nStart by verifying your identity with Veriff.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        Button(
-            onClick = onStartVerification,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-        ) {
-            Text("Start Identity Verification")
-        }
-    }
-}
-
-@Composable 
 fun VerificationScreen() {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -158,11 +210,15 @@ fun VerificationScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CircularProgressIndicator()
-            Text("Identity verification in progress...")
+            CircularProgressIndicator(color = BrandAccent)
+            Text(
+                "Identity verification in progress...",
+                style = MaterialTheme.typography.titleLarge
+            )
             Text(
                 "This may take a few moments",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextSecondary
             )
         }
     }
@@ -183,17 +239,14 @@ fun ErrorScreen(
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.error
         )
-        
         Spacer(modifier = Modifier.height(16.dp))
-        
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = TextSecondary
         )
-        
         Spacer(modifier = Modifier.height(32.dp))
-        
         Button(onClick = onRetry) {
             Text("Try Again")
         }
