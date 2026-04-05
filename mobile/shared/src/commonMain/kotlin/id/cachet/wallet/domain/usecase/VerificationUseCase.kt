@@ -231,13 +231,14 @@ class VerificationUseCase(
         packId: String,
         response: VerifyResponseDTO
     ): ConsentReceipt? {
-        if (response.predicates.isEmpty()) return null
+        val predicates = response.predicates.orEmpty()
+        if (predicates.isEmpty()) return null
 
         val request = PresentationRequest(
             rpIdentifier = "did:web:cachet.id:verifier",
             rpDisplayName = "Cachet Verifier",
             purpose = "Trust Pack verification: $packId",
-            requestedPredicates = response.predicates
+            requestedPredicates = predicates
         )
         val consent = ConsentDetails(
             explicitConsent = true,

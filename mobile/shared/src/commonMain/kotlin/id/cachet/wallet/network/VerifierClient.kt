@@ -71,7 +71,7 @@ data class PersonalDataDTO(
 @Serializable
 data class VerifyResponseDTO(
     val badge: String,
-    val predicates: List<String> = emptyList(),
+    val predicates: List<String>? = null,
     val freshness: String,
     val predicateResults: List<PredicateResultDTO> = emptyList(),
     val summary: VerificationSummaryDTO? = null
