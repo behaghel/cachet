@@ -18,7 +18,7 @@ import kotlinx.serialization.json.*
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** Build a JSON payload for the QR code from a CachPackUi. */
+/** Build a static JSON payload for the QR code (fallback when relay unavailable). */
 private fun packToQrPayload(pack: CachPackUi): String {
     val obj = buildJsonObject {
         put("type", "cachet_verification_request")
@@ -56,6 +56,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     var isOnboarded by remember { mutableStateOf(demoMode || demoEmpty) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
+    // Track the QR payload separately so it can be updated asynchronously
+    var qrPayload by remember { mutableStateOf("") }
 
     // ── Onboarding gate ──
     if (!isOnboarded) {
@@ -67,25 +69,55 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     overlay?.let { screen ->
         when (screen) {
             is OverlayScreen.QrShare -> {
-                // Auto-transition: simulate a scan after 4 seconds
+                // Try relay flow: create relay session → real QR → poll for response
                 LaunchedEffect(screen) {
-                    kotlinx.coroutines.delay(4000)
-                    overlay = OverlayScreen.IncomingRequest(
-                        CachPackMapper.toVerificationRequest(screen.pack)
+                    // Start verifier session via relay
+                    val relayQr = viewModel.createVerifierSession(
+                        packId = screen.pack.cachetType.name.lowercase(),
+                        question = screen.question,
+                        predicates = screen.predicates
                     )
+                    qrPayload = relayQr ?: packToQrPayload(screen.pack)
+
+                    if (relayQr != null) {
+                        // Relay available: simulate holder scanning after a short delay
+                        kotlinx.coroutines.delay(3000)
+
+                        // Holder side: fetch request from relay → build consent screen
+                        val request = viewModel.fetchRequestFromRelay(relayQr)
+                        if (request != null) {
+                            overlay = OverlayScreen.IncomingRequest(request)
+                        }
+                    } else {
+                        // Relay unavailable: fall back to static demo flow
+                        kotlinx.coroutines.delay(4000)
+                        overlay = OverlayScreen.IncomingRequest(
+                            CachPackMapper.toVerificationRequest(screen.pack)
+                        )
+                    }
                 }
                 QrShareScreen(
                     state = QrShareState(
                         question = screen.question,
                         predicates = screen.predicates,
-                        qrPayload = packToQrPayload(screen.pack)
+                        qrPayload = qrPayload
                     ),
-                    onBack = { overlay = null },
-                    onClose = { overlay = null },
+                    onBack = { overlay = null; qrPayload = "" },
+                    onClose = { overlay = null; qrPayload = "" },
                     onScanSimulated = {
-                        overlay = OverlayScreen.IncomingRequest(
-                            CachPackMapper.toVerificationRequest(screen.pack)
-                        )
+                        scope.launch {
+                            val relayQr = qrPayload
+                            if (relayQr.startsWith("cachet://")) {
+                                val request = viewModel.fetchRequestFromRelay(relayQr)
+                                if (request != null) {
+                                    overlay = OverlayScreen.IncomingRequest(request)
+                                }
+                            } else {
+                                overlay = OverlayScreen.IncomingRequest(
+                                    CachPackMapper.toVerificationRequest(screen.pack)
+                                )
+                            }
+                        }
                     }
                 )
             }
@@ -93,12 +125,22 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 request = screen.request,
                 onShare = {
                     scope.launch {
-                        val result = viewModel.shareCredential(screen.request)
-                        overlay = OverlayScreen.CachetResultOverlay(result)
+                        // Holder side: post presentation to relay
+                        if (qrPayload.startsWith("cachet://")) {
+                            viewModel.holderRespondViaRelay(qrPayload)
+                            // Verifier side: poll relay and verify
+                            val result = viewModel.awaitVerifierResult()
+                            overlay = OverlayScreen.CachetResultOverlay(result)
+                        } else {
+                            // Legacy direct flow
+                            val result = viewModel.shareCredential(screen.request)
+                            overlay = OverlayScreen.CachetResultOverlay(result)
+                        }
+                        qrPayload = ""
                     }
                 },
-                onDecline = { overlay = null },
-                onClose = { overlay = null }
+                onDecline = { overlay = null; qrPayload = "" },
+                onClose = { overlay = null; qrPayload = "" }
             )
             is OverlayScreen.CachetResultOverlay -> CachetResultScreen(
                 result = screen.result,
@@ -156,7 +198,6 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                             )
                         },
                         onCardTapped = { card ->
-                            // Map credential to a QR share overlay using its predicates
                             val syntheticPack = CachPackUi(
                                 question = card.displayName,
                                 description = card.predicates.joinToString(", "),
