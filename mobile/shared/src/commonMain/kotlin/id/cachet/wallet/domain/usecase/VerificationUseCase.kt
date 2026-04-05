@@ -10,10 +10,12 @@ import id.cachet.wallet.network.*
 /**
  * Use case for verifying stored credentials against Trust Packs.
  * Supports both legacy JSON credentials and SD-JWT presentations with KB-JWT holder binding.
+ * The relay client enables cross-device verification via the relay service.
  */
 class VerificationUseCase(
     private val credentialRepository: CredentialRepository,
     private val verifierClient: VerifierClient,
+    private val relayClient: RelayClient,
     private val consentUseCase: ConsentUseCase,
     private val keyManager: KeyManager? = null
 ) {

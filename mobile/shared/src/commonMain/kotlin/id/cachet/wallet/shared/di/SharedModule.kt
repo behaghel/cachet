@@ -12,8 +12,10 @@ import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
+import id.cachet.wallet.network.KtorRelayClient
 import id.cachet.wallet.network.KtorVerifierClient
 import id.cachet.wallet.network.OpenID4VCIClient
+import id.cachet.wallet.network.RelayClient
 import id.cachet.wallet.network.VerifierClient
 import io.ktor.client.*
 import io.ktor.client.plugins.*
@@ -62,6 +64,12 @@ val sharedModule = module {
             baseUrl = AppConfig.verifierUrl
         )
     }
+    single<RelayClient> {
+        KtorRelayClient(
+            httpClient = get(),
+            baseUrl = AppConfig.relayUrl
+        )
+    }
 
     // Repositories
     single<ConsentReceiptRepository> {
@@ -98,6 +106,7 @@ val sharedModule = module {
         VerificationUseCase(
             credentialRepository = get(),
             verifierClient = get(),
+            relayClient = get(),
             consentUseCase = get(),
             keyManager = get()
         )
