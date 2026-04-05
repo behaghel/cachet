@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -90,11 +91,33 @@ func NewServerWithConfig(cfg ServerConfig) *Server {
 	s.router.Get("/status/{listId}", s.handleGetStatusList)
 	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
+	s.router.Get("/.well-known/jwks.json", s.handleJWKS)
 
 	return s
 }
 
 func (s *Server) Router() *chi.Mux { return s.router }
+
+// handleJWKS returns the issuer's public key as a JWKS document.
+// Used by the verifier to discover the issuer key for SD-JWT verification.
+func (s *Server) handleJWKS(w http.ResponseWriter, r *http.Request) {
+	if s.issuerKey == nil {
+		common.WriteError(w, r, http.StatusNotFound, "not_configured", "No issuer key configured")
+		return
+	}
+	pub := s.issuerKey.PublicKey
+	jwk := map[string]interface{}{
+		"kty": "EC",
+		"crv": "P-256",
+		"x":   base64URLEncode(pub.X.Bytes()),
+		"y":   base64URLEncode(pub.Y.Bytes()),
+		"kid": s.issuerKeyID,
+		"use": "sig",
+	}
+	common.WriteJSON(w, r, http.StatusOK, map[string]interface{}{
+		"keys": []interface{}{jwk},
+	})
+}
 
 func (s *Server) handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -311,4 +334,8 @@ func (s *Server) handleRevoke(w http.ResponseWriter, r *http.Request) {
 
 	log.Ctx(r.Context()).Info().Str("list_id", listID).Int("index", req.Index).Msg("credential revoked")
 	w.WriteHeader(http.StatusOK)
+}
+
+func base64URLEncode(b []byte) string {
+	return base64.RawURLEncoding.EncodeToString(b)
 }
