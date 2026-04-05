@@ -81,7 +81,7 @@ class VerificationUseCase(
 
         return VerificationResult(
             packId = sessionInfo.packId,
-            badge = response.badge,
+            badge = response.cachet,
             freshness = response.freshness,
             predicateResults = response.predicateResults,
             summary = response.summary,
@@ -157,7 +157,7 @@ class VerificationUseCase(
 
             val result = VerificationResult(
                 packId = packId,
-                badge = response.badge,
+                badge = response.cachet,
                 freshness = response.freshness,
                 predicateResults = response.predicateResults,
                 summary = response.summary,
