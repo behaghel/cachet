@@ -15,13 +15,19 @@ import (
 	"testing"
 	"time"
 
+	"math/big"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v5"
+	gojwt "github.com/golang-jwt/jwt/v5"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwk"
+	jwxjwt "github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/identity"
 	"github.com/cachet-id/cachet/services/verifier/internal/jwe"
 )
 
@@ -242,6 +248,94 @@ func TestRelayRoundTrip(t *testing.T) {
 	assert.Equal(t, responsePayload, respBody)
 }
 
+// TestSignedRequestObject_DIDDocument verifies the full Slice 7 chain:
+// 1. Session response includes a signed requestObject JWT
+// 2. The DID document endpoint returns the verifier's public key
+// 3. The requestObject signature is valid against that key
+// 4. The requestObject contains the correct claims
+func TestSignedRequestObject_DIDDocument(t *testing.T) {
+	registry := mockRegistryServer()
+	defer registry.Close()
+
+	verifierDID := "did:web:verifier.test"
+	signer := identity.NewDevSigner(verifierDID)
+
+	verifier := NewServerWithConfig(VerifierConfig{
+		Common:         common.ServerConfig{Name: "integration-test", Version: "0.0.1", Port: "0"},
+		RegistryURL:    registry.URL,
+		VerifierDID:    verifierDID,
+		IdentitySigner: signer,
+	})
+
+	// Step 1: Create session with pack metadata
+	reqBody := `{"packId":"pack.childcare.readiness.es","question":"Safe?","predicates":["age.ge.18"]}`
+	w := httptest.NewRecorder()
+	verifier.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader([]byte(reqBody))))
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var session struct {
+		SessionID     string `json:"sessionId"`
+		Nonce         string `json:"nonce"`
+		VerifierDID   string `json:"verifierDid"`
+		RequestObject string `json:"requestObject"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &session))
+	assert.NotEmpty(t, session.RequestObject, "session must include signed requestObject")
+	assert.Equal(t, verifierDID, session.VerifierDID)
+
+	// Step 2: Fetch DID document
+	w = httptest.NewRecorder()
+	verifier.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/.well-known/did.json", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var didDoc struct {
+		ID                 string `json:"id"`
+		VerificationMethod []struct {
+			ID           string            `json:"id"`
+			PublicKeyJwk map[string]string `json:"publicKeyJwk"`
+		} `json:"verificationMethod"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &didDoc))
+	assert.Equal(t, verifierDID, didDoc.ID)
+	require.Len(t, didDoc.VerificationMethod, 1)
+	assert.Equal(t, verifierDID+"#key-1", didDoc.VerificationMethod[0].ID)
+	assert.Equal(t, "EC", didDoc.VerificationMethod[0].PublicKeyJwk["kty"])
+	assert.Equal(t, "P-256", didDoc.VerificationMethod[0].PublicKeyJwk["crv"])
+
+	// Step 3: Verify the requestObject JWT signature using the DID document key
+	pubJWK := didDoc.VerificationMethod[0].PublicKeyJwk
+	xBytes, err := base64.RawURLEncoding.DecodeString(pubJWK["x"])
+	require.NoError(t, err)
+	yBytes, err := base64.RawURLEncoding.DecodeString(pubJWK["y"])
+	require.NoError(t, err)
+	pubKey := &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+		X:     new(big.Int).SetBytes(xBytes),
+		Y:     new(big.Int).SetBytes(yBytes),
+	}
+
+	ecJWK, err := jwk.FromRaw(pubKey)
+	require.NoError(t, err)
+	token, err := jwxjwt.Parse([]byte(session.RequestObject), jwxjwt.WithKey(jwa.ES256, ecJWK))
+	require.NoError(t, err, "requestObject signature must verify against DID document key")
+
+	// Step 4: Verify claims
+	clientID, _ := token.Get("client_id")
+	assert.Equal(t, verifierDID, clientID)
+	nonce, _ := token.Get("nonce")
+	assert.Equal(t, session.Nonce, nonce)
+	state, _ := token.Get("state")
+	assert.Equal(t, session.SessionID, state)
+
+	presDef, _ := token.Get("presentation_definition")
+	presDefMap := presDef.(map[string]interface{})
+	assert.Equal(t, "pack.childcare.readiness.es", presDefMap["id"])
+
+	clientMeta, _ := token.Get("client_metadata")
+	clientMetaMap := clientMeta.(map[string]interface{})
+	assert.Equal(t, "Safe?", clientMetaMap["question"])
+}
+
 // ── Test helpers ──
 
 // buildIntegrationSDJWT builds a valid SD-JWT for integration testing.
@@ -267,7 +361,7 @@ func buildIntegrationSDJWT(t *testing.T, key *ecdsa.PrivateKey, issuer string,
 		sdHashes = append(sdHashes, base64.RawURLEncoding.EncodeToString(hash[:]))
 	}
 
-	claims := jwt.MapClaims{
+	claims := gojwt.MapClaims{
 		"iss":     issuer,
 		"sub":     "did:example:holder",
 		"iat":     time.Now().Unix(),
@@ -279,7 +373,7 @@ func buildIntegrationSDJWT(t *testing.T, key *ecdsa.PrivateKey, issuer string,
 		claims["cnf"] = cnfClaim
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := gojwt.NewWithClaims(gojwt.SigningMethodES256, claims)
 	token.Header["typ"] = "vc+sd-jwt"
 	issuerJWT, err := token.SignedString(key)
 	require.NoError(t, err)
@@ -294,13 +388,13 @@ func buildIntegrationSDJWT(t *testing.T, key *ecdsa.PrivateKey, issuer string,
 
 func buildIntegrationKBJWT(t *testing.T, key *ecdsa.PrivateKey, nonce, aud, sdHash string) string {
 	t.Helper()
-	claims := jwt.MapClaims{
+	claims := gojwt.MapClaims{
 		"nonce":   nonce,
 		"aud":     aud,
 		"iat":     time.Now().Unix(),
 		"sd_hash": sdHash,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := gojwt.NewWithClaims(gojwt.SigningMethodES256, claims)
 	token.Header["typ"] = "kb+jwt"
 	signed, err := token.SignedString(key)
 	require.NoError(t, err)
