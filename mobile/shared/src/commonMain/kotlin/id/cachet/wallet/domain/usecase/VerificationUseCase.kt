@@ -45,6 +45,8 @@ class VerificationUseCase(
      * Verifier creates a verification + relay session and returns info for the QR code.
      */
     suspend fun startVerifierSession(packId: String, question: String, predicates: List<String>): VerifierSessionInfo {
+        require(packId.isNotEmpty()) { "packId must not be empty — check CachPackUi.id is set" }
+
         val session = verifierClient.createSession(
             packId = packId,
             question = question,
