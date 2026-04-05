@@ -47,7 +47,7 @@ func TestGetRequest_Found(t *testing.T) {
 	w := httptest.NewRecorder()
 	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader(payload)))
 	var created map[string]string
-	json.Unmarshal(w.Body.Bytes(), &created)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &created))
 
 	// Get request
 	w2 := httptest.NewRecorder()
@@ -71,7 +71,7 @@ func TestPostResponse(t *testing.T) {
 	w := httptest.NewRecorder()
 	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader([]byte("req"))))
 	var created map[string]string
-	json.Unmarshal(w.Body.Bytes(), &created)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &created))
 	sid := created["sessionId"]
 
 	// Post response
@@ -87,7 +87,7 @@ func TestGetResponse_BeforeHolderPosts(t *testing.T) {
 	w := httptest.NewRecorder()
 	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader([]byte("req"))))
 	var created map[string]string
-	json.Unmarshal(w.Body.Bytes(), &created)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &created))
 
 	// Poll before holder responds — should get 204
 	w2 := httptest.NewRecorder()
@@ -101,7 +101,7 @@ func TestGetResponse_AfterHolderPosts(t *testing.T) {
 	w := httptest.NewRecorder()
 	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader([]byte("req"))))
 	var created map[string]string
-	json.Unmarshal(w.Body.Bytes(), &created)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &created))
 	sid := created["sessionId"]
 
 	// Holder posts response
@@ -135,7 +135,7 @@ func TestFullFlow(t *testing.T) {
 	s.Router().ServeHTTP(w1, httptest.NewRequest(http.MethodPost, "/sessions", bytes.NewReader(requestObj)))
 	require.Equal(t, http.StatusOK, w1.Code)
 	var created map[string]string
-	json.Unmarshal(w1.Body.Bytes(), &created)
+	require.NoError(t, json.Unmarshal(w1.Body.Bytes(), &created))
 	sid := created["sessionId"]
 
 	// 2. Holder scans QR, fetches request

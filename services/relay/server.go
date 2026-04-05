@@ -64,7 +64,7 @@ func (s *Server) handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.WriteHeader(http.StatusOK)
-	w.Write(request)
+	_, _ = w.Write(request)
 }
 
 // handlePostResponse stores the holder's response (encrypted VP).
@@ -102,5 +102,5 @@ func (s *Server) handleGetResponse(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	_, _ = w.Write(response)
 }
