@@ -1,11 +1,13 @@
 package id.cachet.wallet.android.ui
 
+import android.content.Intent
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -52,6 +54,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     val uiState by viewModel.uiState.collectAsState()
     val activityState by viewModel.activityState.collectAsState()
 
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isOnboarded by remember { mutableStateOf(demoMode || demoEmpty) }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -104,6 +107,15 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                     ),
                     onBack = { overlay = null; qrPayload = "" },
                     onClose = { overlay = null; qrPayload = "" },
+                    onShareLink = {
+                        if (qrPayload.isNotBlank()) {
+                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                putExtra(Intent.EXTRA_TEXT, qrPayload)
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, "Share verification link"))
+                        }
+                    },
                     onScanSimulated = {
                         scope.launch {
                             val relayQr = qrPayload
