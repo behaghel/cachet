@@ -192,11 +192,13 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                             )
                         },
                         onCardTapped = { card ->
+                            val type = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
                             val syntheticPack = CachPackUi(
+                                id = defaultPackIdForType(type),
                                 question = card.displayName,
                                 description = card.predicates.joinToString(", "),
                                 proofCount = card.predicates.size,
-                                cachetType = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
+                                cachetType = type
                             )
                             overlay = OverlayScreen.QrShare(
                                 question = card.displayName,
@@ -215,6 +217,13 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
             }
         }
     }
+}
+
+private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.CachetType): String = when (type) {
+    id.cachet.wallet.android.ui.components.CachetType.CHILDCARE -> "pack.childcare.readiness.es"
+    id.cachet.wallet.android.ui.components.CachetType.SELLER -> "pack.safe.seller"
+    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.childcare.readiness"
+    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.childcare.readiness.es"
 }
 
 // ── Transient screens (loading, error, verification) ──
