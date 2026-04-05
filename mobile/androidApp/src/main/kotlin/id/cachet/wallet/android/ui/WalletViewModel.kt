@@ -39,17 +39,55 @@ class WalletViewModel(
         if (demoEmpty) {
             _uiState.value = WalletUiState.Empty
         } else if (demoMode) {
-            _uiState.value = WalletUiState.HasCredentials(
-                credentials = DemoFixtures.credentials,
-                vaultSummary = DemoFixtures.vaultSummary
-            )
+            loadDemoCredentials()
+        } else {
+            loadCredentials()
+            loadActivity()
+        }
+    }
+
+    /**
+     * Demo mode: try real SD-JWT issuance against running backend (Option B),
+     * fall back to static fixtures (Option A) if backend unavailable.
+     */
+    private fun loadDemoCredentials() {
+        viewModelScope.launch {
+            // Option B: attempt real SD-JWT issuance
+            val realResult = try {
+                issuanceUseCase.requestSDJWTCredential(
+                    clientId = "cachet-android-wallet",
+                    credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+                    sessionId = "demo-session"
+                )
+            } catch (e: Exception) {
+                Log.d(TAG, "Demo: backend unavailable, using static fixtures", e)
+                null
+            }
+
+            if (realResult?.isSuccess == true) {
+                Log.d(TAG, "Demo: issued real SD-JWT credential from backend")
+                val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
+                _uiState.value = if (credentials.isEmpty()) {
+                    WalletUiState.Empty
+                } else {
+                    WalletUiState.HasCredentials(
+                        credentials = credentials.map { CredentialMapper.toCardUi(it) },
+                        vaultSummary = CredentialMapper.toVaultSummary(credentials)
+                    )
+                }
+            } else {
+                // Option A: static demo fixtures (offline)
+                Log.d(TAG, "Demo: using static fixtures")
+                _uiState.value = WalletUiState.HasCredentials(
+                    credentials = DemoFixtures.credentials,
+                    vaultSummary = DemoFixtures.vaultSummary
+                )
+            }
+
             _activityState.value = ActivityUiState(
                 historyGroups = DemoFixtures.historyGroups,
                 receipts = DemoFixtures.receipts
             )
-        } else {
-            loadCredentials()
-            loadActivity()
         }
     }
 
@@ -147,12 +185,27 @@ class WalletViewModel(
     }
 
     private suspend fun requestCredentialWithSession(sessionId: String) {
+        // Try SD-JWT path first (hardware-backed key + selective disclosure)
+        val sdJwtResult = issuanceUseCase.requestSDJWTCredential(
+            clientId = "cachet-android-wallet",
+            credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
+            sessionId = sessionId
+        )
+
+        if (sdJwtResult.isSuccess) {
+            Log.d(TAG, "SD-JWT credential issued: ${sdJwtResult.getOrNull()?.localId}")
+            loadCredentials()
+            return
+        }
+
+        // Fall back to legacy JSON format
+        Log.w(TAG, "SD-JWT issuance failed, falling back to legacy", sdJwtResult.exceptionOrNull())
         issuanceUseCase.requestCredential(
             clientId = "cachet-android-wallet",
             credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
             sessionId = sessionId
         ).onSuccess { credential ->
-            Log.d(TAG, "Credential issued successfully: ${credential.localId}")
+            Log.d(TAG, "Legacy credential issued: ${credential.localId}")
             loadCredentials()
         }.onFailure { exception ->
             Log.e(TAG, "Credential issuance failed", exception)

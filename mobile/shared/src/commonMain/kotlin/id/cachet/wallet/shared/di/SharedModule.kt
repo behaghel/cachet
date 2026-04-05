@@ -5,6 +5,7 @@ import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.SqlDelightConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import id.cachet.wallet.domain.repository.HttpTransparencyLogRepository
+import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
@@ -73,11 +74,15 @@ val sharedModule = module {
         )
     }
 
+    // Key management (hardware-backed on Android)
+    single { KeyManager() }
+
     // Use cases
     single {
         IssuanceUseCase(
             credentialRepository = get(),
-            openID4VCIClient = get()
+            openID4VCIClient = get(),
+            keyManager = get()
         )
     }
 
@@ -93,7 +98,8 @@ val sharedModule = module {
         VerificationUseCase(
             credentialRepository = get(),
             verifierClient = get(),
-            consentUseCase = get()
+            consentUseCase = get(),
+            keyManager = get()
         )
     }
 }
