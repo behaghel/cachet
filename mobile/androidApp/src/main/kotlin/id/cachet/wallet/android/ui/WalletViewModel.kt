@@ -78,12 +78,16 @@ class WalletViewModel(
     suspend fun fetchRequestFromRelay(qrPayload: String): VerificationRequest? {
         return try {
             val requestUri = parseRequestUri(qrPayload) ?: return null
-            val request = verificationUseCase.fetchVerificationRequest(requestUri)
+            val verifiedRequest = verificationUseCase.fetchVerificationRequest(requestUri)
+            val payload = verifiedRequest.payload
+            Log.d(TAG, "Request fetched from relay (verified=${verifiedRequest.isVerified}, verifier=${verifiedRequest.verifierName})")
             VerificationRequest(
-                question = request.question,
-                predicates = request.predicates.map { RequestPredicate(claim = it, privacyNote = "Only yes/no shared") },
+                question = payload.question,
+                predicates = payload.predicates.map { RequestPredicate(claim = it, privacyNote = "Only yes/no shared") },
                 retentionDays = 90,
-                loggedInTransparencyLog = true
+                loggedInTransparencyLog = true,
+                verifierName = verifiedRequest.verifierName,
+                isVerifierVerified = verifiedRequest.isVerified
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch request from relay", e)

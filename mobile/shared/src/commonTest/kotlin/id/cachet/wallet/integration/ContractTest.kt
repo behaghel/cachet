@@ -97,7 +97,7 @@ class ContractTest {
     // ── VerificationSession contracts ──
 
     @Test
-    fun `VerificationSession - with ephemeral key`() {
+    fun `VerificationSession - with ephemeral key and request object`() {
         val input = VERIFICATION_SESSION
         val sess = json.decodeFromString<VerificationSession>(input)
 
@@ -106,6 +106,8 @@ class ContractTest {
         assertEquals("did:web:verifier.cachet.id", sess.verifierDid)
         assertNotNull(sess.ephemeralPubKey, "ephemeralPubKey must be deserialized")
         assertEquals("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", sess.ephemeralPubKey)
+        assertNotNull(sess.requestObject, "requestObject must be deserialized")
+        assertTrue(sess.requestObject!!.startsWith("eyJ"), "requestObject is a JWT")
     }
 
     @Test
@@ -227,7 +229,8 @@ class ContractTest {
           "sessionId": "test-session-123",
           "nonce": "dGVzdC1ub25jZQ",
           "verifierDid": "did:web:verifier.cachet.id",
-          "ephemeralPubKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          "ephemeralPubKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "requestObject": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dmVyaWZpZXIuY2FjaGV0LmlkI2tleS0xIiwidHlwIjoib2F1dGgtYXV0aHotcmVxK2p3dCJ9.eyJjbGllbnRfaWQiOiJkaWQ6d2ViOnZlcmlmaWVyLmNhY2hldC5pZCJ9.fake-sig"
         }
         """.trimIndent()
 

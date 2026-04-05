@@ -1,7 +1,9 @@
 package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.config.AppConfig
+import id.cachet.wallet.domain.crypto.DIDResolver
 import id.cachet.wallet.domain.crypto.JWEEncryptor
+import id.cachet.wallet.domain.crypto.JWSVerifier
 import id.cachet.wallet.domain.crypto.KBJWTBuilder
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.crypto.SDJWTParser
@@ -11,6 +13,9 @@ import id.cachet.wallet.network.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Use case for verifying stored credentials against Trust Packs.
@@ -25,7 +30,8 @@ class VerificationUseCase(
     private val verifierClient: VerifierClient,
     private val relayClient: RelayClient,
     private val consentUseCase: ConsentUseCase,
-    private val keyManager: KeyManager? = null
+    private val keyManager: KeyManager? = null,
+    private val didResolver: DIDResolver? = null
 ) {
 
     companion object {
@@ -39,16 +45,25 @@ class VerificationUseCase(
      * Verifier creates a verification + relay session and returns info for the QR code.
      */
     suspend fun startVerifierSession(packId: String, question: String, predicates: List<String>): VerifierSessionInfo {
-        val session = verifierClient.createSession()
-
-        val payload = VerificationRequestPayload(
-            nonce = session.nonce,
-            verifierDid = session.verifierDid,
+        val session = verifierClient.createSession(
             packId = packId,
             question = question,
             predicates = predicates
         )
-        val payloadBytes = Json.encodeToString(VerificationRequestPayload.serializer(), payload).encodeToByteArray()
+
+        // Store signed Request Object in relay if available, otherwise fall back to plaintext JSON
+        val payloadBytes: ByteArray = if (session.requestObject != null) {
+            session.requestObject.encodeToByteArray()
+        } else {
+            val payload = VerificationRequestPayload(
+                nonce = session.nonce,
+                verifierDid = session.verifierDid,
+                packId = packId,
+                question = question,
+                predicates = predicates
+            )
+            Json.encodeToString(VerificationRequestPayload.serializer(), payload).encodeToByteArray()
+        }
         val relaySession = relayClient.createSession(payloadBytes)
 
         val requestUri = "${AppConfig.relayUrl}${relaySession.requestUri}"
@@ -94,17 +109,95 @@ class VerificationUseCase(
 
     /**
      * Holder fetches the verification request from the relay.
+     * If the content is a signed JWT (JWS), verifies the signature against the verifier's DID
+     * and returns verified identity info. Otherwise parses as plaintext JSON.
      */
-    suspend fun fetchVerificationRequest(requestUri: String): VerificationRequestPayload {
+    suspend fun fetchVerificationRequest(requestUri: String): VerifiedRequest {
         val bytes = relayClient.fetchRequest(requestUri)
-        return Json.decodeFromString(VerificationRequestPayload.serializer(), bytes.decodeToString())
+        val content = bytes.decodeToString()
+
+        // Detect JWS: 3 dot-separated parts starting with eyJ (base64url JSON)
+        if (content.count { it == '.' } == 2 && content.startsWith("eyJ")) {
+            return verifyAndParseRequestObject(content)
+        }
+
+        // Fallback: plaintext JSON (backward compat)
+        val payload = Json.decodeFromString(VerificationRequestPayload.serializer(), content)
+        return VerifiedRequest(payload = payload, isVerified = false)
+    }
+
+    private suspend fun verifyAndParseRequestObject(jwsCompact: String): VerifiedRequest {
+        // Extract client_id from unverified payload to know which DID to resolve
+        val payloadPart = jwsCompact.split(".")[1]
+        val payloadJson = decodeBase64Url(payloadPart).decodeToString()
+        val unverified = Json.parseToJsonElement(payloadJson).jsonObject
+        val clientId = unverified["client_id"]?.jsonPrimitive?.content
+            ?: throw SecurityException("Missing client_id in request object")
+
+        // Extract kid from JWS header
+        val headerPart = jwsCompact.split(".")[0]
+        val headerJson = decodeBase64Url(headerPart).decodeToString()
+        val header = Json.parseToJsonElement(headerJson).jsonObject
+        val kid = header["kid"]?.jsonPrimitive?.content
+
+        // Resolve verifier DID to public key
+        val resolver = didResolver ?: throw SecurityException("DID resolver not configured")
+        val publicKeyJWK = resolver.resolvePublicKeyJWK(clientId, kid)
+
+        // Verify JWS signature
+        val verifier = JWSVerifier()
+        val verifiedPayload = verifier.verify(jwsCompact, publicKeyJWK)
+
+        // Parse verified claims
+        val claims = Json.parseToJsonElement(verifiedPayload).jsonObject
+        val clientMetadata = claims["client_metadata"]?.jsonObject
+        val presDefId = claims["presentation_definition"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+
+        val predicates = clientMetadata?.get("predicates")?.jsonArray
+            ?.map { it.jsonPrimitive.content } ?: emptyList()
+
+        return VerifiedRequest(
+            payload = VerificationRequestPayload(
+                nonce = claims["nonce"]?.jsonPrimitive?.content ?: "",
+                verifierDid = clientId,
+                packId = presDefId ?: "",
+                question = clientMetadata?.get("question")?.jsonPrimitive?.content ?: "",
+                predicates = predicates
+            ),
+            verifierName = clientMetadata?.get("client_name")?.jsonPrimitive?.content,
+            isVerified = true
+        )
+    }
+
+    private fun decodeBase64Url(s: String): ByteArray {
+        val padded = s + "=".repeat((4 - s.length % 4) % 4)
+        val standard = padded.replace('-', '+').replace('_', '/')
+        // Use the same base64 decode as KBJWTBuilder (custom multiplatform impl)
+        return decodeBase64(standard)
+    }
+
+    private fun decodeBase64(s: String): ByteArray {
+        val table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        val result = mutableListOf<Byte>()
+        var i = 0
+        while (i < s.length) {
+            val a = if (s[i] != '=') table.indexOf(s[i]) else 0
+            val b = if (i + 1 < s.length && s[i + 1] != '=') table.indexOf(s[i + 1]) else 0
+            val c = if (i + 2 < s.length && s[i + 2] != '=') table.indexOf(s[i + 2]) else 0
+            val d = if (i + 3 < s.length && s[i + 3] != '=') table.indexOf(s[i + 3]) else 0
+            result.add(((a shl 2) or (b shr 4)).toByte())
+            if (i + 2 < s.length && s[i + 2] != '=') result.add((((b and 0xF) shl 4) or (c shr 2)).toByte())
+            if (i + 3 < s.length && s[i + 3] != '=') result.add((((c and 0x3) shl 6) or d).toByte())
+            i += 4
+        }
+        return result.toByteArray()
     }
 
     /**
      * Holder builds an SD-JWT presentation and posts it to the relay.
      */
     suspend fun respondViaRelay(requestUri: String, credentialId: String, verifierPubKey: String? = null) {
-        val request = fetchVerificationRequest(requestUri)
+        val request = fetchVerificationRequest(requestUri).payload
 
         val stored = credentialRepository.getCredentialById(credentialId)
             ?: throw Exception("Credential not found: $credentialId")
@@ -289,6 +382,13 @@ data class VerifierSessionInfo(
     val relayResponseUri: String,
     val verificationSessionId: String,
     val packId: String
+)
+
+/** Holder-side result of fetching and verifying the Request Object from the relay. */
+data class VerifiedRequest(
+    val payload: VerificationRequestPayload,
+    val verifierName: String? = null,
+    val isVerified: Boolean = false
 )
 
 /** Result of verifying a credential against a Trust Pack. */

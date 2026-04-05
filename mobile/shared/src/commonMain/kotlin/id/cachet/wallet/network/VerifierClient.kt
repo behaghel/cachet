@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 
 interface VerifierClient {
     suspend fun listPacks(): List<PackSummary>
-    suspend fun createSession(): VerificationSession
+    suspend fun createSession(packId: String? = null, question: String? = null, predicates: List<String>? = null): VerificationSession
     suspend fun verifyPresentation(policyId: String, credentials: List<VerifiableCredentialDTO>): VerifyResponseDTO
     suspend fun verifySDJWTPresentation(policyId: String, sdJwtCredentials: List<String>, sessionId: String? = null): VerifyResponseDTO
 }
@@ -19,7 +19,8 @@ data class VerificationSession(
     val sessionId: String,
     val nonce: String,
     val verifierDid: String,
-    val ephemeralPubKey: String? = null // base64url X25519 public key for E2E encryption
+    val ephemeralPubKey: String? = null, // base64url X25519 public key for E2E encryption
+    val requestObject: String? = null    // signed JWT (JWS) Request Object
 )
 
 @Serializable
@@ -100,10 +101,17 @@ class KtorVerifierClient(
     private val baseUrl: String
 ) : VerifierClient {
 
-    override suspend fun createSession(): VerificationSession {
+    override suspend fun createSession(packId: String?, question: String?, predicates: List<String>?): VerificationSession {
         try {
             val response: HttpResponse = httpClient.post("$baseUrl/sessions") {
                 contentType(ContentType.Application.Json)
+                if (packId != null || question != null || predicates != null) {
+                    setBody(mapOf(
+                        "packId" to packId,
+                        "question" to question,
+                        "predicates" to predicates
+                    ).filterValues { it != null })
+                }
             }
             if (response.status.isSuccess()) {
                 return response.body<VerificationSession>()

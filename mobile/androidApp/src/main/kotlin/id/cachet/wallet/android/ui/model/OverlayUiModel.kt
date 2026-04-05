@@ -18,7 +18,9 @@ data class VerificationRequest(
     val question: String,
     val predicates: List<RequestPredicate>,
     val retentionDays: Int = 90,
-    val loggedInTransparencyLog: Boolean = true
+    val loggedInTransparencyLog: Boolean = true,
+    val verifierName: String? = null,
+    val isVerifierVerified: Boolean = false
 )
 
 data class PredicateResult(
