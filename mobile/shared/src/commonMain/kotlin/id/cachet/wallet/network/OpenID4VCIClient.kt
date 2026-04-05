@@ -32,7 +32,7 @@ data class TokenResponse(
 data class CredentialRequest(
     val format: String,
     val types: List<String>,
-    val proof: Map<String, String>? = null
+    val proof: kotlinx.serialization.json.JsonObject? = null
 )
 
 @Serializable
@@ -113,7 +113,9 @@ class KtorOpenID4VCIClient(
             val request = CredentialRequest(
                 format = "vc+sd-jwt",
                 types = types,
-                proof = mapOf("jwk" to holderJWK)
+                proof = kotlinx.serialization.json.buildJsonObject {
+                    put("jwk", kotlinx.serialization.json.Json.parseToJsonElement(holderJWK))
+                }
             )
 
             val response: HttpResponse = httpClient.post("$baseUrl/credential") {
