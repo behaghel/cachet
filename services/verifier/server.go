@@ -13,6 +13,7 @@ import (
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/verifier/internal/eval"
+	"github.com/cachet-id/cachet/services/verifier/internal/jwe"
 	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 	"github.com/cachet-id/cachet/services/verifier/internal/session"
 	"github.com/cachet-id/cachet/services/verifier/internal/statuslist"
@@ -118,8 +119,10 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 	if len(req.SDJWTCredentials) > 0 && s.didResolver != nil {
 		// Consume session nonce if session ID provided
 		var expectedNonce, expectedAud string
+		var sess *session.Session
 		if req.SessionId != "" {
-			sess, err := s.sessions.Consume(req.SessionId)
+			var err error
+			sess, err = s.sessions.Consume(req.SessionId)
 			if err != nil {
 				log.Ctx(r.Context()).Warn().Err(err).Str("session_id", req.SessionId).Msg("session validation failed")
 				common.WriteError(w, r, http.StatusBadRequest, "invalid_session", "Session validation failed: "+err.Error())
@@ -130,7 +133,21 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 		}
 
 		var verifiedClaims []*eval.VerifiedClaims
-		for i, sdJWT := range req.SDJWTCredentials {
+		for i, credential := range req.SDJWTCredentials {
+			// Attempt JWE decryption if session has an ephemeral key
+			sdJWT := credential
+			if sess != nil && sess.EphemeralPrivateKey() != nil && jwe.IsJWE(credential) {
+				decrypted, decErr := jwe.Decrypt(credential, sess.EphemeralPrivateKey())
+				if decErr != nil {
+					log.Ctx(r.Context()).Warn().Err(decErr).Int("credential_index", i).Msg("JWE decryption failed")
+					common.WriteError(w, r, http.StatusBadRequest, "decryption_failed",
+						fmt.Sprintf("JWE decryption failed for credential %d: %v", i, decErr))
+					return
+				}
+				sdJWT = string(decrypted)
+				log.Ctx(r.Context()).Info().Int("credential_index", i).Msg("JWE decrypted successfully")
+			}
+
 			vc, err := eval.VerifySDJWT(sdJWT, s.didResolver)
 			if err != nil {
 				log.Ctx(r.Context()).Warn().Err(err).Int("credential_index", i).Msg("SD-JWT verification failed")
