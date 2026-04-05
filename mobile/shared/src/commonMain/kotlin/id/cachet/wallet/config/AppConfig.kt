@@ -37,6 +37,9 @@ object AppConfig {
     var oauthScope: String = "credential_issuance"
         private set
 
+    /** Webhook HMAC secret for mock Veriff service (dev only — matches devenv.nix). */
+    const val DEV_WEBHOOK_SECRET = "dev-secret-do-not-use-in-production"
+
     /**
      * Override configuration values. Call from Application.onCreate()
      * or test setup to inject environment-specific values.

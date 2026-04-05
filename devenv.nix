@@ -726,7 +726,7 @@ EOF
   };
   processes.issuance-gateway = {
     ports.http.allocate = 8090;
-    exec = "cd services/issuance-gateway && PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
+    exec = "cd services/issuance-gateway && VERIFF_WEBHOOK_SECRET=dev-secret-do-not-use-in-production PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
   };
   processes.relay = {
     ports.http.allocate = 8084;
