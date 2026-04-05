@@ -78,9 +78,9 @@ class MockVeriffService : VeriffService {
             "session_id": "$sessionId",
             "status": "approved",
             "person": {
-                "first_name": "Jane",
-                "last_name": "Doe",
-                "date_of_birth": "1995-06-15",
+                "firstName": "Jane",
+                "lastName": "Doe",
+                "dateOfBirth": "1995-06-15",
                 "confidence": 0.96
             },
             "document": {
@@ -90,9 +90,9 @@ class MockVeriffService : VeriffService {
                 "authenticity": 0.97
             },
             "verification": {
-                "liveness_score": 0.93,
-                "overall_confidence": 0.96,
-                "risk_score": 0.03,
+                "livenessScore": 0.93,
+                "overallConfidence": 0.96,
+                "riskScore": 0.03,
                 "timestamp": "$now"
             }
         }
