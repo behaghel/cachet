@@ -20,20 +20,16 @@ Verifier creates relay session → holder fetches → builds KB-JWT presentation
 
 ---
 
-## Phase C: E2E Encryption + Signed Requests (Slices 6-7)
+## Phase C: E2E Encryption + Signed Requests (Slices 6-7) — DONE
 
-**Goal:** Relay cannot read VP claims (T5). Holder verifies verifier identity before disclosing (T6).
+Slice 6: JWE encryption with ephemeral X25519 (ECDH-ES+A256KW / A256GCM).
+Go `lestrrat-go/jwx/v2`, Kotlin `nimbus-jose-jwt` + Tink + BouncyCastle.
+Relay sees only ciphertext. Backward compatible with plaintext.
 
-### C1: Slice 6 — JWE Encryption
-
-**Go (verifier):** Ephemeral X25519 key pair per session. QR includes verifier's ephemeral pubkey. Decrypt incoming JWE.
-**Kotlin (mobile):** Encrypt VP to verifier's ephemeral key before posting to relay.
-**Library:** `go-jose/v4` (Go), Tink (Kotlin)
-
-### C2: Slice 7 — Signed Request Objects
-
-**Go (verifier):** Sign the request object as JWS with verifier's ES256 key.
-**Kotlin (mobile):** Verify JWS before showing consent screen. Display verified verifier name/logo.
+Slice 7: Signed Request Objects (ES256 JWS, `typ: oauth-authz-req+jwt`).
+Verifier signs with identity key, holder verifies via DID resolution
+(`/.well-known/did.json`). Consent screen shows verified verifier name
+or "Unverified requester" warning.
 
 ---
 
