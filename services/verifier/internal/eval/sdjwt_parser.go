@@ -34,9 +34,10 @@ type VerifiedClaims struct {
 	IssuedAt    int64
 	Expiration  int64
 	Claims      map[string]interface{} // merged non-disclosable + verified disclosures
+	Status      map[string]interface{} // credential status (StatusList2021 entry)
 	HolderBound bool                   // true if KB-JWT was verified
-	KBJWTNonce  string                 // nonce from KB-JWT (checked in Slice 4)
-	KBJWTAud    string                 // audience from KB-JWT (checked in Slice 4)
+	KBJWTNonce  string                 // nonce from KB-JWT
+	KBJWTAud    string                 // audience from KB-JWT
 }
 
 // ParseSDJWT splits an SD-JWT string into its components without verifying signatures.
@@ -170,6 +171,7 @@ func VerifySDJWT(raw string, resolver DIDResolver) (*VerifiedClaims, error) {
 	sub, _ := claims["sub"].(string)
 	iat, _ := claims["iat"].(float64)
 	exp, _ := claims["exp"].(float64)
+	status, _ := claims["status"].(map[string]interface{})
 
 	result := &VerifiedClaims{
 		Issuer:     issuer,
@@ -177,6 +179,7 @@ func VerifySDJWT(raw string, resolver DIDResolver) (*VerifiedClaims, error) {
 		IssuedAt:   int64(iat),
 		Expiration: int64(exp),
 		Claims:     mergedClaims,
+		Status:     status,
 	}
 
 	if kbResult != nil {

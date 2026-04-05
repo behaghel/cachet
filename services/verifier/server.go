@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/cachet-id/cachet/services/verifier/internal/eval"
 	"github.com/cachet-id/cachet/services/verifier/internal/pack"
 	"github.com/cachet-id/cachet/services/verifier/internal/session"
+	"github.com/cachet-id/cachet/services/verifier/internal/statuslist"
 )
 
 // VerifierConfig holds injectable dependencies for the verifier.
@@ -25,11 +27,12 @@ type VerifierConfig struct {
 }
 
 type Server struct {
-	router      *chi.Mux
-	packClient  *pack.Client
-	didResolver eval.DIDResolver
-	sessions    *session.Manager
-	verifierDID string
+	router        *chi.Mux
+	packClient    *pack.Client
+	didResolver   eval.DIDResolver
+	sessions      *session.Manager
+	verifierDID   string
+	statusChecker *statuslist.Checker
 }
 
 func NewServer(cfg common.ServerConfig, registryURL string) *Server {
@@ -41,11 +44,12 @@ func NewServer(cfg common.ServerConfig, registryURL string) *Server {
 
 func NewServerWithConfig(cfg VerifierConfig) *Server {
 	s := &Server{
-		router:      common.NewRouter(cfg.Common),
-		packClient:  pack.NewClient(cfg.RegistryURL),
-		didResolver: cfg.DIDResolver,
-		sessions:    session.NewManager(5 * time.Minute),
-		verifierDID: cfg.VerifierDID,
+		router:        common.NewRouter(cfg.Common),
+		packClient:    pack.NewClient(cfg.RegistryURL),
+		didResolver:   cfg.DIDResolver,
+		sessions:      session.NewManager(5 * time.Minute),
+		verifierDID:   cfg.VerifierDID,
+		statusChecker: statuslist.NewChecker(),
 	}
 	s.router.Get("/packs", s.handleListPacks)
 	s.router.Post("/sessions", s.handleCreateSession)
@@ -143,6 +147,23 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 				if expectedAud != "" && vc.KBJWTAud != expectedAud {
 					common.WriteError(w, r, http.StatusBadRequest, "audience_mismatch", "KB-JWT audience does not match verifier")
 					return
+				}
+			}
+
+			// Check revocation via StatusList2021
+			if vc.Status != nil {
+				slURL, _ := vc.Status["statusListCredential"].(string)
+				slIdxStr, _ := vc.Status["statusListIndex"].(string)
+				if slURL != "" && slIdxStr != "" {
+					var slIdx int
+					fmt.Sscanf(slIdxStr, "%d", &slIdx)
+					revoked, err := s.statusChecker.IsRevoked(slURL, slIdx)
+					if err != nil {
+						log.Ctx(r.Context()).Warn().Err(err).Str("url", slURL).Msg("revocation check failed")
+					} else if revoked {
+						common.WriteError(w, r, http.StatusBadRequest, "credential_revoked", "Credential has been revoked")
+						return
+					}
 				}
 			}
 

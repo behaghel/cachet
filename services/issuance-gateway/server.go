@@ -22,6 +22,7 @@ import (
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/statuslist"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 )
 
@@ -59,12 +60,13 @@ func DefaultServerConfig() ServerConfig {
 }
 
 type Server struct {
-	router        *chi.Mux
-	signingKey    *rsa.PrivateKey
-	issuerKey     *ecdsa.PrivateKey
-	issuerKeyID   string
-	sessions      veriff.SessionStore
-	webhookSecret string
+	router          *chi.Mux
+	signingKey      *rsa.PrivateKey
+	issuerKey       *ecdsa.PrivateKey
+	issuerKeyID     string
+	sessions        veriff.SessionStore
+	webhookSecret   string
+	statusListStore *statuslist.Store
 }
 
 func NewServer() *Server {
@@ -72,17 +74,21 @@ func NewServer() *Server {
 }
 
 func NewServerWithConfig(cfg ServerConfig) *Server {
+	slStore := statuslist.NewStore()
 	s := &Server{
-		router:        common.NewRouter(cfg.Common),
-		signingKey:    cfg.SigningKey,
-		issuerKey:     cfg.IssuerKey,
-		issuerKeyID:   cfg.IssuerKeyID,
-		sessions:      cfg.Sessions,
-		webhookSecret: cfg.WebhookSecret,
+		router:          common.NewRouter(cfg.Common),
+		signingKey:      cfg.SigningKey,
+		issuerKey:       cfg.IssuerKey,
+		issuerKeyID:     cfg.IssuerKeyID,
+		sessions:        cfg.Sessions,
+		webhookSecret:   cfg.WebhookSecret,
+		statusListStore: slStore,
 	}
 
 	s.router.Post("/oauth/token", s.handleOAuthToken)
 	s.router.Post("/credential", s.handleCredentialIssuance)
+	s.router.Get("/status/{listId}", s.handleGetStatusList)
+	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 
 	return s
@@ -178,7 +184,15 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID, holderJWK)
+		// Allocate status list index for revocation support
+		statusIndex, err := s.statusListStore.AllocateIndex("1")
+		if err != nil {
+			log.Ctx(r.Context()).Error().Err(err).Msg("status list index allocation failed")
+			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to allocate credential status")
+			return
+		}
+
+		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID, holderJWK, statusIndex)
 		if err != nil {
 			log.Ctx(r.Context()).Error().Err(err).Msg("SD-JWT credential building failed")
 			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to build credential")
@@ -258,5 +272,43 @@ func (s *Server) handleVeriffWebhook(w http.ResponseWriter, r *http.Request) {
 		Str("quality_level", validation.QualityLevel).
 		Float64("confidence", validation.Confidence).
 		Msg("session stored")
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleGetStatusList(w http.ResponseWriter, r *http.Request) {
+	listID := chi.URLParam(r, "listId")
+	encoded, err := s.statusListStore.GetEncoded(listID)
+	if err != nil {
+		common.WriteError(w, r, http.StatusNotFound, "not_found", "Status list not found")
+		return
+	}
+	purpose, _ := s.statusListStore.GetPurpose(listID)
+
+	w.Header().Set("Cache-Control", "max-age=300")
+	common.WriteJSON(w, r, http.StatusOK, map[string]string{
+		"id":          "https://cachet.id/status/" + listID,
+		"type":        "BitstringStatusListCredential",
+		"purpose":     purpose,
+		"encodedList": encoded,
+	})
+}
+
+func (s *Server) handleRevoke(w http.ResponseWriter, r *http.Request) {
+	listID := chi.URLParam(r, "listId")
+
+	var req struct {
+		Index int `json:"index"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
+		return
+	}
+
+	if err := s.statusListStore.Revoke(listID, req.Index); err != nil {
+		common.WriteError(w, r, http.StatusBadRequest, "revoke_failed", err.Error())
+		return
+	}
+
+	log.Ctx(r.Context()).Info().Str("list_id", listID).Int("index", req.Index).Msg("credential revoked")
 	w.WriteHeader(http.StatusOK)
 }

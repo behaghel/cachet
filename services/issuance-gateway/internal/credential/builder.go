@@ -16,7 +16,7 @@ import (
 // Non-disclosable claims: iss, sub, iat, exp, _sd_alg, cnf, status, vct.
 // holderJWK is the holder's public key as a JWK map — embedded in cnf for holder binding.
 // If nil, cnf is omitted (no holder binding).
-func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string, holderJWK map[string]interface{}) (string, error) {
+func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string, holderJWK map[string]interface{}, statusListIndex int) (string, error) {
 	now := time.Now()
 	expiration := now.Add(90 * 24 * time.Hour)
 
@@ -31,8 +31,11 @@ func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationRe
 		"jti": credentialID,
 		"vct": types,
 		"status": map[string]interface{}{
-			"id":   fmt.Sprintf("https://cachet.id/status/1#%s", uuid.New().String()),
-			"type": "StatusList2021Entry",
+			"id":                   fmt.Sprintf("https://cachet.id/status/1#%d", statusListIndex),
+			"type":                 "StatusList2021Entry",
+			"statusPurpose":        "revocation",
+			"statusListIndex":      fmt.Sprintf("%d", statusListIndex),
+			"statusListCredential": "https://cachet.id/status/1",
 		},
 	}
 
