@@ -724,7 +724,7 @@ EOF
   # Fixed ports — mobile app hardcodes these (10.0.2.2:<port> from emulator).
   # We hardcode PORT in exec instead of using ports.http.allocate, because
   # allocate silently picks a different port if an orphan holds ours.
-  processes.verifier.exec = "cd services/verifier && PORT=8081 go run .";
+  processes.verifier.exec = "cd services/verifier && CACHET_VERIFIER_DID='did:web:10.0.2.2%3A8081' PORT=8081 go run .";
   processes.registry.exec = "cd services/registry && PORT=8082 go run .";
   processes.receipts.exec = "cd services/receipts-log && PORT=8083 go run .";
   processes.issuance-gateway.exec = "cd services/issuance-gateway && VERIFF_WEBHOOK_SECRET=dev-secret-do-not-use-in-production PORT=8090 go run .";
