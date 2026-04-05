@@ -117,13 +117,13 @@ class WalletViewModel(
             loadActivity()
 
             CachetResult(
-                cachetName = result.badge.ifEmpty { session.packId },
+                cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
                 allPassed = result.summary?.badgeGranted ?: result.badge.isNotEmpty(),
                 passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
                 totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
                 predicates = result.predicateResults.map { p ->
                     PredicateResult(
-                        label = p.predicateId,
+                        label = humanizePredicateId(p.predicateId),
                         passed = p.status == "satisfied",
                         failReason = p.reason
                     )
@@ -159,6 +159,26 @@ class WalletViewModel(
 
     private fun parseRequestUri(qrPayload: String): String? = parseQrParam(qrPayload, "request_uri")
     private fun parseVerifierPubKey(qrPayload: String): String? = parseQrParam(qrPayload, "vk")
+
+    private fun humanizePredicateId(id: String): String = when (id) {
+        "age.ge.18" -> "Age 18+"
+        "age.ge.21" -> "Age 21+"
+        "identity.verified" -> "Identity verified"
+        "criminal.clear.es" -> "Criminal record clear (ES)"
+        "firstaid.valid.es" -> "First aid certificate (ES)"
+        "references.verified" -> "References verified"
+        "liveness.verified" -> "Liveness check"
+        else -> id.replace(".", " ").replaceFirstChar { it.uppercase() }
+    }
+
+    private fun humanizePackId(id: String): String = when (id) {
+        "pack.childcare.readiness.es" -> "Childcare Ready (ES)"
+        "pack.childcare.readiness" -> "Childcare Ready"
+        "pack.childcare.readiness.fr" -> "Childcare Ready (FR)"
+        "pack.childcare.readiness.ee" -> "Childcare Ready (EE)"
+        "pack.safe.seller" -> "Safe Seller"
+        else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
+    }
 
     // ── Existing flows ──
 
