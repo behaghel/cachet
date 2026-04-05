@@ -5,7 +5,7 @@ let
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
 
   # Service list — single source of truth for all per-service scripts
-  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" ];
+  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" ];
   forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
 in
 {
@@ -62,6 +62,7 @@ in
   env.CACHET_REGISTRY_PORT = toString config.processes.registry.ports.http.value;
   env.CACHET_RECEIPTS_PORT = toString config.processes.receipts.ports.http.value;
   env.CACHET_ISSUANCE_PORT = toString config.processes.issuance-gateway.ports.http.value;
+  env.CACHET_RELAY_PORT = toString config.processes.relay.ports.http.value;
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -212,6 +213,7 @@ in
     curl -f http://localhost:$CACHET_REGISTRY_PORT/health && echo "✅ Registry healthy"
     curl -f http://localhost:$CACHET_RECEIPTS_PORT/health && echo "✅ Receipts healthy"
     curl -f http://localhost:$CACHET_ISSUANCE_PORT/health && echo "✅ Issuance gateway healthy"
+    curl -f http://localhost:$CACHET_RELAY_PORT/health && echo "✅ Relay healthy"
     devenv processes stop
   '';
   scripts."android:emulator".exec = ''
@@ -725,6 +727,10 @@ EOF
   processes.issuance-gateway = {
     ports.http.allocate = 8090;
     exec = "cd services/issuance-gateway && PORT=${toString config.processes.issuance-gateway.ports.http.value} go run .";
+  };
+  processes.relay = {
+    ports.http.allocate = 8084;
+    exec = "cd services/relay && PORT=${toString config.processes.relay.ports.http.value} go run .";
   };
 
   # Pre-commit hooks for consistent build cycle
