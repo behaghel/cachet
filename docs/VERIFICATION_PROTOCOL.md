@@ -1,6 +1,6 @@
 # Verification Protocol
 
-> Revision 2.1 — 2026-04-05 (implementation status update)
+> Revision 3 — 2026-04-05 (pure spec: moved implementation tracking to SECURITY_HARDENING_PLAN.md)
 > Revision 2 — 2026-04-04 (full spec rewrite: threat model, crypto requirements, phases)
 > Revision 1 — 2026-03-28 (flow sketch only)
 
@@ -348,43 +348,20 @@ When fully implemented, the protocol provides:
 
 ---
 
-## 7. Implementation Phases
+## 7. Future Directions
 
-### Phase 1 — MVP
+The MVP protocol (Sections 1–6) uses SD-JWT with selective disclosure. Known limitations and their planned mitigations:
 
-**Goal:** Cryptographically sound verification with all P0 security properties.
+| Limitation | Mitigation | Mechanism |
+|-----------|------------|-----------|
+| Cross-presentation correlation (T10) | **BBS+ signatures** | Data Integrity `bbs-2023` — unlinkable derived proofs |
+| Holder DID correlation | **Pairwise / pseudonymous DIDs** | Per-verifier holder identifiers |
+| Predicate boundary leakage | **ZK predicate proofs** | ZK-SNARKs (Plonk/Halo2) — prove `age >= 18` without disclosing age |
+| StatusList index as persistent ID | **Accumulator-based revocation** | Holder proves non-revocation without revealing credential index |
+| Credential instance linkability | **Batch issuance** | Multiple short-lived instances; each presentation uses a different one |
+| Relay metadata correlation | **Multi-relay + Tor/mixnet** | Anonymized transport layer; holder and verifier via different relays |
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| SD-JWT VC issuance (ES256 signing, `_sd` arrays, disclosures) | **Implemented** | `sdjwt.go` in issuance-gateway (Slice 1) |
-| SD-JWT VC parsing (issuer JWT + disclosures + KB-JWT) | **Implemented** | `sdjwt_parser.go` in verifier (Slice 2) |
-| Issuer signature verification (DID resolution → pubkey → JWS verify) | **Implemented** | `StaticDIDResolver` + JWS verify (Slice 2) |
-| KB-JWT generation (holder side) with hardware-backed key | **Implemented** | `KBJWTBuilder.kt` + Android KeyStore `KeyManager` (Slice 3b) |
-| KB-JWT verification (verifier side) with sd_hash | **Implemented** | `kbjwt.go` in verifier (Slice 3a) |
-| Nonce generation and session binding | **Implemented** | `session.go` + `POST /sessions` endpoint (Slice 4) |
-| Nonce + audience validation in KB-JWT | **Implemented** | Verifier checks nonce + aud from session (Slice 4) |
-| End-to-end SD-JWT presentation flow (mobile) | **Implemented** | `VerificationUseCase` orchestrates session → KB-JWT → verify (Slice 5) |
-| HMAC webhook verification (fail-closed) | **Implemented** | Rejects when secret unset (Slice 0) |
-| Predicate evaluation engine | **Implemented** | Works with both legacy JSON and verified SD-JWT claims |
-| Consent screen with exact claim list | **Implemented** | Mobile wallet shows "Only these facts" |
-| E2E encryption (JWE with ephemeral X25519) | Planned | Currently: plaintext on relay (Slice 6) |
-| Signed Request Objects (verifier authentication) | Planned | Currently: unsigned request (Slice 7) |
-| StatusList2021 fetch and check | Planned | Type exists, no fetch logic (Slice 8) |
-| Biometric gate for KB-JWT signing | Planned | KeyStore supports it, not yet wired |
-
-### Phase 2 — v2
-
-**Goal:** Unlinkability, advanced privacy, and zero-knowledge predicates.
-
-| Component | Description |
-|-----------|-------------|
-| **BBS+ signatures** | Replace SD-JWT issuer signatures with BBS+ (Data Integrity `bbs-2023`). Enables unlinkable derived proofs — colluding verifiers cannot correlate the same holder across presentations. |
-| **Pairwise / pseudonymous holder DIDs** | Per-verifier holder identifiers. Prevents cross-verifier correlation via DID. |
-| **ZK predicate proofs** | Prove `age >= 18` without disclosing age at all — not even the predicate result leaks the boundary. Uses ZK-SNARKs (Plonk/Halo2). |
-| **Accumulator-based revocation** | Replace StatusList2021 with cryptographic accumulators. Holder proves non-revocation without revealing their credential index. |
-| **Batch issuance** | Issue multiple short-lived credential instances. Each presentation uses a different instance, further reducing correlation. |
-| **Multi-relay support** | Holder and verifier connect via different relays. Prevents relay-level metadata correlation. |
-| **Tor/mixnet transport** | Optional anonymized transport layer to prevent IP-level correlation at the relay. |
+For implementation status and phased delivery plan, see [`docs/SECURITY_HARDENING_PLAN.md`](SECURITY_HARDENING_PLAN.md).
 
 ---
 
