@@ -15,6 +15,13 @@ interface VerifierClient {
 }
 
 @Serializable
+data class CreateSessionRequest(
+    val packId: String? = null,
+    val question: String? = null,
+    val predicates: List<String>? = null
+)
+
+@Serializable
 data class VerificationSession(
     val sessionId: String,
     val nonce: String,
@@ -106,11 +113,7 @@ class KtorVerifierClient(
             val response: HttpResponse = httpClient.post("$baseUrl/sessions") {
                 contentType(ContentType.Application.Json)
                 if (packId != null || question != null || predicates != null) {
-                    setBody(mapOf(
-                        "packId" to packId,
-                        "question" to question,
-                        "predicates" to predicates
-                    ).filterValues { it != null })
+                    setBody(CreateSessionRequest(packId = packId, question = question, predicates = predicates))
                 }
             }
             if (response.status.isSuccess()) {
