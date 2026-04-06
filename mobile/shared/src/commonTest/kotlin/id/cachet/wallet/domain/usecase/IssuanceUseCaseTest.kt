@@ -1,7 +1,9 @@
 package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.network.OpenID4VCIException
+import id.cachet.wallet.network.SDJWTCredentialResponse
 import id.cachet.wallet.testfixtures.FakeCredentialRepository
+import id.cachet.wallet.testfixtures.FakeKeyManager
 import id.cachet.wallet.testfixtures.FakeOpenID4VCIClient
 import id.cachet.wallet.testfixtures.makeCredential
 import id.cachet.wallet.testfixtures.makeCredentialResponse
@@ -9,6 +11,7 @@ import id.cachet.wallet.testfixtures.makeStoredCredential
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class IssuanceUseCaseTest {
@@ -106,5 +109,38 @@ class IssuanceUseCaseTest {
 
         assertTrue(result.isSuccess)
         assertEquals(2, result.getOrThrow().size)
+    }
+
+    // ── requestSDJWTCredential (with FakeKeyManager) ──
+
+    @Test
+    fun `requestSDJWTCredential stores credential with key alias`() = runTest {
+        val repo = FakeCredentialRepository()
+        val client = FakeOpenID4VCIClient()
+        client.sdJwtCredentialResponse = SDJWTCredentialResponse(
+            credential = "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJkaWQ6dmVyaWZmOnByb2R1Y3Rpb24ifQ.sig~WyJzYWx0MSIsImFnZSIsMzBd~",
+            format = "vc+sd-jwt"
+        )
+        val km = FakeKeyManager()
+        val useCase = IssuanceUseCase(repo, client, km)
+
+        val result = useCase.requestSDJWTCredential("client-1", listOf("IdentityCredential"))
+
+        assertTrue(result.isSuccess)
+        val stored = repo.getAllCredentials()
+        assertEquals(1, stored.size)
+        assertNotNull(stored[0].rawSdJwt)
+        assertNotNull(stored[0].keyAlias)
+        assertTrue(km.hasKey(stored[0].keyAlias!!))
+    }
+
+    @Test
+    fun `requestSDJWTCredential fails without KeyManager`() = runTest {
+        val useCase = IssuanceUseCase(FakeCredentialRepository(), FakeOpenID4VCIClient(), keyManager = null)
+
+        val result = useCase.requestSDJWTCredential("client-1", listOf("IdentityCredential"))
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("KeyManager not available"))
     }
 }

@@ -26,11 +26,14 @@ class VerificationUseCaseTest {
         MockTransparencyLogRepository()
     )
 
-    private fun createUseCase() = VerificationUseCase(
+    private val fakeKeyManager = FakeKeyManager()
+
+    private fun createUseCase(withKeyManager: Boolean = false) = VerificationUseCase(
         credentialRepository = credRepo,
         verifierClient = verifierClient,
         relayClient = relayClient,
-        consentUseCase = consentUseCase
+        consentUseCase = consentUseCase,
+        keyManager = if (withKeyManager) fakeKeyManager else null
     )
 
     @AfterTest
@@ -264,5 +267,108 @@ class VerificationUseCaseTest {
 
         assertTrue(result.isSuccess)
         assertNull(result.getOrThrow().consentReceiptId)
+    }
+
+    // ── verifyCredential (SD-JWT path with FakeKeyManager) ──
+
+    @Test
+    fun `verifyCredential SD-JWT path creates session and verifies`() = runTest {
+        fakeKeyManager.generateKeyPair("holder-key")
+        val cred = makeStoredCredential(
+            localId = "sd-1",
+            credential = makeCredential(id = "sd-1"),
+            rawSdJwt = "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJkaWQ6dmVyaWZmOnByb2R1Y3Rpb24ifQ.sig~WyJzYWx0MSIsImFnZSIsMzBd~",
+            keyAlias = "holder-key"
+        )
+        credRepo.storeCredential(cred)
+        verifierClient.session = VerificationSession(
+            sessionId = "sd-sess",
+            nonce = "sd-nonce",
+            verifierDid = "did:web:verifier"
+        )
+        verifierClient.verifyResponse = VerifyResponseDTO(
+            cachet = "Age Verified",
+            freshness = "fresh",
+            predicates = listOf("age_gte_18"),
+            predicateResults = listOf(
+                PredicateResultDTO(predicateId = "age_gte_18", status = "satisfied")
+            )
+        )
+        val useCase = createUseCase(withKeyManager = true)
+
+        val result = useCase.verifyCredential("sd-1", "age-check")
+
+        assertTrue(result.isSuccess)
+        val verification = result.getOrThrow()
+        assertEquals("Age Verified", verification.badge)
+        assertTrue(verification.holderBound) // SD-JWT path is holder-bound
+    }
+
+    @Test
+    fun `verifyCredential falls back to legacy when no SD-JWT`() = runTest {
+        val cred = makeStoredCredential(
+            localId = "legacy-1",
+            credential = makeCredential(id = "legacy-1"),
+            rawSdJwt = null,
+            keyAlias = null
+        )
+        credRepo.storeCredential(cred)
+        verifierClient.verifyResponse = VerifyResponseDTO(cachet = "OK", freshness = "fresh")
+        val useCase = createUseCase(withKeyManager = true)
+
+        val result = useCase.verifyCredential("legacy-1", "pack")
+
+        assertTrue(result.isSuccess)
+        assertFalse(result.getOrThrow().holderBound)
+    }
+
+    // ── respondViaRelay (with FakeKeyManager) ──
+
+    @Test
+    fun `respondViaRelay posts presentation to relay`() = runTest {
+        AppConfig.configure(relayUrl = "http://relay")
+        fakeKeyManager.generateKeyPair("holder-key")
+        val cred = makeStoredCredential(
+            localId = "relay-cred",
+            credential = makeCredential(id = "relay-cred"),
+            rawSdJwt = "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJkaWQ6dmVyaWZmOnByb2R1Y3Rpb24ifQ.sig~WyJzYWx0MSIsImFnZSIsMzBd~",
+            keyAlias = "holder-key"
+        )
+        credRepo.storeCredential(cred)
+
+        val payload = VerificationRequestPayload(
+            nonce = "relay-nonce",
+            verifierDid = "did:web:verifier",
+            packId = "childcare-es",
+            question = "Safe?",
+            predicates = listOf("age_gte_18")
+        )
+        relayClient.requestPayload = Json.encodeToString(
+            VerificationRequestPayload.serializer(), payload
+        ).encodeToByteArray()
+
+        val useCase = createUseCase(withKeyManager = true)
+        useCase.respondViaRelay("http://relay/sessions/s1/request", "relay-cred")
+
+        assertEquals(1, relayClient.postedResponses.size)
+        val posted = relayClient.postedResponses[0].decodeToString()
+        // The posted response should be an SD-JWT presentation with KB-JWT appended
+        assertTrue(posted.contains("eyJhbGciOiJFUzI1NiJ9"))
+    }
+
+    @Test
+    fun `respondViaRelay throws when credential not found`() = runTest {
+        relayClient.requestPayload = Json.encodeToString(
+            VerificationRequestPayload.serializer(),
+            VerificationRequestPayload("n", "did", "p", "q", listOf("p"))
+        ).encodeToByteArray()
+        val useCase = createUseCase(withKeyManager = true)
+
+        try {
+            useCase.respondViaRelay("http://relay/request", "nonexistent")
+            assertTrue(false, "Should have thrown")
+        } catch (e: Exception) {
+            assertTrue(e.message!!.contains("Credential not found"))
+        }
     }
 }
