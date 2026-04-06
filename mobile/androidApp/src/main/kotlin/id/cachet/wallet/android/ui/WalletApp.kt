@@ -36,6 +36,7 @@ private fun packToQrPayload(pack: CachPackUi): String {
  * null = no overlay, show normal tabs.
  */
 sealed class OverlayScreen {
+    data class CachetDetail(val card: CredentialCardUi) : OverlayScreen()
     data class QrShare(
         val question: String,
         val predicates: List<String>,
@@ -66,6 +67,30 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     // ── Overlay screens (full-screen, above tabs) ──
     overlay?.let { screen ->
         when (screen) {
+            is OverlayScreen.CachetDetail -> {
+                val relatedActivity = activityState.historyGroups
+                    .flatMap { it.entries }
+                    .filter { it.title.contains(screen.card.displayName, ignoreCase = true) }
+                CachetDetailScreen(
+                    card = screen.card,
+                    relatedActivity = relatedActivity,
+                    onBack = { overlay = null },
+                    onShare = {
+                        val syntheticPack = CachPackUi(
+                            question = screen.card.displayName,
+                            description = screen.card.predicates.joinToString(", "),
+                            proofCount = screen.card.predicates.size,
+                            cachetType = screen.card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
+                        )
+                        overlay = OverlayScreen.QrShare(
+                            question = screen.card.displayName,
+                            predicates = screen.card.predicates,
+                            pack = syntheticPack
+                        )
+                    },
+                    onRevoke = { viewModel.revokeCredential(screen.card.localId) ; overlay = null }
+                )
+            }
             is OverlayScreen.QrShare -> {
                 // Auto-transition: simulate a scan after 4 seconds
                 LaunchedEffect(screen) {
@@ -156,18 +181,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                             )
                         },
                         onCardTapped = { card ->
-                            // Map credential to a QR share overlay using its predicates
-                            val syntheticPack = CachPackUi(
-                                question = card.displayName,
-                                description = card.predicates.joinToString(", "),
-                                proofCount = card.predicates.size,
-                                cachetType = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
-                            )
-                            overlay = OverlayScreen.QrShare(
-                                question = card.displayName,
-                                predicates = card.predicates,
-                                pack = syntheticPack
-                            )
+                            overlay = OverlayScreen.CachetDetail(card)
                         }
                     )
                     1 -> ActivityScreen(

@@ -12,7 +12,8 @@ data class CredentialCardUi(
     val cachetType: CachetType?,
     val trustStatus: TrustStatus,
     val predicates: List<String>,
-    val sharesSummary: String
+    val sharesSummary: String,
+    val keyAlias: String? = null
 )
 
 data class VaultSummaryUi(
