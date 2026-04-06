@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/base64"
@@ -64,7 +65,11 @@ func fetchIssuerKeys(issuanceURL string) eval.DIDResolver {
 	jwksURL := issuanceURL + "/.well-known/jwks.json"
 
 	for attempt := 0; attempt < 10; attempt++ {
-		resp, err := http.Get(jwksURL)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, jwksURL, nil)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create JWKS request")
+		}
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Warn().Err(err).Int("attempt", attempt+1).Msg("waiting for issuance gateway JWKS")
 			time.Sleep(2 * time.Second)
