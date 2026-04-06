@@ -6,8 +6,11 @@ data class QrShareState(
     val question: String,
     val predicates: List<String>,
     val expiresLabel: String = "Request expires in 4:58",
-    val qrPayload: String = ""
+    val qrPayload: String = "",
+    val sessionTtlSeconds: Int = 300
 )
+
+enum class QrSessionStatus { WAITING, EXPIRED }
 
 data class RequestPredicate(
     val claim: String,

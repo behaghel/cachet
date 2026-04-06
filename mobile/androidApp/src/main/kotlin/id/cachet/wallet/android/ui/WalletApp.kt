@@ -67,24 +67,31 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     overlay?.let { screen ->
         when (screen) {
             is OverlayScreen.QrShare -> {
-                // Auto-transition: simulate a scan after 4 seconds
-                LaunchedEffect(screen) {
-                    kotlinx.coroutines.delay(4000)
-                    overlay = OverlayScreen.IncomingRequest(
-                        CachPackMapper.toVerificationRequest(screen.pack)
-                    )
+                // Demo mode: auto-transition after 4 seconds
+                if (demoMode) {
+                    LaunchedEffect(screen) {
+                        kotlinx.coroutines.delay(4000)
+                        overlay = OverlayScreen.IncomingRequest(
+                            CachPackMapper.toVerificationRequest(screen.pack)
+                        )
+                    }
                 }
+                // Real mode: relay polling would go here via viewModel
                 QrShareScreen(
                     state = QrShareState(
                         question = screen.question,
                         predicates = screen.predicates,
-                        qrPayload = packToQrPayload(screen.pack)
+                        qrPayload = packToQrPayload(screen.pack),
+                        sessionTtlSeconds = if (demoMode) 300 else 300
                     ),
                     onBack = { overlay = null },
                     onClose = { overlay = null },
-                    onScanSimulated = {
-                        overlay = OverlayScreen.IncomingRequest(
-                            CachPackMapper.toVerificationRequest(screen.pack)
+                    onRetry = {
+                        // Re-create the overlay to restart the session
+                        overlay = OverlayScreen.QrShare(
+                            question = screen.question,
+                            predicates = screen.predicates,
+                            pack = screen.pack
                         )
                     }
                 )
