@@ -36,7 +36,7 @@ object ActivityMapper {
             title = receipt.purpose,
             subtitle = "${receipt.rpDisplayName} verified you",
             time = formatTime(receipt.timestamp),
-            proofSummary = "${receipt.predicatesProven.size} proofs shared",
+            proofSummary = "${receipt.predicatesProven.size} ${if (receipt.predicatesProven.size == 1) "proof" else "proofs"} shared",
             direction = VerificationDirection.RECEIVED,
             status = TrustStatus.PASSED
         )

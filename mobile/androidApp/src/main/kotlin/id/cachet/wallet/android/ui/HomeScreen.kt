@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,9 +61,9 @@ fun HomeScreen(
     }
 }
 
-// ═══════════════════════════════════════════
+// ===============================================
 // MY CACHETS GRID
-// ═══════════════════════════════════════════
+// ===============================================
 
 @Composable
 private fun MyCachetsGrid(
@@ -107,7 +108,7 @@ private fun MyCachetsGrid(
                 EmptySlotCard(onClick = onStartVerification)
             }
 
-            // ── "Verify" section ── full width
+            // -- "Verify" section -- full width
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -132,17 +133,17 @@ private fun MyCachetsGrid(
             }
         }
 
-        // FAB
+        // FAB — Midnight Slate (holder action: earn a cachet)
         FloatingActionButton(
             onClick = onStartVerification,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 8.dp),
-            containerColor = BrandAccent,
-            contentColor = TextOnBrand,
+            containerColor = BrandPrimary,
+            contentColor = Color.White,
             shape = CircleShape
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add cachet")
+            Icon(Icons.Default.Add, contentDescription = "Get a cachet")
         }
     }
 }
@@ -172,7 +173,7 @@ private fun CachPackCard(pack: CachPackUi, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "${pack.proofCount} proofs",
+                    text = "${pack.proofCount} ${if (pack.proofCount == 1) "proof" else "proofs"}",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextTertiary
                 )
@@ -228,9 +229,9 @@ private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
     }
 }
 
-// ═══════════════════════════════════════════
+// ===============================================
 // EMPTY VAULT
-// ═══════════════════════════════════════════
+// ===============================================
 
 @Composable
 private fun EmptyVault(onStartVerification: () -> Unit) {
@@ -314,4 +315,3 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
         Spacer(modifier = Modifier.weight(0.3f))
     }
 }
-

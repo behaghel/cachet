@@ -39,7 +39,7 @@ class WalletViewModel(
     private val _activityState = MutableStateFlow(ActivityUiState())
     val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
 
-    /** Active verifier session — set when QR overlay is shown, consumed when verification completes. */
+    /** Active verifier session -- set when QR overlay is shown, consumed when verification completes. */
     private var activeVerifierSession: VerifierSessionInfo? = null
 
     init {
@@ -53,7 +53,7 @@ class WalletViewModel(
         }
     }
 
-    // ── Relay flow ──
+    // -- Relay flow --
 
     /**
      * Verifier side: create a relay session for QR-based verification.
@@ -184,7 +184,7 @@ class WalletViewModel(
         else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
     }
 
-    // ── Existing flows ──
+    // -- Existing flows --
 
     private fun loadDemoCredentials() {
         viewModelScope.launch {
@@ -348,7 +348,13 @@ class WalletViewModel(
     }
 
     suspend fun shareCredential(request: VerificationRequest): CachetResult {
-        if (demoMode) return DemoFixtures.cachetResultPass
+        if (demoMode) {
+            // "Trusted seller" demo always fails to showcase the fail screen
+            return if (request.question.contains("seller", ignoreCase = true))
+                DemoFixtures.cachetResultFail
+            else
+                DemoFixtures.cachetResultPass
+        }
 
         val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
         val credential = credentials.firstOrNull { !it.isRevoked }
@@ -377,6 +383,7 @@ class WalletViewModel(
             userConsent = consent
         ).getOrNull()
 
+        // Refresh activity after sharing
         loadActivity()
 
         return if (result != null && result.success) {

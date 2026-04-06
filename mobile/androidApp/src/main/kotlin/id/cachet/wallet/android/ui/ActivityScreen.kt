@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,17 +26,19 @@ private enum class ActivityFilter { ALL, EXCHANGES, RECEIPTS, CACHETS }
 
 private fun ActivityFilter.label() = when (this) {
     ActivityFilter.ALL -> "All"
-    ActivityFilter.EXCHANGES -> "Exchanges"
-    ActivityFilter.RECEIPTS -> "Receipts"
+    ActivityFilter.EXCHANGES -> "Given"
+    ActivityFilter.RECEIPTS -> "Received"
     ActivityFilter.CACHETS -> "Cachets"
 }
 
 @Composable
 fun ActivityScreen(
     historyGroups: List<HistoryGroup>,
-    receipts: List<ReceiptItem>,
+    receipts: List<ReceiptItem> = emptyList(),
     auditResult: String? = null,
-    onRunAudit: () -> Unit = {}
+    onRunAudit: () -> Unit = {},
+    onStartVerification: () -> Unit = {},
+    onScanQr: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf(ActivityFilter.ALL) }
 
@@ -43,14 +48,22 @@ fun ActivityScreen(
                 group.copy(entries = group.entries.filter { it.cachetEarned != null })
             }.filter { it.entries.isNotEmpty() }
             ActivityFilter.EXCHANGES -> historyGroups.map { group ->
-                group.copy(entries = group.entries.filter { it.cachetEarned == null })
+                group.copy(entries = group.entries.filter {
+                    it.direction == VerificationDirection.GIVEN && it.cachetEarned == null
+                })
+            }.filter { it.entries.isNotEmpty() }
+            ActivityFilter.RECEIPTS -> historyGroups.map { group ->
+                group.copy(entries = group.entries.filter {
+                    it.direction == VerificationDirection.RECEIVED && it.cachetEarned == null
+                })
             }.filter { it.entries.isNotEmpty() }
             else -> historyGroups
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // ── Filter pills ──
+        // -- Filter pills --
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(ActivityFilter.entries) { filter ->
                 FilterPill(
@@ -63,17 +76,14 @@ fun ActivityScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ── Content ──
+        // -- Content --
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             when (selectedFilter) {
                 ActivityFilter.ALL -> {
-                    // History section
-                    item {
-                        SectionHeader("Recent exchanges")
-                    }
+                    // Unified chronological feed — no section headers
                     filteredGroups.forEach { group ->
                         item(key = "date-${group.dateLabel}") {
                             DateLabel(group.dateLabel)
@@ -86,16 +96,6 @@ fun ActivityScreen(
                             }
                         }
                     }
-
-                    // Receipts section
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        SectionHeader("Receipts")
-                    }
-                    items(receipts, key = { it.id }) { receipt ->
-                        ReceiptCard(receipt = receipt)
-                    }
-
                     item { AuditSummaryBar(result = auditResult) }
                 }
 
@@ -111,39 +111,14 @@ fun ActivityScreen(
                 }
 
                 ActivityFilter.RECEIPTS -> {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Your data sharing history, on the record",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(
-                                onClick = onRunAudit,
-                                shape = RoundedCornerShape(18.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = BrandPrimary,
-                                    contentColor = TextOnBrand
-                                ),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = "Run Audit",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                    filteredGroups.forEach { group ->
+                        item(key = "date-${group.dateLabel}") {
+                            DateLabel(group.dateLabel)
+                        }
+                        items(group.entries, key = { it.id }) { entry ->
+                            HistoryEntryCard(entry = entry)
                         }
                     }
-                    items(receipts, key = { it.id }) { receipt ->
-                        ReceiptCard(receipt = receipt)
-                    }
-                    item { AuditSummaryBar(result = auditResult) }
                 }
 
                 ActivityFilter.CACHETS -> {
@@ -159,20 +134,48 @@ fun ActivityScreen(
             }
         }
     }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Scan QR (holder flow)
+            SmallFloatingActionButton(
+                onClick = onScanQr,
+                containerColor = BrandPrimary,
+                contentColor = TextOnBrand,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR")
+            }
+            // New request (verifier flow)
+            FloatingActionButton(
+                onClick = onStartVerification,
+                containerColor = BrandAccent,
+                contentColor = TextOnBrand,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "New verification request")
+            }
+        }
+    }
 }
 
-// ═══════════════════════════════════════════
+// ===============================================
 // SHARED COMPOSABLES
-// ═══════════════════════════════════════════
+// ===============================================
 
 @Composable
 private fun DateLabel(label: String) {
     SectionHeader(text = label)
 }
 
-// ═══════════════════════════════════════════
+// ===============================================
 // HISTORY CARDS
-// ═══════════════════════════════════════════
+// ===============================================
 
 @Composable
 private fun HistoryEntryCard(entry: HistoryEntry) {
@@ -271,98 +274,6 @@ private fun CachetEarnedCard(entry: HistoryEntry) {
     }
 }
 
-// ═══════════════════════════════════════════
-// RECEIPT CARDS
-// ═══════════════════════════════════════════
-
-@Composable
-private fun ReceiptCard(receipt: ReceiptItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceBorder)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            // Status dot
-            val dotColor = when (receipt.logStatus) {
-                ReceiptLogStatus.LOGGED -> TrustVerified
-                ReceiptLogStatus.PENDING -> TrustPending
-            }
-            Surface(
-                modifier = Modifier
-                    .padding(top = 6.dp)
-                    .size(8.dp),
-                shape = RoundedCornerShape(4.dp),
-                color = dotColor
-            ) {}
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = receipt.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = receipt.counterparty,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-                Text(
-                    text = "${receipt.date}  ·  ${receipt.predicateCount} predicates shared",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextTertiary
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                val (badgeLabel, badgeBg, badgeBorder, badgeFg) = when (receipt.logStatus) {
-                    ReceiptLogStatus.LOGGED -> LogBadgeColors("Logged", TrustVerifiedBg, TrustVerifiedBorder, TrustVerifiedText)
-                    ReceiptLogStatus.PENDING -> LogBadgeColors("Pending", TrustPendingBg, TrustPendingBorder, TrustPendingText)
-                }
-                Surface(
-                    shape = RoundedCornerShape(11.dp),
-                    color = badgeBg,
-                    border = BorderStroke(1.dp, badgeBorder)
-                ) {
-                    Text(
-                        text = badgeLabel,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = badgeFg
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = receipt.expiresLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextTertiary
-                )
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextTertiary,
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(18.dp)
-                    .align(Alignment.CenterVertically)
-            )
-        }
-    }
-}
-
 @Composable
 private fun AuditSummaryBar(result: String?) {
     Surface(
@@ -390,10 +301,3 @@ private fun AuditSummaryBar(result: String?) {
         }
     }
 }
-
-private data class LogBadgeColors(
-    val label: String,
-    val bg: Color,
-    val border: Color,
-    val text: Color
-)

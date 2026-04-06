@@ -38,12 +38,12 @@ fun IncomingRequestScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Close button ──
+            // -- Close button --
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
+                        .padding(top = 8.dp)
                 ) {
                     IconButton(
                         onClick = onClose,
@@ -54,11 +54,11 @@ fun IncomingRequestScreen(
                 }
             }
 
-            // ── Requester identity ──
+            // -- Requester identity --
             item {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Surface(
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(56.dp),
                     shape = CircleShape,
                     color = if (request.isVerifierVerified) BrandAccent else BrandPrimary
                 ) {
@@ -89,10 +89,10 @@ fun IncomingRequestScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ── Title ──
+            // -- Title --
             item {
                 Text(
                     text = "Verification Request",
@@ -111,7 +111,7 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Question pill ──
+            // -- Question pill --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -122,17 +122,17 @@ fun IncomingRequestScreen(
                         text = request.question,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 18.dp),
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── "They will learn" header ──
+            // -- "They will learn" header --
             item {
                 Text(
                     text = "They will learn:",
@@ -149,7 +149,7 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ── Predicate list card ──
+            // -- Predicate list card --
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -172,7 +172,7 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Consent metadata ──
+            // -- Consent metadata --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -214,10 +214,10 @@ fun IncomingRequestScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Action buttons ──
+            // -- Action buttons --
             item {
                 SealButton(
                     text = "Verify & Share",

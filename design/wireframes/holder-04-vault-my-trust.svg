@@ -117,7 +117,7 @@
   <text x="276" y="548" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Get a new</text>
   <text x="276" y="564" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">cachet</text>
 
-  <!-- Add credential FAB -->
-  <circle cx="340" cy="720" r="26" fill="#10B981"/>
+  <!-- Add credential FAB — Midnight Slate (holder action: earn a cachet) -->
+  <circle cx="340" cy="720" r="26" fill="#1E293B"/>
   <text x="340" y="728" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="300" fill="#FFFFFF">+</text>
 </svg>
