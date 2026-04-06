@@ -1,6 +1,7 @@
 package session
 
 import (
+	"crypto/ecdh"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -8,15 +9,25 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/cachet-id/cachet/services/verifier/internal/jwe"
 )
 
-// Session represents a verification session with a nonce for replay protection.
+// Session represents a verification session with a nonce for replay protection
+// and an ephemeral X25519 key pair for end-to-end encryption.
 type Session struct {
-	ID          string    `json:"sessionId"`
-	Nonce       string    `json:"nonce"`
-	VerifierDID string    `json:"verifierDid"`
-	CreatedAt   time.Time `json:"-"`
-	Used        bool      `json:"-"`
+	ID              string           `json:"sessionId"`
+	Nonce           string           `json:"nonce"`
+	VerifierDID     string           `json:"verifierDid"`
+	EphemeralPubKey string           `json:"ephemeralPubKey,omitempty"` // base64url X25519 public key
+	CreatedAt       time.Time        `json:"-"`
+	Used            bool             `json:"-"`
+	ephemeralPriv   *ecdh.PrivateKey `json:"-"` // unexported, never serialized
+}
+
+// EphemeralPrivateKey returns the ephemeral X25519 private key for JWE decryption.
+func (s *Session) EphemeralPrivateKey() *ecdh.PrivateKey {
+	return s.ephemeralPriv
 }
 
 // Manager manages verification sessions with nonce generation and one-time-use.
@@ -34,14 +45,25 @@ func NewManager(ttl time.Duration) *Manager {
 	}
 }
 
-// Create generates a new verification session with a fresh nonce.
+// Create generates a new verification session with a fresh nonce
+// and an ephemeral X25519 key pair for end-to-end encryption.
 func (m *Manager) Create(verifierDID string) *Session {
 	nonce := generateNonce()
+
+	priv, pubB64, err := jwe.GenerateEphemeralKeyPair()
+	if err != nil {
+		// Non-fatal: session works without E2E encryption
+		priv = nil
+		pubB64 = ""
+	}
+
 	s := &Session{
-		ID:          uuid.New().String(),
-		Nonce:       nonce,
-		VerifierDID: verifierDID,
-		CreatedAt:   time.Now(),
+		ID:              uuid.New().String(),
+		Nonce:           nonce,
+		VerifierDID:     verifierDID,
+		EphemeralPubKey: pubB64,
+		CreatedAt:       time.Now(),
+		ephemeralPriv:   priv,
 	}
 
 	m.mu.Lock()

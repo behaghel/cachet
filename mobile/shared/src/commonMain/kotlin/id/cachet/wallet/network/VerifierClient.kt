@@ -9,16 +9,25 @@ import kotlinx.serialization.Serializable
 
 interface VerifierClient {
     suspend fun listPacks(): List<PackSummary>
-    suspend fun createSession(): VerificationSession
+    suspend fun createSession(packId: String? = null, question: String? = null, predicates: List<String>? = null): VerificationSession
     suspend fun verifyPresentation(policyId: String, credentials: List<VerifiableCredentialDTO>): VerifyResponseDTO
     suspend fun verifySDJWTPresentation(policyId: String, sdJwtCredentials: List<String>, sessionId: String? = null): VerifyResponseDTO
 }
 
 @Serializable
+data class CreateSessionRequest(
+    val packId: String? = null,
+    val question: String? = null,
+    val predicates: List<String>? = null
+)
+
+@Serializable
 data class VerificationSession(
     val sessionId: String,
     val nonce: String,
-    val verifierDid: String
+    val verifierDid: String,
+    val ephemeralPubKey: String? = null, // base64url X25519 public key for E2E encryption
+    val requestObject: String? = null    // signed JWT (JWS) Request Object
 )
 
 @Serializable
@@ -69,8 +78,8 @@ data class PersonalDataDTO(
 
 @Serializable
 data class VerifyResponseDTO(
-    val badge: String,
-    val predicates: List<String> = emptyList(),
+    val cachet: String = "",
+    val predicates: List<String>? = null,
     val freshness: String,
     val predicateResults: List<PredicateResultDTO> = emptyList(),
     val summary: VerificationSummaryDTO? = null
@@ -89,7 +98,7 @@ data class VerificationSummaryDTO(
     val requiredTotal: Int = 0,
     val optionalSatisfied: Int? = null,
     val optionalTotal: Int? = null,
-    val badgeGranted: Boolean = false
+    val cachetGranted: Boolean = false
 )
 
 class VerifierException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -99,10 +108,13 @@ class KtorVerifierClient(
     private val baseUrl: String
 ) : VerifierClient {
 
-    override suspend fun createSession(): VerificationSession {
+    override suspend fun createSession(packId: String?, question: String?, predicates: List<String>?): VerificationSession {
         try {
             val response: HttpResponse = httpClient.post("$baseUrl/sessions") {
                 contentType(ContentType.Application.Json)
+                if (packId != null || question != null || predicates != null) {
+                    setBody(CreateSessionRequest(packId = packId, question = question, predicates = predicates))
+                }
             }
             if (response.status.isSuccess()) {
                 return response.body<VerificationSession>()
@@ -168,7 +180,8 @@ class KtorVerifierClient(
             if (response.status.isSuccess()) {
                 return response.body<VerifyResponseDTO>()
             }
-            throw VerifierException("SD-JWT verification failed: ${response.status}")
+            val errorBody = response.bodyAsText()
+            throw VerifierException("SD-JWT verification failed: ${response.status} — $errorBody")
         } catch (e: Exception) {
             if (e is VerifierException) throw e
             throw VerifierException("Network error during SD-JWT verification", e)

@@ -36,4 +36,4 @@ Out of scope:
 
 ## Current security posture
 
-> The project is in early development. See `docs/ARCHITECTURE.md` (Security model section) for architectural targets and `docs/REFACTORING_PLAN.md` Phase 3 for the security hardening roadmap. Current implementation uses in-memory RSA key generation (not HSM) and does not yet have webhook signature verification, rate limiting, or replay protection.
+> See `docs/VERIFICATION_PROTOCOL.md` for the full threat model and cryptographic spec, and `docs/SECURITY_HARDENING_PLAN.md` for implementation status and phased delivery plan.

@@ -43,11 +43,37 @@ actual class KeyManager actual constructor() {
 
     actual fun sign(alias: String, data: ByteArray): ByteArray {
         val privateKey = keyStore.getKey(alias, null) as PrivateKey
-        return Signature.getInstance("SHA256withECDSA").run {
+        val derSignature = Signature.getInstance("SHA256withECDSA").run {
             initSign(privateKey)
             update(data)
             sign()
         }
+        // Convert DER to raw R||S (64 bytes for P-256) as required by JWT ES256
+        return derToRawRS(derSignature, 32)
+    }
+
+    /**
+     * Convert a DER-encoded ECDSA signature to raw R||S format.
+     * DER: 30 <len> 02 <rlen> <r> 02 <slen> <s>
+     * Raw: <r padded to componentLen> <s padded to componentLen>
+     */
+    private fun derToRawRS(der: ByteArray, componentLen: Int): ByteArray {
+        var offset = 2 // skip 30 <len>
+        val rLen = der[offset + 1].toInt() and 0xFF
+        offset += 2
+        val r = der.copyOfRange(offset, offset + rLen)
+        offset += rLen
+        val sLen = der[offset + 1].toInt() and 0xFF
+        offset += 2
+        val s = der.copyOfRange(offset, offset + sLen)
+
+        val result = ByteArray(componentLen * 2)
+        // Right-align r and s (skip leading zero if present, pad if short)
+        r.copyInto(result, destinationOffset = componentLen - r.size.coerceAtMost(componentLen),
+            startIndex = (r.size - componentLen).coerceAtLeast(0))
+        s.copyInto(result, destinationOffset = componentLen * 2 - s.size.coerceAtMost(componentLen),
+            startIndex = (s.size - componentLen).coerceAtLeast(0))
+        return result
     }
 
     actual fun getPublicKeyJWK(alias: String): String? {

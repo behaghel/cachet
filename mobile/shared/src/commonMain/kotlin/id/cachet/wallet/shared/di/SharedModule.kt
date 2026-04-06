@@ -5,6 +5,7 @@ import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.SqlDelightConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import id.cachet.wallet.domain.repository.HttpTransparencyLogRepository
+import id.cachet.wallet.domain.crypto.DIDResolver
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
@@ -12,8 +13,10 @@ import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
+import id.cachet.wallet.network.KtorRelayClient
 import id.cachet.wallet.network.KtorVerifierClient
 import id.cachet.wallet.network.OpenID4VCIClient
+import id.cachet.wallet.network.RelayClient
 import id.cachet.wallet.network.VerifierClient
 import io.ktor.client.*
 import io.ktor.client.plugins.*
@@ -62,6 +65,12 @@ val sharedModule = module {
             baseUrl = AppConfig.verifierUrl
         )
     }
+    single<RelayClient> {
+        KtorRelayClient(
+            httpClient = get(),
+            baseUrl = AppConfig.relayUrl
+        )
+    }
 
     // Repositories
     single<ConsentReceiptRepository> {
@@ -76,6 +85,9 @@ val sharedModule = module {
 
     // Key management (hardware-backed on Android)
     single { KeyManager() }
+
+    // DID resolution for verifier identity verification
+    single { DIDResolver(httpClient = get()) }
 
     // Use cases
     single {
@@ -98,8 +110,10 @@ val sharedModule = module {
         VerificationUseCase(
             credentialRepository = get(),
             verifierClient = get(),
+            relayClient = get(),
             consentUseCase = get(),
-            keyManager = get()
+            keyManager = get(),
+            didResolver = get()
         )
     }
 }

@@ -30,6 +30,68 @@ fun CachetResultScreen(
     onDone: () -> Unit,
     onViewReceipt: (() -> Unit)? = null
 ) {
+    // ── Technical error: distinct from verification failure ──
+    if (result.isError) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = BrandPrimaryDark
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = onDone,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TrustNeutral)
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "Something went wrong",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Verification could not be completed due to a technical issue. This is not a failed verification.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TrustNeutral,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                if (result.errorMessage != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = BrandPrimary
+                    ) {
+                        Text(
+                            text = result.errorMessage,
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TrustNeutral
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                SealButton(
+                    text = "Try again",
+                    onClick = onDone,
+                    containerColor = Color.White,
+                    contentColor = BrandPrimary
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+        return
+    }
+
     val accentColor = if (result.allPassed) BrandAccent else BrandWarm
 
     Surface(

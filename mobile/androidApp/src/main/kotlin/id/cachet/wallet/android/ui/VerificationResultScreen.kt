@@ -86,8 +86,8 @@ fun VerificationResultScreen(
 
 @Composable
 fun BadgeSection(result: VerificationResult) {
-    val badgeGranted = result.summary?.badgeGranted ?: false
-    val badgeColor = if (badgeGranted) {
+    val cachetGranted = result.summary?.cachetGranted ?: false
+    val badgeColor = if (cachetGranted) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
         MaterialTheme.colorScheme.surfaceVariant
@@ -101,7 +101,7 @@ fun BadgeSection(result: VerificationResult) {
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (badgeGranted && result.badge.isNotEmpty()) {
+            if (cachetGranted && result.badge.isNotEmpty()) {
                 Text(
                     text = result.badge,
                     style = MaterialTheme.typography.headlineSmall

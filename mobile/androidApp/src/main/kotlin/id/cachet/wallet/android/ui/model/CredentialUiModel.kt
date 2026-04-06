@@ -22,6 +22,7 @@ data class VaultSummaryUi(
 )
 
 data class CachPackUi(
+    val id: String = "",
     val question: String,
     val description: String,
     val proofCount: Int,

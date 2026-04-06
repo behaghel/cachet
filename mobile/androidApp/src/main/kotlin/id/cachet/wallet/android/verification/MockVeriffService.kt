@@ -8,6 +8,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import java.net.HttpURLConnection
 import java.net.URL
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
 /**
@@ -42,17 +44,31 @@ class MockVeriffService : VeriffService {
 
     private suspend fun postMockWebhook(sessionId: String) = withContext(Dispatchers.IO) {
         val url = URL("${AppConfig.baseUrl}/webhooks/veriff")
+        val body = buildWebhookPayload(sessionId)
+        val bodyBytes = body.toByteArray(Charsets.UTF_8)
+
         val conn = url.openConnection() as HttpURLConnection
         try {
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("X-HMAC-Signature", hmacSha256(bodyBytes, AppConfig.DEV_WEBHOOK_SECRET))
             conn.doOutput = true
-            conn.outputStream.bufferedWriter().use { it.write(buildWebhookPayload(sessionId)) }
+            conn.outputStream.bufferedWriter().use { it.write(body) }
             val code = conn.responseCode
             Log.d(TAG, "Mock webhook response: $code")
+            if (code != 200) {
+                val error = conn.errorStream?.bufferedReader()?.readText() ?: "unknown"
+                Log.w(TAG, "Webhook rejected: $error")
+            }
         } finally {
             conn.disconnect()
         }
+    }
+
+    private fun hmacSha256(data: ByteArray, secret: String): String {
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+        return mac.doFinal(data).joinToString("") { "%02x".format(it) }
     }
 
     private fun buildWebhookPayload(sessionId: String): String {
@@ -62,9 +78,9 @@ class MockVeriffService : VeriffService {
             "session_id": "$sessionId",
             "status": "approved",
             "person": {
-                "first_name": "Jane",
-                "last_name": "Doe",
-                "date_of_birth": "1995-06-15",
+                "firstName": "Jane",
+                "lastName": "Doe",
+                "dateOfBirth": "1995-06-15",
                 "confidence": 0.96
             },
             "document": {
@@ -74,9 +90,9 @@ class MockVeriffService : VeriffService {
                 "authenticity": 0.97
             },
             "verification": {
-                "liveness_score": 0.93,
-                "overall_confidence": 0.96,
-                "risk_score": 0.03,
+                "livenessScore": 0.93,
+                "overallConfidence": 0.96,
+                "riskScore": 0.03,
                 "timestamp": "$now"
             }
         }

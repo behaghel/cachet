@@ -54,17 +54,40 @@ fun IncomingRequestScreen(
                 }
             }
 
-            // ── Requester avatar ──
+            // ── Requester identity ──
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     modifier = Modifier.size(72.dp),
                     shape = CircleShape,
-                    color = BrandPrimary
+                    color = if (request.isVerifierVerified) BrandAccent else BrandPrimary
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("?", fontSize = 24.sp, color = Color.White)
+                        Text(
+                            text = if (request.isVerifierVerified) "✓" else "?",
+                            fontSize = 24.sp,
+                            color = Color.White
+                        )
                     }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                if (request.verifierName != null) {
+                    Text(
+                        text = request.verifierName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (request.isVerifierVerified) BrandAccent else TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (!request.isVerifierVerified) {
+                    Text(
+                        text = "Unverified requester",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = BrandWarm,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -79,7 +102,7 @@ fun IncomingRequestScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Someone wants to know:",
+                    text = if (request.verifierName != null) "${request.verifierName} wants to know:" else "Someone wants to know:",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
                     color = TextSecondary,
                     textAlign = TextAlign.Center,

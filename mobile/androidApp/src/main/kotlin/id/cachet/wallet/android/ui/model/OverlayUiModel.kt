@@ -18,7 +18,9 @@ data class VerificationRequest(
     val question: String,
     val predicates: List<RequestPredicate>,
     val retentionDays: Int = 90,
-    val loggedInTransparencyLog: Boolean = true
+    val loggedInTransparencyLog: Boolean = true,
+    val verifierName: String? = null,
+    val isVerifierVerified: Boolean = false
 )
 
 data class PredicateResult(
@@ -34,5 +36,7 @@ data class CachetResult(
     val totalCount: Int,
     val predicates: List<PredicateResult>,
     val validityLabel: String? = null,
-    val cachetType: CachetType = CachetType.IDENTITY
+    val cachetType: CachetType = CachetType.IDENTITY,
+    val isError: Boolean = false,
+    val errorMessage: String? = null
 )

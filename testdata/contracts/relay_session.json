@@ -1,0 +1,5 @@
+{
+  "requestUri": "/sessions/relay-session-abc/request",
+  "responseUri": "/sessions/relay-session-abc/response",
+  "sessionId": "relay-session-abc"
+}

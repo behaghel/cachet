@@ -1,0 +1,22 @@
+{
+  "document": {
+    "authenticity": 0.97,
+    "country": "EE",
+    "number": "AB1234567",
+    "type": "PASSPORT"
+  },
+  "person": {
+    "confidence": 0.96,
+    "dateOfBirth": "1995-06-15",
+    "firstName": "Jane",
+    "lastName": "Doe"
+  },
+  "session_id": "veriff-session-789",
+  "status": "approved",
+  "verification": {
+    "livenessScore": 0.93,
+    "overallConfidence": 0.96,
+    "riskScore": 0.03,
+    "timestamp": "2026-04-05T00:00:00Z"
+  }
+}

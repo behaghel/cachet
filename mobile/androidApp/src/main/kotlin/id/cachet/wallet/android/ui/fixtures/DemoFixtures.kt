@@ -59,9 +59,9 @@ object DemoFixtures {
     // ── Home / Verify section ── (inline on My Cachets tab)
 
     val cachPacks: List<CachPackUi> = listOf(
-        CachPackUi("Safe for my kids?", "Identity, background check, references", 4, CachetType.CHILDCARE),
-        CachPackUi("Trusted seller?", "Identity, platform history, fulfilment rate", 4, CachetType.SELLER),
-        CachPackUi("Old enough?", "Age verification (18+ or 21+)", 1, CachetType.AGE)
+        CachPackUi(id = "pack.childcare.readiness.es", question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
+        CachPackUi(id = "pack.safe.seller", question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER),
+        CachPackUi(id = "pack.childcare.readiness", question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE)
     )
 
     // ── Activity ── (wireframe: activity-01-tab)

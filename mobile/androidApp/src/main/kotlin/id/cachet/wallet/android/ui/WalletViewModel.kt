@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.mapper.ActivityMapper
+import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.mapper.CredentialMapper
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.verification.VeriffResult
@@ -14,6 +15,8 @@ import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.PresentationRequest
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
+import id.cachet.wallet.domain.usecase.VerificationUseCase
+import id.cachet.wallet.domain.usecase.VerifierSessionInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -21,6 +24,7 @@ class WalletViewModel(
     private val issuanceUseCase: IssuanceUseCase,
     private val veriffService: VeriffService,
     private val consentUseCase: ConsentUseCase,
+    private val verificationUseCase: VerificationUseCase,
     private val demoMode: Boolean = false,
     private val demoEmpty: Boolean = false
 ) : ViewModel() {
@@ -35,6 +39,9 @@ class WalletViewModel(
     private val _activityState = MutableStateFlow(ActivityUiState())
     val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
 
+    /** Active verifier session — set when QR overlay is shown, consumed when verification completes. */
+    private var activeVerifierSession: VerifierSessionInfo? = null
+
     init {
         if (demoEmpty) {
             _uiState.value = WalletUiState.Empty
@@ -46,13 +53,141 @@ class WalletViewModel(
         }
     }
 
+    // ── Relay flow ──
+
     /**
-     * Demo mode: try real SD-JWT issuance against running backend (Option B),
-     * fall back to static fixtures (Option A) if backend unavailable.
+     * Verifier side: create a relay session for QR-based verification.
+     * Returns the QR payload string, or null if the relay is unavailable.
      */
+    suspend fun createVerifierSession(packId: String, question: String, predicates: List<String>): String? {
+        return try {
+            val session = verificationUseCase.startVerifierSession(packId, question, predicates)
+            activeVerifierSession = session
+            Log.d(TAG, "Relay session created, QR: ${session.qrPayload}")
+            session.qrPayload
+        } catch (e: Exception) {
+            Log.w(TAG, "Relay unavailable, falling back to static QR", e)
+            null
+        }
+    }
+
+    /**
+     * Holder side: fetch the verification request from the relay.
+     * Parses the QR payload to extract the request_uri and fetches the request.
+     */
+    suspend fun fetchRequestFromRelay(qrPayload: String): VerificationRequest? {
+        return try {
+            val requestUri = parseRequestUri(qrPayload) ?: return null
+            val verifiedRequest = verificationUseCase.fetchVerificationRequest(requestUri)
+            val payload = verifiedRequest.payload
+            Log.d(TAG, "Request fetched from relay (verified=${verifiedRequest.isVerified}, verifier=${verifiedRequest.verifierName})")
+            VerificationRequest(
+                question = payload.question,
+                predicates = payload.predicates.map { RequestPredicate(claim = it, privacyNote = "Only yes/no shared") },
+                retentionDays = 90,
+                loggedInTransparencyLog = true,
+                verifierName = verifiedRequest.verifierName,
+                isVerifierVerified = verifiedRequest.isVerified
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to fetch request from relay", e)
+            null
+        }
+    }
+
+    /**
+     * Holder side: build SD-JWT presentation and post to relay.
+     */
+    suspend fun holderRespondViaRelay(qrPayload: String) {
+        val requestUri = parseRequestUri(qrPayload) ?: return
+        val verifierPubKey = parseVerifierPubKey(qrPayload)
+        val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: return
+        val credential = credentials.firstOrNull { !it.isRevoked && it.rawSdJwt != null } ?: return
+
+        verificationUseCase.respondViaRelay(requestUri, credential.localId, verifierPubKey)
+        Log.d(TAG, "Holder response posted to relay (encrypted=${verifierPubKey != null})")
+    }
+
+    /**
+     * Verifier side: poll relay for response and verify.
+     */
+    suspend fun awaitVerifierResult(): CachetResult {
+        val session = activeVerifierSession
+            ?: return DemoFixtures.cachetResultPass
+
+        return try {
+            val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
+            activeVerifierSession = null
+            loadActivity()
+
+            CachetResult(
+                cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
+                allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty(),
+                passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
+                totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
+                predicates = result.predicateResults.map { p ->
+                    PredicateResult(
+                        label = humanizePredicateId(p.predicateId),
+                        passed = p.status == "satisfied",
+                        failReason = p.reason
+                    )
+                },
+                validityLabel = "90 days",
+                cachetType = CachetType.IDENTITY
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Relay verification failed", e)
+            activeVerifierSession = null
+            CachetResult(
+                cachetName = "Error",
+                allPassed = false,
+                passedCount = 0,
+                totalCount = 0,
+                predicates = emptyList(),
+                cachetType = CachetType.IDENTITY,
+                isError = true,
+                errorMessage = e.message ?: "Verification could not be completed"
+            )
+        }
+    }
+
+    private fun parseQrParam(qrPayload: String, param: String): String? {
+        // cachet://verify?request_uri=http://...&vk=...
+        val prefix = "$param="
+        val idx = qrPayload.indexOf(prefix)
+        if (idx < 0) return null
+        val start = idx + prefix.length
+        val end = qrPayload.indexOf('&', start)
+        return if (end < 0) qrPayload.substring(start) else qrPayload.substring(start, end)
+    }
+
+    private fun parseRequestUri(qrPayload: String): String? = parseQrParam(qrPayload, "request_uri")
+    private fun parseVerifierPubKey(qrPayload: String): String? = parseQrParam(qrPayload, "vk")
+
+    private fun humanizePredicateId(id: String): String = when (id) {
+        "age.ge.18" -> "Age 18+"
+        "age.ge.21" -> "Age 21+"
+        "identity.verified" -> "Identity verified"
+        "criminal.clear.es" -> "Criminal record clear (ES)"
+        "firstaid.valid.es" -> "First aid certificate (ES)"
+        "references.verified" -> "References verified"
+        "liveness.verified" -> "Liveness check"
+        else -> id.replace(".", " ").replaceFirstChar { it.uppercase() }
+    }
+
+    private fun humanizePackId(id: String): String = when (id) {
+        "pack.childcare.readiness.es" -> "Childcare Ready (ES)"
+        "pack.childcare.readiness" -> "Childcare Ready"
+        "pack.childcare.readiness.fr" -> "Childcare Ready (FR)"
+        "pack.childcare.readiness.ee" -> "Childcare Ready (EE)"
+        "pack.safe.seller" -> "Safe Seller"
+        else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
+    }
+
+    // ── Existing flows ──
+
     private fun loadDemoCredentials() {
         viewModelScope.launch {
-            // Option B: attempt real SD-JWT issuance
             val realResult = try {
                 issuanceUseCase.requestSDJWTCredential(
                     clientId = "cachet-android-wallet",
@@ -76,7 +211,6 @@ class WalletViewModel(
                     )
                 }
             } else {
-                // Option A: static demo fixtures (offline)
                 Log.d(TAG, "Demo: using static fixtures")
                 _uiState.value = WalletUiState.HasCredentials(
                     credentials = DemoFixtures.credentials,
@@ -185,7 +319,6 @@ class WalletViewModel(
     }
 
     private suspend fun requestCredentialWithSession(sessionId: String) {
-        // Try SD-JWT path first (hardware-backed key + selective disclosure)
         val sdJwtResult = issuanceUseCase.requestSDJWTCredential(
             clientId = "cachet-android-wallet",
             credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
@@ -198,7 +331,6 @@ class WalletViewModel(
             return
         }
 
-        // Fall back to legacy JSON format
         Log.w(TAG, "SD-JWT issuance failed, falling back to legacy", sdJwtResult.exceptionOrNull())
         issuanceUseCase.requestCredential(
             clientId = "cachet-android-wallet",
@@ -245,7 +377,6 @@ class WalletViewModel(
             userConsent = consent
         ).getOrNull()
 
-        // Refresh activity after sharing
         loadActivity()
 
         return if (result != null && result.success) {
