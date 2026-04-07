@@ -111,16 +111,25 @@ fun IncomingRequestScreen(
 
             // ── "They will learn" header ──
             item {
+                val rawCount = request.predicates.count {
+                    it.disclosureType == id.cachet.wallet.android.ui.model.DisclosureType.RAW_VALUE
+                }
+                val predicateCount = request.predicates.size - rawCount
                 Text(
                     text = "They will learn:",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.fillMaxWidth()
                 )
+                val subtitle = if (rawCount > 0) {
+                    "$predicateCount derived facts, $rawCount shared as-is"
+                } else {
+                    "Only these facts \u2014 nothing more"
+                }
                 Text(
-                    text = "Only these facts — nothing more",
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
+                    color = if (rawCount > 0) BrandWarm else TextSecondary,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -222,6 +231,7 @@ fun IncomingRequestScreen(
 
 @Composable
 private fun PredicateRow(predicate: RequestPredicate) {
+    val isRaw = predicate.disclosureType == id.cachet.wallet.android.ui.model.DisclosureType.RAW_VALUE
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -231,13 +241,13 @@ private fun PredicateRow(predicate: RequestPredicate) {
         Surface(
             modifier = Modifier.size(24.dp),
             shape = CircleShape,
-            color = TrustVerifiedBg
+            color = if (isRaw) TrustPendingBg else TrustVerifiedBg
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
-                    "✓",
+                    text = if (isRaw) "\uD83D\uDC41" else "\u2713",
                     style = MaterialTheme.typography.bodySmall,
-                    color = BrandAccent
+                    color = if (isRaw) TrustPendingText else BrandAccent
                 )
             }
         }
@@ -251,7 +261,7 @@ private fun PredicateRow(predicate: RequestPredicate) {
             Text(
                 text = predicate.privacyNote,
                 style = MaterialTheme.typography.labelSmall,
-                color = TextTertiary
+                color = if (isRaw) BrandWarm else TextTertiary
             )
         }
     }
