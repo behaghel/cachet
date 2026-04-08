@@ -121,6 +121,28 @@ class WalletViewModel(
         return try {
             val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
             activeVerifierSession = null
+
+            // Generate a consent receipt so the Activity tab reflects this verification
+            val predicateIds = result.predicateResults.map { it.predicateId }
+            if (predicateIds.isNotEmpty()) {
+                val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
+                val cred = credentials.firstOrNull { !it.isRevoked }?.credential
+                    ?: DemoFixtures.syntheticCredential
+                consentUseCase.generateConsentReceipt(
+                    credential = cred,
+                    presentationRequest = PresentationRequest(
+                        rpIdentifier = "did:web:cachet.id:verifier",
+                        rpDisplayName = "Cachet Verifier",
+                        purpose = "Trust Pack verification: ${humanizePackId(session.packId)}",
+                        requestedPredicates = predicateIds
+                    ),
+                    userConsent = ConsentDetails(
+                        explicitConsent = true,
+                        dataMinimizationAcknowledged = true,
+                        retentionPeriodUnderstood = true
+                    )
+                )
+            }
             loadActivity()
 
             CachetResult(
