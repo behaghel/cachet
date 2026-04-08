@@ -11,7 +11,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.model.*
@@ -258,13 +260,19 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // -- Header --
-            Text(
-                text = "Cachet",
+            // -- Header: brand shield + wordmark --
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displaySmall
-            )
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CachetMark(type = CachetType.IDENTITY, size = 32.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Cachet",
+                    style = MaterialTheme.typography.displaySmall
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -291,13 +299,6 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                             }
                         },
                         onRefresh = { viewModel.loadCredentials() },
-                        onPackSelected = { pack ->
-                            overlay = OverlayScreen.QrShare(
-                                question = pack.question,
-                                predicates = pack.description.split(", "),
-                                pack = pack
-                            )
-                        },
                         onCardTapped = { card ->
                             val detail = DemoFixtures.detailFor(card.localId)
                             if (detail != null) {

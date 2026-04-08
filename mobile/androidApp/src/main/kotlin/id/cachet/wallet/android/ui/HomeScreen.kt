@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
-import id.cachet.wallet.android.ui.fixtures.DemoFixtures
-import id.cachet.wallet.android.ui.model.CachPackUi
 import id.cachet.wallet.android.ui.model.CredentialCardUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.android.ui.theme.*
@@ -34,7 +32,6 @@ fun HomeScreen(
     uiState: WalletUiState,
     onStartVerification: () -> Unit,
     onRefresh: () -> Unit,
-    onPackSelected: (CachPackUi) -> Unit = {},
     onCardTapped: (CredentialCardUi) -> Unit = {}
 ) {
     // Transient states take over the whole screen
@@ -53,9 +50,7 @@ fun HomeScreen(
         MyCachetsGrid(
             credentials = state.credentials,
             summary = state.vaultSummary,
-            packs = DemoFixtures.cachPacks,
             onStartVerification = onStartVerification,
-            onPackSelected = onPackSelected,
             onCardTapped = onCardTapped
         )
     }
@@ -69,9 +64,7 @@ fun HomeScreen(
 private fun MyCachetsGrid(
     credentials: List<CredentialCardUi>,
     summary: VaultSummaryUi,
-    packs: List<CachPackUi>,
     onStartVerification: () -> Unit,
-    onPackSelected: (CachPackUi) -> Unit,
     onCardTapped: (CredentialCardUi) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -107,33 +100,9 @@ private fun MyCachetsGrid(
             item {
                 EmptySlotCard(onClick = onStartVerification)
             }
-
-            // -- "Verify" section -- full width
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    text = "Verify",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    text = "Pick a question — we'll handle the proof",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-            }
-
-            // Cach'pack cards — full width
-            items(packs, key = { it.question }) { pack ->
-                CachPackCard(pack = pack, onClick = { onPackSelected(pack) })
-            }
         }
 
-        // FAB — Midnight Slate (holder action: earn a cachet)
+        // FAB — earn a new cachet
         FloatingActionButton(
             onClick = onStartVerification,
             modifier = Modifier
@@ -144,40 +113,6 @@ private fun MyCachetsGrid(
             shape = CircleShape
         ) {
             Icon(Icons.Default.Add, contentDescription = "Get a cachet")
-        }
-    }
-}
-
-@Composable
-private fun CachPackCard(pack: CachPackUi, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceBorder)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CachetMark(type = pack.cachetType, size = 36.dp)
-            Spacer(modifier = Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = pack.question,
-                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "${pack.proofCount} ${if (pack.proofCount == 1) "proof" else "proofs"}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextTertiary
-                )
-            }
         }
     }
 }
