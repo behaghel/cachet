@@ -8,6 +8,8 @@ import id.cachet.wallet.android.ui.WalletViewModel
 import id.cachet.wallet.android.verification.MockVeriffService
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.db.WalletDatabase
+import id.cachet.wallet.domain.crypto.AndroidKeyStoreKeyManager
+import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.repository.CredentialRepository
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -36,6 +38,9 @@ val androidModule = module {
         CredentialRepositoryImpl(get()) 
     }
     
+    // Key management (hardware-backed Android KeyStore)
+    single<KeyManager> { AndroidKeyStoreKeyManager() }
+
     // Verification — swap MockVeriffService for real Veriff SDK later
     single<VeriffService> { MockVeriffService() }
 

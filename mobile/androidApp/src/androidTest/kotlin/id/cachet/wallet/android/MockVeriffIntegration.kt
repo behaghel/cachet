@@ -4,21 +4,20 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
 import id.cachet.wallet.network.CredentialResponse
+import id.cachet.wallet.network.SDJWTCredentialResponse
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Mock implementation that simulates the full Veriff verification flow
  * including OAuth2 token exchange and credential issuance.
  */
 class MockVeriffIntegration : OpenID4VCIClient {
-    
+
     var simulateSuccess = true
     var simulateNetworkDelay = true
     var customErrorMessage: String? = null
-    private var customCredentialData: Map<String, JsonElement>? = null
+    private var customCredentialSubject: CredentialSubject? = null
     
     // Simulate different verification scenarios
     enum class VerificationScenario {
@@ -31,7 +30,7 @@ class MockVeriffIntegration : OpenID4VCIClient {
     
     var scenario: VerificationScenario = VerificationScenario.SUCCESS
     
-    override suspend fun requestToken(clientId: String, scope: String): TokenResponse {
+    override suspend fun requestToken(clientId: String, scope: String, sessionId: String?): TokenResponse {
         if (simulateNetworkDelay) {
             delay(1500) // Simulate network delay
         }
@@ -86,26 +85,34 @@ class MockVeriffIntegration : OpenID4VCIClient {
         }
     }
     
+    override suspend fun requestSDJWTCredential(
+        accessToken: String,
+        types: List<String>,
+        holderJWK: String
+    ): SDJWTCredentialResponse {
+        throw NotImplementedError("SD-JWT issuance not supported in mock")
+    }
+
     private fun createMockVerifiedCredential(): VerifiableCredential {
         val now = Clock.System.now()
-        
+
         // Use custom data if provided, otherwise use default mock data
-        val credentialSubject = customCredentialData ?: mapOf(
-            "id" to JsonPrimitive("did:example:user123456"),
-            "name" to JsonPrimitive("John Doe"),
-            "dateOfBirth" to JsonPrimitive("1990-01-15"),
-            "nationality" to JsonPrimitive("US"),
-            "documentType" to JsonPrimitive("passport"),
-            "documentNumber" to JsonPrimitive("P123456789"),
-            "verificationLevel" to JsonPrimitive("full"),
-            "verifiedAt" to JsonPrimitive(now.toString()),
-            "veriffSessionId" to JsonPrimitive("veriff-session-${System.currentTimeMillis()}"),
-            "biometricsVerified" to JsonPrimitive(true),
-            "documentVerified" to JsonPrimitive(true),
-            "faceMatch" to JsonPrimitive(true),
-            "verificationScore" to JsonPrimitive(0.98)
+        val credentialSubject = customCredentialSubject ?: CredentialSubject(
+            id = "did:example:user123456",
+            personalData = PersonalData(
+                age = 34,
+                nationality = "US",
+                documentType = "passport"
+            ),
+            verificationLevel = "full",
+            verified = true,
+            verificationMetrics = VerificationMetrics(
+                overallConfidence = 0.98,
+                livenessScore = 0.99,
+                documentAuthenticity = 0.97
+            )
         )
-        
+
         return VerifiableCredential(
             id = "urn:credential:veriff-verification:${System.currentTimeMillis()}",
             context = listOf(
@@ -154,8 +161,8 @@ class MockVeriffIntegration : OpenID4VCIClient {
         simulateSuccess = false
     }
     
-    fun setCustomCredentialData(data: Map<String, JsonElement>) {
-        customCredentialData = data
+    fun setCustomCredentialData(data: CredentialSubject) {
+        customCredentialSubject = data
     }
     
     fun setNetworkDelay(enabled: Boolean) {

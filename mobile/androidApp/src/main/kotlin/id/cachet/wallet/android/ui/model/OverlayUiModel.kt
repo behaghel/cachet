@@ -20,7 +20,8 @@ data class VerificationRequest(
     val retentionDays: Int = 90,
     val loggedInTransparencyLog: Boolean = true,
     val verifierName: String? = null,
-    val isVerifierVerified: Boolean = false
+    val isVerifierVerified: Boolean = false,
+    val cachetType: CachetType = CachetType.IDENTITY
 )
 
 data class PredicateResult(

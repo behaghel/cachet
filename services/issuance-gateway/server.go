@@ -7,11 +7,15 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -38,15 +42,16 @@ type ServerConfig struct {
 }
 
 // DefaultServerConfig creates a config with generated keys and in-memory store.
+// The issuer EC key is persisted to disk so it survives restarts — otherwise
+// every restart generates a new key, invalidating all previously issued credentials.
 func DefaultServerConfig() ServerConfig {
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to generate RSA key")
 	}
-	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to generate ES256 issuer key")
-	}
+
+	ecKey := loadOrGenerateIssuerKey()
+
 	return ServerConfig{
 		Common: common.ServerConfig{
 			Name:    "issuance-gateway",
@@ -58,6 +63,66 @@ func DefaultServerConfig() ServerConfig {
 		IssuerKeyID: "did:veriff:production#key-1",
 		Sessions:    veriff.NewInMemoryStore(),
 	}
+}
+
+// loadOrGenerateIssuerKey loads the issuer EC key from ISSUER_KEY_FILE (or a
+// default path under DEVENV_STATE), generating and persisting a new one if
+// the file doesn't exist yet. This ensures credentials remain verifiable
+// across service restarts.
+func loadOrGenerateIssuerKey() *ecdsa.PrivateKey {
+	keyPath := os.Getenv("ISSUER_KEY_FILE")
+	if keyPath == "" {
+		if state := os.Getenv("DEVENV_STATE"); state != "" {
+			keyPath = filepath.Join(state, "issuer-key.pem")
+		}
+	}
+
+	keyPath = filepath.Clean(keyPath)
+
+	// No persistence path configured — generate ephemeral key (CI, tests)
+	if keyPath == "." {
+		key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to generate ES256 issuer key")
+		}
+		log.Warn().Msg("no ISSUER_KEY_FILE or DEVENV_STATE set — using ephemeral issuer key")
+		return key
+	}
+
+	// Try loading existing key
+	if data, err := os.ReadFile(keyPath); err == nil {
+		block, _ := pem.Decode(data)
+		if block != nil {
+			key, err := x509.ParseECPrivateKey(block.Bytes)
+			if err == nil {
+				log.Info().Str("path", keyPath).Msg("loaded issuer key from disk")
+				return key
+			}
+			log.Warn().Err(err).Msg("failed to parse issuer key PEM — generating new key")
+		}
+	}
+
+	// Generate new key and persist
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to generate ES256 issuer key")
+	}
+
+	der, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to marshal issuer key")
+	}
+	pemBlock := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
+
+	if err := os.MkdirAll(filepath.Dir(keyPath), 0o700); err != nil {
+		log.Error().Err(err).Msg("failed to create directory for issuer key")
+	} else if err := os.WriteFile(keyPath, pemBlock, 0o600); err != nil {
+		log.Error().Err(err).Msg("failed to persist issuer key — will be ephemeral")
+	} else {
+		log.Info().Str("path", keyPath).Msg("generated and persisted new issuer key")
+	}
+
+	return key
 }
 
 type Server struct {

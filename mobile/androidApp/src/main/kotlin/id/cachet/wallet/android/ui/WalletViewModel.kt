@@ -13,6 +13,7 @@ import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.PresentationRequest
+import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
@@ -39,7 +40,7 @@ class WalletViewModel(
     private val _activityState = MutableStateFlow(ActivityUiState())
     val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
 
-    /** Active verifier session — set when QR overlay is shown, consumed when verification completes. */
+    /** Active verifier session -- set when QR overlay is shown, consumed when verification completes. */
     private var activeVerifierSession: VerifierSessionInfo? = null
 
     init {
@@ -53,7 +54,7 @@ class WalletViewModel(
         }
     }
 
-    // ── Relay flow ──
+    // -- Relay flow --
 
     /**
      * Verifier side: create a relay session for QR-based verification.
@@ -115,9 +116,33 @@ class WalletViewModel(
         val session = activeVerifierSession
             ?: return DemoFixtures.cachetResultPass
 
+        val packType = cachetTypeForPackId(session.packId)
+
         return try {
             val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
             activeVerifierSession = null
+
+            // Generate a consent receipt so the Activity tab reflects this verification
+            val predicateIds = result.predicateResults.map { it.predicateId }
+            if (predicateIds.isNotEmpty()) {
+                val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
+                val cred = credentials.firstOrNull { !it.isRevoked }?.credential
+                    ?: DemoFixtures.syntheticCredential
+                consentUseCase.generateConsentReceipt(
+                    credential = cred,
+                    presentationRequest = PresentationRequest(
+                        rpIdentifier = "did:web:cachet.id:verifier",
+                        rpDisplayName = "Cachet Verifier",
+                        purpose = "Trust Pack verification: ${humanizePackId(session.packId)}",
+                        requestedPredicates = predicateIds
+                    ),
+                    userConsent = ConsentDetails(
+                        explicitConsent = true,
+                        dataMinimizationAcknowledged = true,
+                        retentionPeriodUnderstood = true
+                    )
+                )
+            }
             loadActivity()
 
             CachetResult(
@@ -133,7 +158,7 @@ class WalletViewModel(
                     )
                 },
                 validityLabel = "90 days",
-                cachetType = CachetType.IDENTITY
+                cachetType = packType
             )
         } catch (e: Exception) {
             Log.e(TAG, "Relay verification failed", e)
@@ -144,7 +169,7 @@ class WalletViewModel(
                 passedCount = 0,
                 totalCount = 0,
                 predicates = emptyList(),
-                cachetType = CachetType.IDENTITY,
+                cachetType = packType,
                 isError = true,
                 errorMessage = e.message ?: "Verification could not be completed"
             )
@@ -184,7 +209,14 @@ class WalletViewModel(
         else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
     }
 
-    // ── Existing flows ──
+    internal fun cachetTypeForPackId(id: String): CachetType = when {
+        id.contains("childcare") -> CachetType.CHILDCARE
+        id.contains("seller") -> CachetType.SELLER
+        id.contains("age") -> CachetType.AGE
+        else -> CachetType.IDENTITY
+    }
+
+    // -- Existing flows --
 
     private fun loadDemoCredentials() {
         viewModelScope.launch {
@@ -348,11 +380,23 @@ class WalletViewModel(
     }
 
     suspend fun shareCredential(request: VerificationRequest): CachetResult {
-        if (demoMode) return DemoFixtures.cachetResultPass
-
         val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
         val credential = credentials.firstOrNull { !it.isRevoked }
-            ?: return DemoFixtures.cachetResultPass
+
+        if (demoMode) {
+            // Generate a real consent receipt so the Activity tab reflects the verification.
+            // Use the real credential if available, otherwise a synthetic one (demo fixtures
+            // populate the UI but don't store in the repository).
+            val receiptCredential = credential?.credential ?: DemoFixtures.syntheticCredential
+            generateConsentReceiptForShare(receiptCredential, request)
+            // "Trusted seller" demo always fails to showcase the fail screen
+            return if (request.question.contains("seller", ignoreCase = true))
+                DemoFixtures.cachetResultFail
+            else
+                DemoFixtures.cachetResultPass
+        }
+
+        if (credential == null) return DemoFixtures.cachetResultPass
 
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
 
@@ -377,6 +421,7 @@ class WalletViewModel(
             userConsent = consent
         ).getOrNull()
 
+        // Refresh activity after sharing
         loadActivity()
 
         return if (result != null && result.success) {
@@ -389,7 +434,7 @@ class WalletViewModel(
                     PredicateResult(label = pred.claim, passed = true)
                 },
                 validityLabel = "${request.retentionDays} days",
-                cachetType = CachetType.IDENTITY
+                cachetType = request.cachetType
             )
         } else {
             CachetResult(
@@ -404,9 +449,31 @@ class WalletViewModel(
                         failReason = result?.errorMessage ?: "Credential cannot satisfy request"
                     )
                 },
-                cachetType = CachetType.IDENTITY
+                cachetType = request.cachetType
             )
         }
+    }
+
+    private suspend fun generateConsentReceiptForShare(
+        credential: VerifiableCredential,
+        request: VerificationRequest
+    ) {
+        val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
+        val presentationRequest = PresentationRequest(
+            rpIdentifier = "cachet.verifier.local",
+            rpDisplayName = "Cachet Verifier",
+            purpose = request.question,
+            requestedPredicates = domainPredicates,
+            retentionPeriod = "P${request.retentionDays}D"
+        )
+        val consent = ConsentDetails(
+            explicitConsent = true,
+            dataMinimizationAcknowledged = true,
+            retentionPeriodUnderstood = true,
+            retentionPeriodDays = request.retentionDays
+        )
+        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent)
+        loadActivity()
     }
 
     private fun mapPredicateToDomain(uiClaim: String): String {

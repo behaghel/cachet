@@ -49,6 +49,8 @@ class MockVeriffService : VeriffService {
 
         val conn = url.openConnection() as HttpURLConnection
         try {
+            conn.connectTimeout = 3000
+            conn.readTimeout = 3000
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("X-HMAC-Signature", hmacSha256(bodyBytes, AppConfig.DEV_WEBHOOK_SECRET))

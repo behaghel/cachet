@@ -159,7 +159,8 @@ fun QrShareScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f, fill = true))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // ── Share link button ──
             OutlinedButton(
