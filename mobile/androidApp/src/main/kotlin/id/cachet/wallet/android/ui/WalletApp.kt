@@ -282,7 +282,14 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 when (tab) {
                     0 -> HomeScreen(
                         uiState = uiState,
-                        onStartVerification = { overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER) },
+                        onStartVerification = {
+                            if (uiState is WalletUiState.Empty) {
+                                // Empty vault: go straight to Veriff IDV — no pack picker
+                                viewModel.startVeriffVerification()
+                            } else {
+                                overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
+                            }
+                        },
                         onRefresh = { viewModel.loadCredentials() },
                         onPackSelected = { pack ->
                             overlay = OverlayScreen.QrShare(
