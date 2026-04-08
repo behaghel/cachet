@@ -1,3 +1,4 @@
 package id.cachet.wallet.domain.usecase
 
-// TODO: rewrite after CredentialSubject/model refactor — old signatures no longer compile.
+// Transparency log tests are now part of ConsentUseCaseTest.
+// See ConsentUseCaseTest.kt for generateConsentReceipt anchoring and related tests.

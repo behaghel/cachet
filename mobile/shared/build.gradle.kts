@@ -41,6 +41,15 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+            }
+        }
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
+                implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+                implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
             }
         }
         val androidMain by getting {

@@ -15,11 +15,11 @@ import java.util.Base64
  * Uses StrongBox when available, falls back to TEE.
  * Keys are P-256 (ES256) for SD-JWT Key Binding.
  */
-actual class KeyManager actual constructor() {
+class AndroidKeyStoreKeyManager : KeyManager {
 
     private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
-    actual fun generateKeyPair(alias: String): String {
+    override fun generateKeyPair(alias: String): String {
         if (keyStore.containsAlias(alias)) {
             return getPublicKeyJWK(alias)!!
         }
@@ -41,7 +41,7 @@ actual class KeyManager actual constructor() {
         return ecPublicKeyToJWK(keyPair.public as ECPublicKey)
     }
 
-    actual fun sign(alias: String, data: ByteArray): ByteArray {
+    override fun sign(alias: String, data: ByteArray): ByteArray {
         val privateKey = keyStore.getKey(alias, null) as PrivateKey
         val derSignature = Signature.getInstance("SHA256withECDSA").run {
             initSign(privateKey)
@@ -76,14 +76,14 @@ actual class KeyManager actual constructor() {
         return result
     }
 
-    actual fun getPublicKeyJWK(alias: String): String? {
+    override fun getPublicKeyJWK(alias: String): String? {
         if (!keyStore.containsAlias(alias)) return null
         val cert = keyStore.getCertificate(alias) ?: return null
         val pubKey = cert.publicKey as? ECPublicKey ?: return null
         return ecPublicKeyToJWK(pubKey)
     }
 
-    actual fun hasKey(alias: String): Boolean = keyStore.containsAlias(alias)
+    override fun hasKey(alias: String): Boolean = keyStore.containsAlias(alias)
 
     private fun ecPublicKeyToJWK(key: ECPublicKey): String {
         val point = key.w
