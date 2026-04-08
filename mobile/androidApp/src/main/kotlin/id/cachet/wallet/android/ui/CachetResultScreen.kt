@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -30,7 +31,7 @@ fun CachetResultScreen(
     onDone: () -> Unit,
     onViewReceipt: (() -> Unit)? = null
 ) {
-    // ── Technical error: distinct from verification failure ──
+    // -- Technical error: distinct from verification failure --
     if (result.isError) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -104,7 +105,7 @@ fun CachetResultScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Close button ──
+            // -- Close button --
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     IconButton(
@@ -118,14 +119,14 @@ fun CachetResultScreen(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ── Shield cachet with glow ──
+            // -- Shield cachet with glow --
             item {
                 Box(contentAlignment = Alignment.Center) {
                     // Glow rings
-                    Canvas(modifier = Modifier.size(220.dp)) {
+                    Canvas(modifier = Modifier.size(160.dp)) {
                         val center = Offset(size.width / 2, size.height / 2)
                         drawCircle(
                             color = accentColor.copy(alpha = 0.15f),
@@ -143,13 +144,37 @@ fun CachetResultScreen(
                     // Shield cachet mark
                     CachetMark(
                         type = result.cachetType,
-                        size = 180.dp
+                        size = 120.dp
                     )
+                    // Forbidden sign overlay for fail state
+                    if (!result.allPassed) {
+                        val forbiddenRed = Color(0xFFB91C1C)
+                        Canvas(modifier = Modifier.size(120.dp)) {
+                            val c = Offset(size.width / 2, size.height / 2)
+                            val r = size.minDimension / 2 * 0.85f
+                            val sw = 10.dp.toPx()
+                            drawCircle(
+                                color = forbiddenRed,
+                                radius = r,
+                                center = c,
+                                style = Stroke(width = sw)
+                            )
+                            // Diagonal line (top-left to bottom-right)
+                            val offset = r * 0.707f // cos(45°)
+                            drawLine(
+                                color = forbiddenRed,
+                                start = Offset(c.x - offset, c.y - offset),
+                                end = Offset(c.x + offset, c.y + offset),
+                                strokeWidth = sw,
+                                cap = StrokeCap.Round
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Cachet name + summary pill ──
+            // -- Cachet name + summary pill --
             item {
                 Text(
                     text = result.cachetName,
@@ -172,7 +197,7 @@ fun CachetResultScreen(
                         color = if (result.allPassed) BrandAccentLight else TrustRevokedBorder
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Verified just now",
                     style = MaterialTheme.typography.bodySmall,
@@ -183,7 +208,7 @@ fun CachetResultScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Predicate results card ──
+            // -- Predicate results card --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -225,7 +250,7 @@ fun CachetResultScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Consent receipt bar ──
+            // -- Consent receipt bar --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -258,7 +283,7 @@ fun CachetResultScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Done button ──
+            // -- Done button --
             item {
                 SealButton(
                     text = "Done",

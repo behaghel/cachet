@@ -27,6 +27,7 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
 | 7 | `holder-05-empty-vault.svg` | Empty Vault | `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true` |
+| 7b | `holder-06-pick-pack.svg` | Pick Pack (holder) | Tap FAB on My Cachets tab |
 | 8 | `cachet-01-detail.svg` | Cachet Detail | From My Cachets: tap any cachet card |
 | 9 | `cachet-02-qr-scan.svg` | QR Scanner (holder) | Tap FAB on Activity tab → "Scan" |
 | 10 | `cachet-03-incoming-request.svg` | Incoming Request | After scanning a verifier's QR |

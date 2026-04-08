@@ -2,6 +2,7 @@ package id.cachet.wallet.android.ui.model
 
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
+import id.cachet.wallet.android.ui.components.VerificationDirection
 
 data class CredentialCardUi(
     val localId: String,
@@ -27,4 +28,16 @@ data class CachPackUi(
     val description: String,
     val proofCount: Int,
     val cachetType: CachetType
+)
+
+data class CachetDetailUi(
+    val localId: String,
+    val displayName: String,
+    val cachetType: CachetType,
+    val trustStatus: TrustStatus,
+    val issuedDate: String,
+    val expiresDate: String,
+    val issuer: String,
+    val predicates: List<RequestPredicate>,
+    val relatedActivity: List<HistoryEntry>
 )
