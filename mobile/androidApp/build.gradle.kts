@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "id.cachet.wallet.android"
     compileSdk = 36
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "id.cachet.wallet.android"
