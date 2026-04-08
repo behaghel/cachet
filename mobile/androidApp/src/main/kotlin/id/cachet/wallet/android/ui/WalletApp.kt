@@ -11,17 +11,35 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
+import id.cachet.wallet.android.ui.fixtures.DemoFixtures
+import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.theme.*
+import kotlinx.serialization.json.*
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+
+/** Build a JSON payload for the QR code from a CachPackUi. */
+private fun packToQrPayload(pack: CachPackUi): String {
+    val obj = buildJsonObject {
+        put("type", "cachet_verification_request")
+        put("version", 1)
+        put("question", pack.question)
+        putJsonArray("predicates") {
+            pack.description.split(", ").forEach { add(it) }
+        }
+    }
+    return obj.toString()
+}
 
 /**
  * Overlay screens that sit on top of the main tab navigation.
  * null = no overlay, show normal tabs.
  */
 sealed class OverlayScreen {
+    data class PackPicker(val mode: PackPickerMode) : OverlayScreen()
     data class QrShare(
         val question: String,
         val predicates: List<String>,
@@ -29,6 +47,8 @@ sealed class OverlayScreen {
     ) : OverlayScreen()
     data class IncomingRequest(val request: VerificationRequest) : OverlayScreen()
     data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
+    data class CachetDetail(val detail: CachetDetailUi) : OverlayScreen()
+    data object QrScanner : OverlayScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,17 +66,37 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
     // Track the QR payload separately so it can be updated asynchronously
     var qrPayload by remember { mutableStateOf("") }
 
-    // ── Onboarding gate ──
+    // -- Onboarding gate --
     if (!isOnboarded) {
         OnboardingScreen(onComplete = { isOnboarded = true })
         return
     }
 
-    // ── Overlay screens (full-screen, above tabs) ──
+    // -- Overlay screens (full-screen, above tabs) --
     overlay?.let { screen ->
         when (screen) {
+            is OverlayScreen.PackPicker -> PackPickerScreen(
+                mode = screen.mode,
+                packs = DemoFixtures.cachPacks,
+                onPackSelected = { pack ->
+                    when (screen.mode) {
+                        PackPickerMode.HOLDER -> {
+                            overlay = null
+                            viewModel.startVeriffVerification()
+                        }
+                        PackPickerMode.VERIFIER -> {
+                            overlay = OverlayScreen.QrShare(
+                                question = pack.question,
+                                predicates = pack.description.split(", "),
+                                pack = pack
+                            )
+                        }
+                    }
+                },
+                onClose = { overlay = null }
+            )
             is OverlayScreen.QrShare -> {
-                // Create relay session → real QR → poll for holder response
+                // Create relay session -> real QR -> poll for holder response
                 LaunchedEffect(screen) {
                     val relayQr = viewModel.createVerifierSession(
                         packId = screen.pack.id,
@@ -65,7 +105,15 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                     )
 
                     if (relayQr == null) {
-                        // Relay unavailable — show error, never fake a result
+                        // Relay unavailable -- fall back to demo auto-transition
+                        if (demoMode) {
+                            qrPayload = packToQrPayload(screen.pack)
+                            kotlinx.coroutines.delay(4000)
+                            overlay = OverlayScreen.IncomingRequest(
+                                CachPackMapper.toVerificationRequest(screen.pack)
+                            )
+                            return@LaunchedEffect
+                        }
                         overlay = OverlayScreen.CachetResultOverlay(CachetResult(
                             cachetName = "Error",
                             allPassed = false, passedCount = 0, totalCount = 0,
@@ -98,7 +146,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                     state = QrShareState(
                         question = screen.question,
                         predicates = screen.predicates,
-                        qrPayload = qrPayload
+                        qrPayload = qrPayload.ifBlank { packToQrPayload(screen.pack) }
                     ),
                     onBack = { overlay = null; qrPayload = "" },
                     onClose = { overlay = null; qrPayload = "" },
@@ -118,6 +166,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                                 if (request != null) {
                                     overlay = OverlayScreen.IncomingRequest(request)
                                 }
+                            } else {
+                                // Demo fallback
+                                overlay = OverlayScreen.IncomingRequest(
+                                    CachPackMapper.toVerificationRequest(screen.pack)
+                                )
                             }
                         }
                     }
@@ -127,10 +180,15 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 request = screen.request,
                 onShare = {
                     scope.launch {
-                        viewModel.holderRespondViaRelay(qrPayload)
-                        val result = viewModel.awaitVerifierResult()
-                        overlay = OverlayScreen.CachetResultOverlay(result)
-                        qrPayload = ""
+                        if (qrPayload.startsWith("cachet://")) {
+                            viewModel.holderRespondViaRelay(qrPayload)
+                            val result = viewModel.awaitVerifierResult()
+                            overlay = OverlayScreen.CachetResultOverlay(result)
+                            qrPayload = ""
+                        } else {
+                            val result = viewModel.shareCredential(screen.request)
+                            overlay = OverlayScreen.CachetResultOverlay(result)
+                        }
                     }
                 },
                 onDecline = { overlay = null; qrPayload = "" },
@@ -144,11 +202,54 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                     selectedTab = 1 // Activity tab
                 }
             )
+            is OverlayScreen.QrScanner -> QrScannerScreen(
+                demoMode = demoMode,
+                onCodeScanned = { code ->
+                    if (code.startsWith("cachet://")) {
+                        // Real relay flow: fetch request from relay
+                        scope.launch {
+                            qrPayload = code
+                            val request = viewModel.fetchRequestFromRelay(code)
+                            if (request != null) {
+                                overlay = OverlayScreen.IncomingRequest(request)
+                            }
+                        }
+                    } else {
+                        // Demo fallback
+                        overlay = OverlayScreen.IncomingRequest(DemoFixtures.childcareRequest)
+                    }
+                },
+                onClose = { overlay = null }
+            )
+            is OverlayScreen.CachetDetail -> CachetDetailScreen(
+                detail = screen.detail,
+                onBack = { overlay = null },
+                onShare = {
+                    val d = screen.detail
+                    val syntheticPack = CachPackUi(
+                        id = defaultPackIdForType(d.cachetType),
+                        question = d.displayName,
+                        description = d.predicates.joinToString(", ") { it.claim },
+                        proofCount = d.predicates.size,
+                        cachetType = d.cachetType
+                    )
+                    overlay = OverlayScreen.QrShare(
+                        question = d.displayName,
+                        predicates = d.predicates.map { it.claim },
+                        pack = syntheticPack
+                    )
+                },
+                onRevoke = { overlay = null },
+                onSeeAllActivity = {
+                    overlay = null
+                    selectedTab = 1 // Activity tab
+                }
+            )
         }
         return
     }
 
-    // ── Main app shell (no bottom nav) ──
+    // -- Main app shell (no bottom nav) --
     Scaffold(containerColor = SurfaceBackground) { innerPadding ->
         Column(
             modifier = Modifier
@@ -158,17 +259,23 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Header ──
-            Text(
-                text = "Cachet",
+            // -- Header: brand shield + wordmark --
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displaySmall
-            )
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BrandShieldMark(size = 32.dp, fillWidth = false)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Cachet",
+                    style = MaterialTheme.typography.displaySmall
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Top segmented control ──
+            // -- Top segmented control --
             CachetSegmentedControl(
                 tabs = listOf("My Cachets", "Activity"),
                 selectedIndex = selectedTab,
@@ -177,41 +284,49 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Tab content ──
+            // -- Tab content --
             Crossfade(targetState = selectedTab, label = "main-tab") { tab ->
                 when (tab) {
                     0 -> HomeScreen(
                         uiState = uiState,
-                        onStartVerification = { viewModel.startVeriffVerification() },
-                        onRefresh = { viewModel.loadCredentials() },
-                        onPackSelected = { pack ->
-                            overlay = OverlayScreen.QrShare(
-                                question = pack.question,
-                                predicates = pack.description.split(", "),
-                                pack = pack
-                            )
+                        onStartVerification = {
+                            if (uiState is WalletUiState.Empty) {
+                                // Empty vault: go straight to Veriff IDV — no pack picker
+                                viewModel.startVeriffVerification()
+                            } else {
+                                overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
+                            }
                         },
+                        onRefresh = { viewModel.loadCredentials() },
                         onCardTapped = { card ->
-                            val type = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
-                            val syntheticPack = CachPackUi(
-                                id = defaultPackIdForType(type),
-                                question = card.displayName,
-                                description = card.predicates.joinToString(", "),
-                                proofCount = card.predicates.size,
-                                cachetType = type
-                            )
-                            overlay = OverlayScreen.QrShare(
-                                question = card.displayName,
-                                predicates = card.predicates,
-                                pack = syntheticPack
-                            )
+                            val detail = DemoFixtures.detailFor(card.localId)
+                            if (detail != null) {
+                                overlay = OverlayScreen.CachetDetail(detail)
+                            } else {
+                                // Fallback for non-demo cards: open QR share directly
+                                val type = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
+                                val syntheticPack = CachPackUi(
+                                    id = defaultPackIdForType(type),
+                                    question = card.displayName,
+                                    description = card.predicates.joinToString(", "),
+                                    proofCount = card.predicates.size,
+                                    cachetType = type
+                                )
+                                overlay = OverlayScreen.QrShare(
+                                    question = card.displayName,
+                                    predicates = card.predicates,
+                                    pack = syntheticPack
+                                )
+                            }
                         }
                     )
                     1 -> ActivityScreen(
                         historyGroups = activityState.historyGroups,
                         receipts = activityState.receipts,
                         auditResult = activityState.auditResult,
-                        onRunAudit = { viewModel.runAudit() }
+                        onRunAudit = { viewModel.runAudit() },
+                        onStartVerification = { overlay = OverlayScreen.PackPicker(PackPickerMode.VERIFIER) },
+                        onScanQr = { overlay = OverlayScreen.QrScanner }
                     )
                 }
             }
@@ -226,7 +341,7 @@ private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.Ca
     id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.childcare.readiness.es"
 }
 
-// ── Transient screens (loading, error, verification) ──
+// -- Transient screens (loading, error, verification) --
 
 @Composable
 fun LoadingScreen() {

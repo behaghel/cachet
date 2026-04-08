@@ -48,7 +48,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
-                implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+                implementation("com.nimbusds:nimbus-jose-jwt:10.9")
                 implementation("org.bouncycastle:bcprov-jdk15to18:1.83")
             }
         }
@@ -58,7 +58,7 @@ kotlin {
                 implementation("app.cash.sqldelight:android-driver:2.3.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
                 // JWE/JWS for E2E encryption and signed request verification
-                implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+                implementation("com.nimbusds:nimbus-jose-jwt:10.9")
                 implementation("com.google.crypto.tink:tink-android:1.21.0")
                 implementation("org.bouncycastle:bcprov-jdk15to18:1.83")
             }
