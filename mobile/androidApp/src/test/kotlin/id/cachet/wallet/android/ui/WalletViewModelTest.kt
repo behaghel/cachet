@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui
 
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.domain.model.*
@@ -122,6 +123,34 @@ class WalletViewModelTest {
         // In demo mode, startVeriffVerification returns immediately — state doesn't change to VerificationInProgress
         val state = vm.uiState.value
         assertTrue("Demo mode should not trigger verification, got $state", state !is WalletUiState.VerificationInProgress)
+    }
+
+    // ── cachetTypeForPackId ──
+
+    @Test
+    fun `cachetTypeForPackId maps childcare pack`() {
+        val vm = createViewModel(demoEmpty = true)
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness.es"))
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness.fr"))
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness"))
+    }
+
+    @Test
+    fun `cachetTypeForPackId maps seller pack`() {
+        val vm = createViewModel(demoEmpty = true)
+        assertEquals(CachetType.SELLER, vm.cachetTypeForPackId("pack.safe.seller"))
+    }
+
+    @Test
+    fun `cachetTypeForPackId maps age pack`() {
+        val vm = createViewModel(demoEmpty = true)
+        assertEquals(CachetType.AGE, vm.cachetTypeForPackId("pack.age.check"))
+    }
+
+    @Test
+    fun `cachetTypeForPackId defaults to IDENTITY for unknown pack`() {
+        val vm = createViewModel(demoEmpty = true)
+        assertEquals(CachetType.IDENTITY, vm.cachetTypeForPackId("pack.unknown.something"))
     }
 }
 

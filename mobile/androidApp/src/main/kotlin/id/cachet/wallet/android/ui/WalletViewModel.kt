@@ -115,6 +115,8 @@ class WalletViewModel(
         val session = activeVerifierSession
             ?: return DemoFixtures.cachetResultPass
 
+        val packType = cachetTypeForPackId(session.packId)
+
         return try {
             val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
             activeVerifierSession = null
@@ -133,7 +135,7 @@ class WalletViewModel(
                     )
                 },
                 validityLabel = "90 days",
-                cachetType = CachetType.IDENTITY
+                cachetType = packType
             )
         } catch (e: Exception) {
             Log.e(TAG, "Relay verification failed", e)
@@ -144,7 +146,7 @@ class WalletViewModel(
                 passedCount = 0,
                 totalCount = 0,
                 predicates = emptyList(),
-                cachetType = CachetType.IDENTITY,
+                cachetType = packType,
                 isError = true,
                 errorMessage = e.message ?: "Verification could not be completed"
             )
@@ -182,6 +184,13 @@ class WalletViewModel(
         "pack.childcare.readiness.ee" -> "Childcare Ready (EE)"
         "pack.safe.seller" -> "Safe Seller"
         else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
+    }
+
+    internal fun cachetTypeForPackId(id: String): CachetType = when {
+        id.contains("childcare") -> CachetType.CHILDCARE
+        id.contains("seller") -> CachetType.SELLER
+        id.contains("age") -> CachetType.AGE
+        else -> CachetType.IDENTITY
     }
 
     // -- Existing flows --
@@ -396,7 +405,7 @@ class WalletViewModel(
                     PredicateResult(label = pred.claim, passed = true)
                 },
                 validityLabel = "${request.retentionDays} days",
-                cachetType = CachetType.IDENTITY
+                cachetType = request.cachetType
             )
         } else {
             CachetResult(
@@ -411,7 +420,7 @@ class WalletViewModel(
                         failReason = result?.errorMessage ?: "Credential cannot satisfy request"
                     )
                 },
-                cachetType = CachetType.IDENTITY
+                cachetType = request.cachetType
             )
         }
     }
