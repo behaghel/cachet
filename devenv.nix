@@ -23,7 +23,8 @@ in
   # Enable with: export DEVENV_ENABLE_ANDROID=1
   android = lib.mkIf enableAndroid {
     enable = true;
-    platforms.version = [ "34" ];
+    platforms.version = [ "36" ];
+    buildTools.version = [ "36.0.0" ];
     systemImageTypes = [ "google_apis_playstore" ];
     abis = [ "arm64-v8a" "x86_64" ];
     emulator.enable = true;
@@ -226,7 +227,7 @@ in
       ABI="x86_64"
     fi
     echo "Host architecture: $HOST_ARCH → using ABI: $ABI"
-    avdmanager create avd --force --name cachet-emulator --package "system-images;android-34;google_apis_playstore;$ABI" || true
+    avdmanager create avd --force --name cachet-emulator --package "system-images;android-36;google_apis_playstore;$ABI" || true
     # Ensure the .android dir exists (avoids .ini file warnings)
     mkdir -p "$HOME/.android"
     touch "$HOME/.android/emu-update-last-check.ini"
