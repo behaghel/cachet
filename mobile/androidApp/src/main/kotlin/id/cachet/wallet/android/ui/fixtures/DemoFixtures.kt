@@ -4,6 +4,9 @@ import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.model.*
+import id.cachet.wallet.domain.model.CredentialSubject
+import id.cachet.wallet.domain.model.PersonalData
+import id.cachet.wallet.domain.model.VerifiableCredential
 
 /**
  * Single source of truth for deterministic QA state.
@@ -11,6 +14,21 @@ import id.cachet.wallet.android.ui.model.*
  * Data matches the approved wireframes in design/wireframes/.
  */
 object DemoFixtures {
+
+    /** Synthetic credential for consent receipt generation when no real credential is in the repo. */
+    val syntheticCredential = VerifiableCredential(
+        id = "urn:demo:synthetic",
+        context = listOf("https://www.w3.org/2018/credentials/v1"),
+        type = listOf("VerifiableCredential", "IdentityCredential"),
+        issuer = "did:web:demo.cachet.id",
+        issuanceDate = "2026-04-01T10:00:00Z",
+        credentialSubject = CredentialSubject(
+            id = "did:key:demo-holder",
+            verified = true,
+            personalData = PersonalData(age = 30, nationality = "FR", documentType = "passport"),
+            verificationLevel = "premium"
+        )
+    )
 
     // -- Home / My Trust -- (wireframe: holder-04-vault-my-trust)
 

@@ -362,10 +362,11 @@ class WalletViewModel(
         val credential = credentials.firstOrNull { !it.isRevoked }
 
         if (demoMode) {
-            // Generate a real consent receipt so the Activity tab reflects the verification
-            if (credential != null) {
-                generateConsentReceiptForShare(credential.credential, request)
-            }
+            // Generate a real consent receipt so the Activity tab reflects the verification.
+            // Use the real credential if available, otherwise a synthetic one (demo fixtures
+            // populate the UI but don't store in the repository).
+            val receiptCredential = credential?.credential ?: DemoFixtures.syntheticCredential
+            generateConsentReceiptForShare(receiptCredential, request)
             // "Trusted seller" demo always fails to showcase the fail screen
             return if (request.question.contains("seller", ignoreCase = true))
                 DemoFixtures.cachetResultFail
