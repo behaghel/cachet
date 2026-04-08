@@ -57,11 +57,21 @@ runs:
         # Fast, targeted cleanup
         tool-cache: false
         android: false
-        dotnet: true  
+        dotnet: true
         haskell: false
         large-packages: false
         docker-images: false
         swap-storage: false
+
+    # When using devenv's Android SDK, remove pre-installed system SDK (~14GB)
+    - name: Remove system Android SDK (devenv provides its own)
+      if: inputs.enable-android-sdk == 'true'
+      shell: bash
+      run: |
+        echo "Removing pre-installed Android SDK to free disk for devenv build..."
+        sudo rm -rf /usr/local/lib/android || true
+        echo "Freed $(du -sh /usr/local/lib/android 2>/dev/null | cut -f1 || echo 'N/A') of disk space"
+        df -h / | tail -1
 
 
     - name: Install Nix
