@@ -3,6 +3,8 @@ package id.cachet.wallet.android.ui
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
+import id.cachet.wallet.android.ui.model.RequestPredicate
+import id.cachet.wallet.android.ui.model.VerificationRequest
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.InMemoryConsentReceiptRepository
@@ -151,6 +153,63 @@ class WalletViewModelTest {
     fun `cachetTypeForPackId defaults to IDENTITY for unknown pack`() {
         val vm = createViewModel(demoEmpty = true)
         assertEquals(CachetType.IDENTITY, vm.cachetTypeForPackId("pack.unknown.something"))
+    }
+
+    // ── shareCredential populates Activity in demo mode ──
+
+    @Test
+    fun `shareCredential in demo mode generates consent receipt and refreshes activity`() = runTest {
+        // Set up a demo-mode ViewModel with a real credential in the repo
+        val credRepo = InMemoryCredentialRepository()
+        val cred = StoredCredential(
+            localId = "demo-cred",
+            credential = VerifiableCredential(
+                id = "urn:demo",
+                context = listOf("https://www.w3.org/2018/credentials/v1"),
+                type = listOf("VerifiableCredential", "IdentityCredential"),
+                issuer = "did:web:issuer",
+                issuanceDate = "2026-04-01T10:00:00Z",
+                credentialSubject = CredentialSubject(
+                    id = "did:key:holder",
+                    verified = true,
+                    personalData = PersonalData(age = 30)
+                )
+            ),
+            createdAt = kotlinx.datetime.Clock.System.now()
+        )
+        credRepo.storeCredential(cred)
+
+        val consentRepo = InMemoryConsentReceiptRepository()
+        val consentUseCase = ConsentUseCase(credRepo, consentRepo, MockTransparencyLogRepository())
+        val vm = WalletViewModel(
+            issuanceUseCase = IssuanceUseCase(credRepo, StubOpenID4VCIClient()),
+            veriffService = FakeVeriffService(VeriffResult.Success("s1")),
+            consentUseCase = consentUseCase,
+            verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
+            demoMode = true,
+            demoEmpty = false
+        )
+
+        // Verify activity starts with demo fixtures (from loadDemoCredentials)
+        // Now share a credential
+        val request = VerificationRequest(
+            question = "Are you safe for childcare?",
+            predicates = listOf(RequestPredicate("You are 18 or older", "Age not shared")),
+            cachetType = CachetType.CHILDCARE
+        )
+        val result = vm.shareCredential(request)
+
+        // Should return demo pass result
+        assertTrue(result.allPassed)
+
+        // A consent receipt should have been stored
+        val receipts = consentRepo.getAllReceipts().getOrThrow()
+        assertEquals("Expected 1 consent receipt after demo share", 1, receipts.size)
+        assertTrue(receipts[0].purpose.contains("childcare"))
+
+        // Activity state should be populated (loadActivity was called)
+        val activity = vm.activityState.value
+        assertTrue("Activity receipts should not be empty after share", activity.receipts.isNotEmpty())
     }
 }
 

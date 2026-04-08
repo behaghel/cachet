@@ -13,6 +13,7 @@ import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.PresentationRequest
+import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
@@ -357,7 +358,14 @@ class WalletViewModel(
     }
 
     suspend fun shareCredential(request: VerificationRequest): CachetResult {
+        val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
+        val credential = credentials.firstOrNull { !it.isRevoked }
+
         if (demoMode) {
+            // Generate a real consent receipt so the Activity tab reflects the verification
+            if (credential != null) {
+                generateConsentReceiptForShare(credential.credential, request)
+            }
             // "Trusted seller" demo always fails to showcase the fail screen
             return if (request.question.contains("seller", ignoreCase = true))
                 DemoFixtures.cachetResultFail
@@ -365,9 +373,7 @@ class WalletViewModel(
                 DemoFixtures.cachetResultPass
         }
 
-        val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
-        val credential = credentials.firstOrNull { !it.isRevoked }
-            ?: return DemoFixtures.cachetResultPass
+        if (credential == null) return DemoFixtures.cachetResultPass
 
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
 
@@ -423,6 +429,28 @@ class WalletViewModel(
                 cachetType = request.cachetType
             )
         }
+    }
+
+    private suspend fun generateConsentReceiptForShare(
+        credential: VerifiableCredential,
+        request: VerificationRequest
+    ) {
+        val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
+        val presentationRequest = PresentationRequest(
+            rpIdentifier = "cachet.verifier.local",
+            rpDisplayName = "Cachet Verifier",
+            purpose = request.question,
+            requestedPredicates = domainPredicates,
+            retentionPeriod = "P${request.retentionDays}D"
+        )
+        val consent = ConsentDetails(
+            explicitConsent = true,
+            dataMinimizationAcknowledged = true,
+            retentionPeriodUnderstood = true,
+            retentionPeriodDays = request.retentionDays
+        )
+        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent)
+        loadActivity()
     }
 
     private fun mapPredicateToDomain(uiClaim: String): String {
