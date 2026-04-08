@@ -11,9 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import id.cachet.wallet.android.ui.components.CachetMark
+import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
-import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.model.*
@@ -266,7 +265,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CachetMark(type = CachetType.IDENTITY, size = 32.dp)
+                BrandShieldMark(size = 32.dp, fillWidth = false)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Cachet",
