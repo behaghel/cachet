@@ -5,6 +5,7 @@ import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.domain.model.ConsentReceipt
 import kotlinx.datetime.*
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
 object ActivityMapper {

@@ -2,7 +2,7 @@ package id.cachet.wallet.testfixtures
 
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.network.CredentialResponse
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.Instant
 
 fun makeCredential(

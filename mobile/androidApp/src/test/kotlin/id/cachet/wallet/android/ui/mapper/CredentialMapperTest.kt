@@ -3,7 +3,7 @@ package id.cachet.wallet.android.ui.mapper
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.domain.model.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.Instant
 import org.junit.Assert.*
 import org.junit.Test

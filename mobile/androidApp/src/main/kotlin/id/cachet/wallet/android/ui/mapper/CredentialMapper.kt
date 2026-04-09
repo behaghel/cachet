@@ -6,7 +6,7 @@ import id.cachet.wallet.android.ui.model.CredentialCardUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.domain.model.CredentialSubject
 import id.cachet.wallet.domain.model.StoredCredential
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toLocalDateTime
 

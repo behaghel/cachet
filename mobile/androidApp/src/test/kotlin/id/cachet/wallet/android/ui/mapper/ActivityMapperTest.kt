@@ -5,7 +5,7 @@ import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.ConsentReceipt
 import id.cachet.wallet.domain.model.SignedCertificateTimestamp
 import id.cachet.wallet.domain.model.TransparencyLogEntry
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

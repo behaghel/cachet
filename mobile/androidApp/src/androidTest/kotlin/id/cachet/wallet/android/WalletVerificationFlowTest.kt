@@ -24,7 +24,7 @@ import id.cachet.wallet.network.VerifiableCredentialDTO
 import id.cachet.wallet.network.VerificationSession
 import id.cachet.wallet.network.VerifierClient
 import id.cachet.wallet.network.VerifyResponseDTO
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

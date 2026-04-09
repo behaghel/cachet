@@ -5,7 +5,7 @@ import id.cachet.wallet.config.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.crypto.Mac
