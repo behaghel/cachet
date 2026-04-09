@@ -23,7 +23,7 @@ data class VerifiableCredential(
         } catch (e: Exception) {
             return false
         }
-        return kotlinx.datetime.Clock.System.now() > expiryDate
+        return kotlin.time.Clock.System.now() > expiryDate
     }
 
     fun getIssuanceInstant(): Instant? {

@@ -140,8 +140,8 @@ fun VerifiableCredential.extractQuality(): CredentialQuality? {
         val livenessScore = metrics?.livenessScore ?: 0.0
         val documentAuthenticity = metrics?.documentAuthenticity ?: 0.0
 
-        val issuanceInstant = getIssuanceInstant() ?: kotlinx.datetime.Clock.System.now()
-        val freshness = kotlinx.datetime.Clock.System.now() - issuanceInstant
+        val issuanceInstant = getIssuanceInstant() ?: kotlin.time.Clock.System.now()
+        val freshness = kotlin.time.Clock.System.now() - issuanceInstant
 
         val privacySupport = listOf("selective_disclosure", "predicate_proofs")
         val trustScore = overallConfidence
@@ -157,8 +157,8 @@ fun VerifiableCredential.extractQuality(): CredentialQuality? {
             documentAuthenticity = documentAuthenticity
         )
     } catch (e: Exception) {
-        val issuanceInstant = getIssuanceInstant() ?: kotlinx.datetime.Clock.System.now()
-        val freshness = kotlinx.datetime.Clock.System.now() - issuanceInstant
+        val issuanceInstant = getIssuanceInstant() ?: kotlin.time.Clock.System.now()
+        val freshness = kotlin.time.Clock.System.now() - issuanceInstant
 
         return CredentialQuality(
             verificationLevel = VerificationLevel.BASIC,
