@@ -37,7 +37,7 @@ bouncycastle = "1.83"
 tink-android = "1.21.0"
 
 # Concurrent (needed for CameraX ListenableFuture)
-concurrent-futures = "1.2.0"
+concurrent-futures = "1.1.0"
 
 # QR
 zxing = "3.5.4"
