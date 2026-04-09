@@ -55,6 +55,8 @@ git checkout -b feature/your-feature main
 
 One focus per branch. A branch that fixes a bug and adds a feature is two branches.
 
+**Never branch off an in-flight feature branch.** We squash-merge PRs, which rewrites history: git can no longer tell that `main` already contains the parent branch's changes. Any child branch will conflict on every file the parent touched — even if the content is identical. If you must stack work, rebase the child onto `main` immediately after the parent merges.
+
 ### 2. Schema first
 
 All API changes start with the OpenAPI specification, not the code:
