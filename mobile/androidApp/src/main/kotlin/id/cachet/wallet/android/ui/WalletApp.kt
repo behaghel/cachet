@@ -158,7 +158,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     state = QrShareState(
                         question = screen.question,
                         predicates = screen.predicates,
-                        qrPayload = qrPayload.ifBlank { packToQrPayload(screen.pack) }
+                        qrPayload = qrPayload.ifBlank { packToQrPayload(screen.pack) },
+                        sessionTtlSeconds = 300
                     ),
                     onBack = { overlay = null; qrPayload = "" },
                     onClose = { overlay = null; qrPayload = "" },
@@ -171,20 +172,14 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                             context.startActivity(Intent.createChooser(sendIntent, "Share verification link"))
                         }
                     },
-                    onScanSimulated = {
-                        scope.launch {
-                            if (qrPayload.startsWith("cachet://")) {
-                                val request = viewModel.fetchRequestFromRelay(qrPayload)
-                                if (request != null) {
-                                    overlay = OverlayScreen.IncomingRequest(request)
-                                }
-                            } else {
-                                // Demo fallback
-                                overlay = OverlayScreen.IncomingRequest(
-                                    CachPackMapper.toVerificationRequest(screen.pack)
-                                )
-                            }
-                        }
+                    onRetry = {
+                        // Re-create the overlay to restart the session
+                        qrPayload = ""
+                        overlay = OverlayScreen.QrShare(
+                            question = screen.question,
+                            predicates = screen.predicates,
+                            pack = screen.pack
+                        )
                     }
                 )
             }
