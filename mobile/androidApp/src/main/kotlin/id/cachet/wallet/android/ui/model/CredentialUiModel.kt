@@ -39,5 +39,7 @@ data class CachetDetailUi(
     val expiresDate: String,
     val issuer: String,
     val predicates: List<RequestPredicate>,
-    val relatedActivity: List<HistoryEntry>
+    val relatedActivity: List<HistoryEntry>,
+    val isRevoked: Boolean = false,
+    val keyAlias: String? = null
 )

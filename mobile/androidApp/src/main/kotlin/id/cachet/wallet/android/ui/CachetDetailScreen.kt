@@ -7,10 +7,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,8 +74,19 @@ fun CachetDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     SealButton(
                         text = "Share",
-                        onClick = onShare
+                        onClick = onShare,
+                        enabled = !detail.isRevoked
                     )
+                    if (detail.isRevoked) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Revoked credentials cannot be shared",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = BrandWarm,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -89,6 +102,38 @@ fun CachetDetailScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 MetadataField(label = "Issuer", value = detail.issuer)
+                if (detail.isRevoked) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    MetadataField(label = "Status", value = "Revoked", valueColor = BrandWarm)
+                }
+                // ── Hardware-backed indicator (#62) ──
+                if (detail.keyAlias != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = SurfaceElevated)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = "Hardware-secured",
+                            tint = BrandAccent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Hardware-secured",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = BrandAccent
+                            )
+                            Text(
+                                text = "Bound to your device's secure element",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextTertiary
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -159,27 +204,29 @@ fun CachetDetailScreen(
                 }
             }
 
-            // ── Revoke link ──
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Revoke this cachet",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = BrandWarm,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onRevoke)
-                        .padding(vertical = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(32.dp))
+            // ── Revoke link (hidden when already revoked) ──
+            if (!detail.isRevoked) {
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Revoke this cachet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = BrandWarm,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onRevoke)
+                            .padding(vertical = 8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MetadataField(label: String, value: String) {
+private fun MetadataField(label: String, value: String, valueColor: Color = TextPrimary) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
@@ -191,7 +238,7 @@ private fun MetadataField(label: String, value: String) {
             text = value,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
-            color = TextPrimary
+            color = valueColor
         )
     }
 }
