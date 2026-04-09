@@ -5,7 +5,7 @@ import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.TokenResponse
 import id.cachet.wallet.network.CredentialResponse
 import id.cachet.wallet.network.SDJWTCredentialResponse
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.coroutines.delay
 
 /**

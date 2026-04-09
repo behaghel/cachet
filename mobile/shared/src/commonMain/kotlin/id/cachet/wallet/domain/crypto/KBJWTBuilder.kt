@@ -1,7 +1,7 @@
 package id.cachet.wallet.domain.crypto
 
 import id.cachet.wallet.domain.model.sha256Hash
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Builds Key Binding JWTs (KB-JWT) for SD-JWT presentations.

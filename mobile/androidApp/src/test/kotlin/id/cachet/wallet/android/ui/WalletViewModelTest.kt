@@ -19,7 +19,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -175,7 +175,7 @@ class WalletViewModelTest {
                     personalData = PersonalData(age = 30)
                 )
             ),
-            createdAt = kotlinx.datetime.Clock.System.now()
+            createdAt = kotlin.time.Clock.System.now()
         )
         credRepo.storeCredential(cred)
 

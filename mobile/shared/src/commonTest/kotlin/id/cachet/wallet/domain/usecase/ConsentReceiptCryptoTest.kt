@@ -1,7 +1,7 @@
 package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.domain.model.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse

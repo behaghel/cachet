@@ -193,7 +193,7 @@ class MockTransparencyLogRepository : TransparencyLogRepository {
         return try {
             val entry = LogEntry(
                 index = currentTreeSize,
-                timestamp = kotlinx.datetime.Clock.System.now(),
+                timestamp = kotlin.time.Clock.System.now(),
                 receiptHash = request.receiptHash,
                 saltHash = request.saltHash,
                 policyId = request.policyId,
@@ -205,7 +205,7 @@ class MockTransparencyLogRepository : TransparencyLogRepository {
             
             val sct = SignedCertificateTimestamp(
                 logId = "mock-log-id",
-                timestamp = kotlinx.datetime.Clock.System.now(),
+                timestamp = kotlin.time.Clock.System.now(),
                 signature = "mock-signature-${currentTreeSize}"
             )
             
@@ -220,7 +220,7 @@ class MockTransparencyLogRepository : TransparencyLogRepository {
             val sth = SignedTreeHead(
                 treeSize = currentTreeSize,
                 rootHash = "mock-root-hash-${currentTreeSize}",
-                timestamp = kotlinx.datetime.Clock.System.now(),
+                timestamp = kotlin.time.Clock.System.now(),
                 logId = "mock-log-id",
                 signature = "mock-sth-signature-${currentTreeSize}"
             )

@@ -4,7 +4,7 @@ import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.network.OpenID4VCIClient
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.random.Random
 
 class IssuanceUseCase(
@@ -128,7 +128,7 @@ class IssuanceUseCase(
             context = listOf("https://www.w3.org/2018/credentials/v1"),
             type = types,
             issuer = "did:veriff:production",
-            issuanceDate = kotlinx.datetime.Clock.System.now().toString(),
+            issuanceDate = Clock.System.now().toString(),
             credentialSubject = id.cachet.wallet.domain.model.CredentialSubject(
                 id = "did:example:holder",
                 verified = true,

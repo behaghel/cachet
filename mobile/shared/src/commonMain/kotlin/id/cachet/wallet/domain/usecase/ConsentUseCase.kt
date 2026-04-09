@@ -4,7 +4,7 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Use case for handling consent receipts and credential presentations
