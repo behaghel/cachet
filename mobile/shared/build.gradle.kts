@@ -4,24 +4,23 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-@OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
-kotlin {
-    applyDefaultHierarchyTemplate()
-
-    androidTarget {
-        compilations.all {
-            compilerOptions.configure {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-            }
-        }
+androidLibrary {
+    namespace = "id.cachet.wallet.shared"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    buildToolsVersion = libs.versions.buildTools.get()
+    defaultConfig {
+        minSdk = libs.versions.minSdk.get().toInt()
     }
+}
 
+@OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+kotlinMultiplatform {
     iosX64()
     iosArm64()
     iosSimulatorArm64()
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
@@ -37,21 +36,13 @@ kotlin {
                 implementation(libs.multiplatform.settings.coroutines)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
-        val androidUnitTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
-                implementation(libs.nimbus.jose.jwt)
-                implementation(libs.bouncycastle)
-            }
-        }
-        val androidMain by getting {
+        androidMain {
             dependencies {
                 implementation(libs.ktor.client.android)
                 implementation(libs.sqldelight.android.driver)
@@ -62,21 +53,20 @@ kotlin {
                 implementation(libs.bouncycastle)
             }
         }
-        val iosMain by getting {
+        getByName("androidUnitTest") {
+            dependencies {
+                implementation(kotlin("test"))
+                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
+                implementation(libs.nimbus.jose.jwt)
+                implementation(libs.bouncycastle)
+            }
+        }
+        iosMain {
             dependencies {
                 implementation(libs.ktor.client.ios)
                 implementation(libs.sqldelight.native.driver)
             }
         }
-    }
-}
-
-android {
-    namespace = "id.cachet.wallet.shared"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    buildToolsVersion = libs.versions.buildTools.get()
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
     }
 }
 
