@@ -19,7 +19,8 @@ object CachPackMapper {
                 RequestPredicate("2+ verified references", "Referee names will NOT be shared")
             ),
             retentionDays = 90,
-            loggedInTransparencyLog = true
+            loggedInTransparencyLog = true,
+            cachetType = CachetType.CHILDCARE
         )
         CachetType.SELLER -> VerificationRequest(
             question = "Are you a trusted seller?",
@@ -30,7 +31,8 @@ object CachPackMapper {
                 RequestPredicate("Low chargeback rate", "Only a pass/fail result")
             ),
             retentionDays = 90,
-            loggedInTransparencyLog = true
+            loggedInTransparencyLog = true,
+            cachetType = CachetType.SELLER
         )
         CachetType.AGE -> VerificationRequest(
             question = "Are you old enough?",
@@ -38,7 +40,8 @@ object CachPackMapper {
                 RequestPredicate("You are 18 or older", "Your exact age will NOT be shared")
             ),
             retentionDays = 30,
-            loggedInTransparencyLog = true
+            loggedInTransparencyLog = true,
+            cachetType = CachetType.AGE
         )
         CachetType.IDENTITY -> VerificationRequest(
             question = "Is your identity verified?",
@@ -47,7 +50,8 @@ object CachPackMapper {
                 RequestPredicate("Liveness check passed", "Only a pass/fail result")
             ),
             retentionDays = 90,
-            loggedInTransparencyLog = true
+            loggedInTransparencyLog = true,
+            cachetType = CachetType.IDENTITY
         )
     }
 

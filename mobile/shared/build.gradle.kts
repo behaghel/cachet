@@ -41,6 +41,15 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+            }
+        }
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
+                implementation("com.nimbusds:nimbus-jose-jwt:10.9")
+                implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
             }
         }
         val androidMain by getting {
@@ -49,7 +58,7 @@ kotlin {
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
                 // JWE/JWS for E2E encryption and signed request verification
-                implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+                implementation("com.nimbusds:nimbus-jose-jwt:10.9")
                 implementation("com.google.crypto.tink:tink-android:1.13.0")
                 implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
             }

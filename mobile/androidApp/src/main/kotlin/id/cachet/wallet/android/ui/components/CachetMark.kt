@@ -283,22 +283,31 @@ private val brandCArcPath    by lazy { PathParser().parsePathString(BRAND_C_ARC)
 private const val BRAND_VB_W = 400f
 private const val BRAND_VB_H = 480f
 
+/**
+ * Brand logo mark — the green shield with white C arc, no inner icon.
+ * Matches design/logo/logo-mark.svg exactly.
+ *
+ * @param size The height of the mark. Width is derived from the aspect ratio.
+ * @param fillWidth When true, fills available width and centers the mark (for hero layouts).
+ */
 @Composable
 fun BrandShieldMark(
     modifier: Modifier = Modifier,
-    size: Dp = 200.dp
+    size: Dp = 200.dp,
+    fillWidth: Boolean = true
 ) {
-    val heightPx = with(LocalDensity.current) { size.toPx() }
-    val scale = heightPx / BRAND_VB_H
-    val shieldWidthPx = BRAND_VB_W * scale
+    val widthDp = size * (BRAND_VB_W / BRAND_VB_H)
+    val canvasModifier = if (fillWidth) {
+        modifier.fillMaxWidth().height(size)
+    } else {
+        modifier.size(width = widthDp, height = size)
+    }
 
-    Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(size)
-    ) {
-        // Center the shield drawing within the full-width canvas
-        val offsetX = (this.size.width - shieldWidthPx) / 2f
+    Canvas(modifier = canvasModifier) {
+        val scale = this.size.height / BRAND_VB_H
+        // Center when filling width; no offset when intrinsically sized
+        val shieldWidthPx = BRAND_VB_W * scale
+        val offsetX = if (fillWidth) (this.size.width - shieldWidthPx) / 2f else 0f
 
         withTransform({
             translate(left = offsetX)

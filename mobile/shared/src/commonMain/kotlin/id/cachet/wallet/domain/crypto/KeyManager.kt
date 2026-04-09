@@ -3,8 +3,11 @@ package id.cachet.wallet.domain.crypto
 /**
  * Platform-agnostic key management interface for holder key operations.
  * Keys are hardware-backed on Android (StrongBox/TEE) and Secure Enclave on iOS.
+ *
+ * Production: [AndroidKeyStoreKeyManager] (androidMain)
+ * Tests: [FakeKeyManager] (commonTest testfixtures)
  */
-expect class KeyManager() {
+interface KeyManager {
     /**
      * Generate a P-256 (ES256) key pair and return the public key as a JWK JSON string.
      * The private key is stored in hardware-backed secure storage under the given alias.
@@ -15,7 +18,7 @@ expect class KeyManager() {
     /**
      * Sign data with the private key stored under the given alias.
      * Uses SHA256withECDSA (ES256).
-     * Returns the raw signature bytes.
+     * Returns the raw signature bytes (R||S, 64 bytes for P-256).
      */
     fun sign(alias: String, data: ByteArray): ByteArray
 

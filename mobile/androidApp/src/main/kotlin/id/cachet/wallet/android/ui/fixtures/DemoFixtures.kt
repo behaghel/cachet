@@ -4,6 +4,9 @@ import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.model.*
+import id.cachet.wallet.domain.model.CredentialSubject
+import id.cachet.wallet.domain.model.PersonalData
+import id.cachet.wallet.domain.model.VerifiableCredential
 
 /**
  * Single source of truth for deterministic QA state.
@@ -12,36 +15,51 @@ import id.cachet.wallet.android.ui.model.*
  */
 object DemoFixtures {
 
-    // ── Home / My Trust ── (wireframe: holder-04-vault-my-trust)
+    /** Synthetic credential for consent receipt generation when no real credential is in the repo. */
+    val syntheticCredential = VerifiableCredential(
+        id = "urn:demo:synthetic",
+        context = listOf("https://www.w3.org/2018/credentials/v1"),
+        type = listOf("VerifiableCredential", "IdentityCredential"),
+        issuer = "did:web:demo.cachet.id",
+        issuanceDate = "2026-04-01T10:00:00Z",
+        credentialSubject = CredentialSubject(
+            id = "did:key:demo-holder",
+            verified = true,
+            personalData = PersonalData(age = 30, nationality = "FR", documentType = "passport"),
+            verificationLevel = "premium"
+        )
+    )
+
+    // -- Home / My Trust -- (wireframe: holder-04-vault-my-trust)
 
     val credentials: List<CredentialCardUi> = listOf(
         CredentialCardUi(
             localId = "demo-identity",
             displayName = "Identity",
-            issuerLine = "Issued by Veriff  ·  Premium tier  ·  Expires Dec 2026",
+            issuerLine = "Issued by Veriff  \u00B7  Premium tier  \u00B7  Expires Dec 2026",
             freshnessLabel = "12d",
             isRevoked = false,
             cachetType = CachetType.IDENTITY,
             trustStatus = TrustStatus.VERIFIED,
             predicates = listOf("Age 18+", "ID Verified", "Liveness", "Nationality"),
-            sharesSummary = "Shared 3 times  ·  Last used 2 days ago"
+            sharesSummary = "Shared 3 times  \u00B7  Last used 2 days ago"
         ),
         CredentialCardUi(
             localId = "demo-childcare",
             displayName = "Childcare",
-            issuerLine = "Issued by Parents Association  ·  Standard tier",
+            issuerLine = "Issued by Parents Association  \u00B7  Standard tier",
             freshnessLabel = "45d",
             isRevoked = false,
             cachetType = CachetType.CHILDCARE,
             trustStatus = TrustStatus.VERIFIED,
             predicates = listOf("Criminal clear", "ID Verified"),
-            sharesSummary = "Shared 1 time  ·  Last used 5 days ago"
+            sharesSummary = "Shared 1 time  \u00B7  Last used 5 days ago"
         ),
         CredentialCardUi(
             localId = "demo-seller",
             displayName = "Safe Seller",
-            issuerLine = "Issued by Marketplace  ·  Awaiting platform data",
-            freshnessLabel = "—",
+            issuerLine = "Issued by Marketplace  \u00B7  Awaiting platform data",
+            freshnessLabel = "\u2014",
             isRevoked = false,
             cachetType = CachetType.SELLER,
             trustStatus = TrustStatus.PENDING,
@@ -56,7 +74,7 @@ object DemoFixtures {
         pendingCount = 1
     )
 
-    // ── Home / Verify section ── (inline on My Cachets tab)
+    // -- Home / Verify section -- (inline on My Cachets tab)
 
     val cachPacks: List<CachPackUi> = listOf(
         CachPackUi(id = "pack.childcare.readiness.es", question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
@@ -64,7 +82,7 @@ object DemoFixtures {
         CachPackUi(id = "pack.childcare.readiness", question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE)
     )
 
-    // ── Activity ── (wireframe: activity-01-tab)
+    // -- Activity -- (wireframe: activity-01-tab)
 
     val historyGroups: List<HistoryGroup> = listOf(
         HistoryGroup(
@@ -85,12 +103,12 @@ object DemoFixtures {
         HistoryGroup(
             dateLabel = "MAR 22",
             entries = listOf(
-                HistoryEntry("h5", "Background check request — you declined", "Unknown requester  ·  3:10 PM", "", "", VerificationDirection.DECLINED, TrustStatus.INCOMPLETE)
+                HistoryEntry("h5", "Background check request \u2014 you declined", "Unknown requester  \u00B7  3:10 PM", "", "", VerificationDirection.DECLINED, TrustStatus.INCOMPLETE)
             )
         )
     )
 
-    // ── Receipts ── (shown in Activity tab, Receipts filter)
+    // -- Receipts -- (shown in Activity tab, Receipts filter)
 
     val receipts: List<ReceiptItem> = listOf(
         ReceiptItem("r1", "Childcare readiness check", "Parents Association Madrid", "Mar 28, 2026", 4, ReceiptLogStatus.LOGGED, "Expires Jun 26"),
@@ -99,7 +117,67 @@ object DemoFixtures {
         ReceiptItem("r4", "Identity check", "Freelance platform onboarding", "Mar 10, 2026", 2, ReceiptLogStatus.LOGGED, "Expires Jun 8")
     )
 
-    // ── Overlay: QR Share ── (wireframe: verify-02-qr-share)
+    // -- Cachet Detail -- (wireframe: cachet-01-detail)
+
+    val cachetDetails: Map<String, CachetDetailUi> = mapOf(
+        "demo-childcare" to CachetDetailUi(
+            localId = "demo-childcare",
+            displayName = "Childcare Ready",
+            cachetType = CachetType.CHILDCARE,
+            trustStatus = TrustStatus.VERIFIED,
+            issuedDate = "Mar 15, 2026",
+            expiresDate = "Jun 13, 2026",
+            issuer = "Veriff",
+            predicates = listOf(
+                RequestPredicate("Age 18 or older", "Your exact age is never shared"),
+                RequestPredicate("Identity verified", "Your name is never shared"),
+                RequestPredicate("No criminal record", "Only a clear/not-clear result")
+            ),
+            relatedActivity = listOf(
+                HistoryEntry("rd1", "Parents Association", "All proofs passed \u00B7 \u2713 Logged", "Mar 15", "", VerificationDirection.RECEIVED, TrustStatus.PASSED),
+                HistoryEntry("rd2", "After-school club", "All proofs passed \u00B7 \u2713 Logged", "Mar 22", "", VerificationDirection.RECEIVED, TrustStatus.PASSED)
+            )
+        ),
+        "demo-identity" to CachetDetailUi(
+            localId = "demo-identity",
+            displayName = "Identity",
+            cachetType = CachetType.IDENTITY,
+            trustStatus = TrustStatus.VERIFIED,
+            issuedDate = "Mar 24, 2026",
+            expiresDate = "Dec 24, 2026",
+            issuer = "Veriff",
+            predicates = listOf(
+                RequestPredicate("Age 18 or older", "Your exact age is never shared"),
+                RequestPredicate("Identity verified", "Your name is never shared"),
+                RequestPredicate("Liveness confirmed", "Biometric data never leaves your device"),
+                RequestPredicate("Nationality confirmed", "Only country, not passport number")
+            ),
+            relatedActivity = listOf(
+                HistoryEntry("rd3", "Festival Entrada", "1 proof shared \u00B7 \u2713 Logged", "Today", "", VerificationDirection.RECEIVED, TrustStatus.PASSED),
+                HistoryEntry("rd4", "Freelance platform", "2 proofs shared \u00B7 \u2713 Logged", "Mar 28", "", VerificationDirection.RECEIVED, TrustStatus.PASSED)
+            )
+        ),
+        "demo-seller" to CachetDetailUi(
+            localId = "demo-seller",
+            displayName = "Safe Seller",
+            cachetType = CachetType.SELLER,
+            trustStatus = TrustStatus.PENDING,
+            issuedDate = "\u2014",
+            expiresDate = "\u2014",
+            issuer = "Marketplace",
+            predicates = listOf(
+                RequestPredicate("Identity verified", "Your name is never shared"),
+                RequestPredicate("Platform tenure \u2265 6 months", "Only pass/fail shared"),
+                RequestPredicate("Fulfilment rate \u2265 95%", "Only pass/fail shared"),
+                RequestPredicate("No unresolved chargebacks", "Only pass/fail shared")
+            ),
+            relatedActivity = emptyList()
+        )
+    )
+
+    fun detailFor(localId: String): CachetDetailUi? = cachetDetails[localId]
+
+    // -- Overlay: QR Share -- (wireframe: verify-02-qr-share)
 
     val qrShareState = QrShareState(
         question = "Safe for my kids?",
@@ -107,7 +185,7 @@ object DemoFixtures {
         expiresLabel = "Request expires in 4:58"
     )
 
-    // ── Overlay: Incoming Request ── (wireframe: verify-03-incoming-request)
+    // -- Overlay: Incoming Request -- (wireframe: verify-03-incoming-request)
 
     val childcareRequest = VerificationRequest(
         question = "Are you safe for childcare?",
@@ -121,7 +199,7 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
-    // ── Overlay: Seller Request ──
+    // -- Overlay: Seller Request --
 
     val sellerRequest = VerificationRequest(
         question = "Are you a trusted seller?",
@@ -135,7 +213,7 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
-    // ── Overlay: Age Request ──
+    // -- Overlay: Age Request --
 
     val ageRequest = VerificationRequest(
         question = "Are you old enough?",
@@ -146,7 +224,7 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
-    // ── Overlay: Cachet Result Pass ── (wireframe: cachet-04-result-pass)
+    // -- Overlay: Cachet Result Pass -- (wireframe: cachet-04-result-pass)
 
     val cachetResultPass = CachetResult(
         cachetName = "Childcare Ready",
@@ -163,7 +241,7 @@ object DemoFixtures {
         cachetType = CachetType.CHILDCARE
     )
 
-    // ── Overlay: Cachet Result Fail ── (wireframe: cachet-05-result-fail)
+    // -- Overlay: Cachet Result Fail -- (wireframe: cachet-05-result-fail)
 
     val cachetResultFail = CachetResult(
         cachetName = "Incomplete",

@@ -2,7 +2,6 @@ package id.cachet.wallet.android.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,10 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.components.SealButton
 import id.cachet.wallet.android.ui.model.RequestPredicate
 import id.cachet.wallet.android.ui.model.VerificationRequest
@@ -38,12 +41,12 @@ fun IncomingRequestScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Close button ──
+            // -- Close button --
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
+                        .padding(top = 8.dp)
                 ) {
                     IconButton(
                         onClick = onClose,
@@ -54,32 +57,30 @@ fun IncomingRequestScreen(
                 }
             }
 
-            // ── Requester identity ──
+            // -- Cachet shield with "?" badge --
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    modifier = Modifier.size(72.dp),
-                    shape = CircleShape,
-                    color = if (request.isVerifierVerified) BrandAccent else BrandPrimary
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (request.isVerifierVerified) "✓" else "?",
-                            fontSize = 24.sp,
-                            color = Color.White
-                        )
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    CachetMark(type = request.cachetType, size = 72.dp)
+                    Surface(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .offset(x = 4.dp, y = 4.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandPrimary
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                if (request.verifierName != null) {
-                    Text(
-                        text = request.verifierName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (request.isVerifierVerified) BrandAccent else TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
                 if (!request.isVerifierVerified) {
                     Text(
                         text = "Unverified requester",
@@ -89,10 +90,10 @@ fun IncomingRequestScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ── Title ──
+            // -- Title + subtitle with verifier name in accent --
             item {
                 Text(
                     text = "Verification Request",
@@ -101,17 +102,33 @@ fun IncomingRequestScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (request.verifierName != null) "${request.verifierName} wants to know:" else "Someone wants to know:",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                val nameColor = if (request.isVerifierVerified) BrandAccent else TextPrimary
+                if (request.verifierName != null) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(color = nameColor, fontWeight = FontWeight.SemiBold)) {
+                                append(request.verifierName)
+                            }
+                            append(" wants to know:")
+                        },
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Text(
+                        text = "Someone wants to know:",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Question pill ──
+            // -- Question pill --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -122,17 +139,17 @@ fun IncomingRequestScreen(
                         text = request.question,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 18.dp),
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── "They will learn" header ──
+            // -- "They will learn" header --
             item {
                 Text(
                     text = "They will learn:",
@@ -149,7 +166,7 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ── Predicate list card ──
+            // -- Predicate list card --
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -172,7 +189,7 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Consent metadata ──
+            // -- Consent metadata --
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -214,10 +231,10 @@ fun IncomingRequestScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ── Action buttons ──
+            // -- Action buttons --
             item {
                 SealButton(
                     text = "Verify & Share",
@@ -251,16 +268,17 @@ private fun PredicateRow(predicate: RequestPredicate) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.Top
     ) {
+        // Neutral arrow icon — these proofs are pending, not yet performed
         Surface(
             modifier = Modifier.size(24.dp),
             shape = CircleShape,
-            color = TrustVerifiedBg
+            color = SurfaceElevated
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
-                    "✓",
+                    "\u2192",
                     style = MaterialTheme.typography.bodySmall,
-                    color = BrandAccent
+                    color = TextSecondary
                 )
             }
         }

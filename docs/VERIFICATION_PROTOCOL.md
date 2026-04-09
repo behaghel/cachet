@@ -350,7 +350,7 @@ When fully implemented, the protocol provides:
 
 ## 7. Future Directions
 
-The MVP protocol (Sections 1–6) uses SD-JWT with selective disclosure. Known limitations and their planned mitigations:
+The MVP protocol (Sections 1-6) uses SD-JWT with selective disclosure. Known limitations and their planned mitigations:
 
 | Limitation | Mitigation | Mechanism |
 |-----------|------------|-----------|
