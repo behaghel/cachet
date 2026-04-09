@@ -83,6 +83,10 @@ jobs:
           cp .env.ci .env
           echo "✅ Dummy secrets configured for SecretSpec compatibility"
 
+      - name: Check Android SDK version sync
+        shell: bash
+        run: bash scripts/check-android-version-sync.sh
+
       - name: Build Android APK
         shell: bash
         run: devenv shell -- android:build

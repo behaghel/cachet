@@ -61,7 +61,7 @@ updates:
       go-deps:
         patterns: ["*"]
 
-  # Gradle dependencies (Android) — grouped, major bumps separate
+  # Gradle dependencies (Android) — grouped by ecosystem for coherent PRs
   - package-ecosystem: "gradle"
     directory: "/mobile"
     schedule:
@@ -70,12 +70,17 @@ updates:
       prefix: "chore(deps)"
       include: "scope"
     groups:
-      mobile-deps:
+      kotlin-ecosystem:
+        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*"]
+      ktor:
+        patterns: ["io.ktor*"]
+      sqldelight:
+        patterns: ["app.cash.sqldelight*"]
+      androidx:
+        patterns: ["androidx.*"]
+      mobile-other:
         patterns: ["*"]
-        update-types: ["minor", "patch"]
-      mobile-major:
-        patterns: ["*"]
-        update-types: ["major"]
+        exclude-patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*", "io.ktor*", "app.cash.sqldelight*", "androidx.*"]
 
   # Docker base images — grouped into one PR
   - package-ecosystem: "docker"
