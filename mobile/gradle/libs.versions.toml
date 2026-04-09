@@ -22,7 +22,7 @@ kotlinx-serialization = "1.10.0"
 kotlinx-datetime = "0.7.1"
 
 # Ktor
-ktor = "2.3.7"
+ktor = "3.4.2"
 
 # DI
 koin = "4.2.0"
