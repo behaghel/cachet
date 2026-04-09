@@ -36,6 +36,9 @@ nimbus-jose-jwt = "10.9"
 bouncycastle = "1.83"
 tink-android = "1.21.0"
 
+# Concurrent (needed for CameraX ListenableFuture)
+concurrent-futures = "1.2.0"
+
 # QR
 zxing = "3.5.4"
 
@@ -102,6 +105,7 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" 
 camerax-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+concurrent-futures-ktx = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version.ref = "concurrent-futures" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
