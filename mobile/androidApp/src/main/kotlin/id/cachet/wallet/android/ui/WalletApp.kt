@@ -198,6 +198,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 result = screen.result,
                 onDone = { overlay = null },
                 onViewReceipt = {
+                    viewModel.appendVerificationToActivity(screen.result)
                     overlay = null
                     selectedTab = 1 // Activity tab
                 }
