@@ -9,6 +9,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
@@ -30,7 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
@@ -270,46 +270,45 @@ private fun CameraPreview(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     var camera by remember { mutableStateOf<androidx.camera.core.Camera?>(null) }
+    val previewView = remember { PreviewView(context) }
 
     // Toggle torch when state changes
     LaunchedEffect(torchEnabled) {
         camera?.cameraControl?.enableTorch(torchEnabled)
     }
 
-    AndroidView(
-        factory = { ctx ->
-            PreviewView(ctx).also { previewView ->
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
-                    }
-                    val analyzer = ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build()
-                        .also {
-                            it.setAnalyzer(
-                                Executors.newSingleThreadExecutor(),
-                                QrCodeAnalyzer(onCodeScanned)
-                            )
-                        }
-
-                    try {
-                        cameraProvider.unbindAll()
-                        camera = cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
-                            preview,
-                            analyzer
-                        )
-                    } catch (_: Exception) {
-                        // Camera binding failed
-                    }
-                }, ContextCompat.getMainExecutor(ctx))
+    // Bind camera using suspend API (CameraX 1.5+)
+    LaunchedEffect(Unit) {
+        try {
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
             }
-        },
+            val analyzer = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(
+                        Executors.newSingleThreadExecutor(),
+                        QrCodeAnalyzer(onCodeScanned)
+                    )
+                }
+
+            cameraProvider.unbindAll()
+            camera = cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                analyzer
+            )
+        } catch (_: Exception) {
+            // Camera binding failed
+        }
+    }
+
+    AndroidView(
+        factory = { previewView },
         modifier = modifier
     )
 }
