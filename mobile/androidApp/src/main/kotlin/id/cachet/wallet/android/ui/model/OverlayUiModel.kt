@@ -12,9 +12,12 @@ data class QrShareState(
 
 enum class QrSessionStatus { WAITING, EXPIRED }
 
+enum class DisclosureType { PREDICATE, RAW_VALUE }
+
 data class RequestPredicate(
     val claim: String,
-    val privacyNote: String
+    val privacyNote: String,
+    val disclosureType: DisclosureType = DisclosureType.PREDICATE
 )
 
 data class VerificationRequest(
