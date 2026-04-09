@@ -71,8 +71,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("io.insert-koin:koin-android:3.5.3")
-    implementation("io.insert-koin:koin-androidx-compose:3.5.3")
+    implementation("io.insert-koin:koin-android:4.2.0")
+    implementation("io.insert-koin:koin-androidx-compose:4.2.0")
     
     // DateTime and Serialization (already included in shared module but needed for Android-specific code)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")

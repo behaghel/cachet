@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.cachet.wallet.android.ui.components.CachetType
+import id.cachet.wallet.android.ui.components.TrustStatus
+import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.mapper.ActivityMapper
 import id.cachet.wallet.android.ui.mapper.CachPackMapper
@@ -280,6 +282,32 @@ class WalletViewModel(
                         exception.message ?: "Failed to load credentials"
                     )
                 }
+        }
+    }
+
+    fun appendVerificationToActivity(result: CachetResult) {
+        if (demoMode) {
+            val entry = HistoryEntry(
+                id = "h-${System.currentTimeMillis()}",
+                title = result.cachetName,
+                subtitle = if (result.allPassed) "Verification passed" else "Verification incomplete",
+                time = "Just now",
+                proofSummary = "${result.passedCount} of ${result.totalCount} proofs checked",
+                direction = VerificationDirection.GIVEN,
+                status = if (result.allPassed) TrustStatus.PASSED else TrustStatus.INCOMPLETE,
+                cachetEarned = if (result.allPassed) result.cachetType else null
+            )
+            val current = _activityState.value
+            val todayGroup = current.historyGroups.firstOrNull()
+            val updatedGroups = if (todayGroup != null && todayGroup.dateLabel == "TODAY") {
+                listOf(todayGroup.copy(entries = listOf(entry) + todayGroup.entries)) +
+                    current.historyGroups.drop(1)
+            } else {
+                listOf(HistoryGroup("TODAY", listOf(entry))) + current.historyGroups
+            }
+            _activityState.value = current.copy(historyGroups = updatedGroups)
+        } else {
+            loadActivity()
         }
     }
 
