@@ -75,6 +75,7 @@ kotlin {
 android {
     namespace = "id.cachet.wallet.shared"
     compileSdk = 36
+    buildToolsVersion = "36.0.0"
     defaultConfig {
         minSdk = 24
     }
