@@ -1,18 +1,18 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "id.cachet.wallet.android"
-    compileSdk = 36
-    buildToolsVersion = "36.0.0"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    buildToolsVersion = libs.versions.buildTools.get()
 
     defaultConfig {
         applicationId = "id.cachet.wallet.android"
-        minSdk = 24
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -62,49 +62,49 @@ dependencies {
     implementation(project(":shared"))
 
     // Use Compose BOM to manage versions
-    implementation(platform("androidx.compose:compose-bom:2026.03.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("io.insert-koin:koin-android:4.2.0")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.0")
-    
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+
+    implementation(libs.activity.compose)
+    implementation(libs.lifecycle.viewmodel)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+
     // DateTime and Serialization (already included in shared module but needed for Android-specific code)
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("app.cash.sqldelight:android-driver:2.3.2")
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.sqldelight.android.driver)
 
     // QR code generation (encoding only, no camera/scanner)
-    implementation("com.google.zxing:core:3.5.4")
+    implementation(libs.zxing.core)
 
     // CameraX for QR scanning
-    implementation("androidx.camera:camera-camera2:1.3.1")
-    implementation("androidx.camera:camera-lifecycle:1.3.1")
-    implementation("androidx.camera:camera-view:1.3.1")
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2026.03.01"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.test.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
 
 // Task to automatically update network security config with local development IP
 tasks.register("updateNetworkSecurityConfig") {
     description = "Updates network_security_config.xml with the current machine's IP address"
     group = "android"
-    
+
     doLast {
         val networkConfigFile = file("src/main/res/xml/network_security_config.xml")
-        
+
         // Get local IP address using shell command (cross-platform)
         val osName = System.getProperty("os.name").lowercase()
         val getIpCommand = when {
@@ -112,21 +112,21 @@ tasks.register("updateNetworkSecurityConfig") {
             osName.contains("mac") || osName.contains("darwin") -> listOf("bash", "-c", "ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo ''")
             else -> listOf("bash", "-c", "ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \\K[\\d.]+' || hostname -I 2>/dev/null | awk '{print \$1}' || echo ''")
         }
-        
+
         try {
             val process = ProcessBuilder(getIpCommand)
                 .redirectErrorStream(true)
                 .start()
-            
+
             val localIP = process.inputStream.bufferedReader().readText().trim()
             val exitCode = process.waitFor()
-            
+
             if (exitCode == 0 && localIP.isNotEmpty() && localIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+".toRegex())) {
                 println("Detected local IP: $localIP")
-                
+
                 if (networkConfigFile.exists()) {
                     val content = networkConfigFile.readText()
-                    
+
                     // Check if IP is already present
                     if (!content.contains("<domain includeSubdomains=\"false\">$localIP</domain>")) {
                         // Add the IP to the domain-config section
@@ -134,21 +134,21 @@ tasks.register("updateNetworkSecurityConfig") {
                             "</domain-config>",
                             "        <domain includeSubdomains=\"false\">$localIP</domain>\n    </domain-config>"
                         )
-                        
+
                         networkConfigFile.writeText(updatedContent)
-                        println("✅ Updated network_security_config.xml with IP: $localIP")
+                        println("Updated network_security_config.xml with IP: $localIP")
                     } else {
-                        println("✅ IP $localIP already present in network_security_config.xml")
+                        println("IP $localIP already present in network_security_config.xml")
                     }
                 } else {
-                    println("❌ network_security_config.xml not found")
+                    println("network_security_config.xml not found")
                 }
             } else {
-                println("⚠️ Could not detect local IP address (got: '$localIP')")
+                println("Could not detect local IP address (got: '$localIP')")
                 println("You may need to manually add your IP to network_security_config.xml")
             }
         } catch (e: Exception) {
-            println("⚠️ Error detecting IP: ${e.message}")
+            println("Error detecting IP: ${e.message}")
             println("You may need to manually add your IP to network_security_config.xml")
         }
     }
