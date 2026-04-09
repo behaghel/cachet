@@ -1,26 +1,27 @@
 plugins {
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kotlin.serialization)
 }
 
-androidLibrary {
-    namespace = "id.cachet.wallet.shared"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    buildToolsVersion = libs.versions.buildTools.get()
-    defaultConfig {
+@OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+kotlin {
+    applyDefaultHierarchyTemplate()
+
+    android {
+        namespace = "id.cachet.wallet.shared"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        buildToolsVersion = libs.versions.buildTools.get()
         minSdk = libs.versions.minSdk.get().toInt()
     }
-}
 
-@OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
-kotlinMultiplatform {
     iosX64()
     iosArm64()
     iosSimulatorArm64()
 
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
@@ -36,13 +37,13 @@ kotlinMultiplatform {
                 implementation(libs.multiplatform.settings.coroutines)
             }
         }
-        commonTest {
+        val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
-        androidMain {
+        val androidMain by getting {
             dependencies {
                 implementation(libs.ktor.client.android)
                 implementation(libs.sqldelight.android.driver)
@@ -53,15 +54,7 @@ kotlinMultiplatform {
                 implementation(libs.bouncycastle)
             }
         }
-        getByName("androidUnitTest") {
-            dependencies {
-                implementation(kotlin("test"))
-                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
-                implementation(libs.nimbus.jose.jwt)
-                implementation(libs.bouncycastle)
-            }
-        }
-        iosMain {
+        val iosMain by getting {
             dependencies {
                 implementation(libs.ktor.client.ios)
                 implementation(libs.sqldelight.native.driver)
