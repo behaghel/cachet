@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.sqldelight)
-    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -9,12 +9,11 @@ plugins {
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    androidTarget {
-        compilations.all {
-            compilerOptions.configure {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-            }
-        }
+    android {
+        namespace = "id.cachet.wallet.shared"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        buildToolsVersion = libs.versions.buildTools.get()
+        minSdk = libs.versions.minSdk.get().toInt()
     }
 
     iosX64()
@@ -44,14 +43,6 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
-        val androidUnitTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                // Real crypto libs for JWSVerifier/JWEEncryptor round-trip tests
-                implementation(libs.nimbus.jose.jwt)
-                implementation(libs.bouncycastle)
-            }
-        }
         val androidMain by getting {
             dependencies {
                 implementation(libs.ktor.client.android)
@@ -69,15 +60,6 @@ kotlin {
                 implementation(libs.sqldelight.native.driver)
             }
         }
-    }
-}
-
-android {
-    namespace = "id.cachet.wallet.shared"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    buildToolsVersion = libs.versions.buildTools.get()
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
     }
 }
 
