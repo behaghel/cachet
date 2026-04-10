@@ -87,6 +87,9 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.concurrent.futures.ktx)
+    // Guava is on runtime classpath (via ZXing/Tink) but CameraX 1.6 exposes
+    // ListenableFuture in its API — need it at compile time too
+    compileOnly("com.google.guava:guava:33.3.1-android")
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
