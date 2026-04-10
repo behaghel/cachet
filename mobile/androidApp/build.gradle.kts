@@ -24,6 +24,19 @@ android {
         buildConfigField("String", "CACHET_BASE_URL", "\"http://10.0.2.2:8090\"")
     }
 
+    flavorDimensions += "mode"
+    productFlavors {
+        create("demo") {
+            dimension = "mode"
+            applicationIdSuffix = ".demo"
+            buildConfigField("boolean", "DEMO_ENABLED", "true")
+        }
+        create("prod") {
+            dimension = "mode"
+            buildConfigField("boolean", "DEMO_ENABLED", "false")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

@@ -251,7 +251,7 @@ in
     unset ANDROID_SDK_ROOT
     # Generate local.properties from devenv's ANDROID_HOME (avoids stale committed paths)
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew --no-daemon :androidApp:assembleDebug
+    cd mobile && ./gradlew --no-daemon :androidApp:assembleDemoDebug
   '';
   scripts."android:install".exec = ''
     set -euo pipefail
@@ -261,11 +261,11 @@ in
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     # Uninstall previous version if signatures differ (common after re-signing)
-    $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
-    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
+    $ADB uninstall id.cachet.wallet.android.demo 2>/dev/null || $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
+    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
 
-    echo "Launching Cachet Wallet..."
-    if $ADB shell am start -n id.cachet.wallet.android/.MainActivity 2>&1 | grep -q "Error\|Exception"; then
+    echo "Launching Cachet Wallet (demo)..."
+    if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity 2>&1 | grep -q "Error\|Exception"; then
       echo "❌ Failed to launch app. Is the emulator running? (android:emulator)"
       exit 1
     fi
@@ -299,7 +299,7 @@ in
     echo "1. Checking emulator connection..."
     adb devices | grep device || (echo "❌ No Android emulator detected. Run 'android:emulator' first." && exit 1)
     echo "2. Building and running tests..."
-    cd mobile && gradle :androidApp:connectedAndroidTest
+    cd mobile && gradle :androidApp:connectedDemoDebugAndroidTest
     echo "✅ Android tests completed!"
     echo "📊 Test results available in mobile/androidApp/build/reports/androidTests/"
   '';
@@ -308,7 +308,7 @@ in
     echo "1. Running shared module tests..."
     cd mobile && gradle :shared:testDebugUnitTest
     echo "2. Running Android unit tests..."
-    gradle :androidApp:testDebugUnitTest
+    gradle :androidApp:testDemoDebugUnitTest
     echo "✅ Unit tests completed!"
     echo "📊 Test results available in mobile/*/build/reports/tests/"
   '';

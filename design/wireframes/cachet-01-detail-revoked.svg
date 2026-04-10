@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    CACHET DETAIL — REVOKED STATE
+    Scenario: revoked. Same layout as cachet-01-detail.svg but with:
+    - Red REVOKED status chip instead of green Active
+    - "Revoked on" metadata row
+    - Share button disabled (greyed out) with explanation text
+    - No revoke link at bottom (already revoked)
+  -->
+
+  <defs>
+    <symbol id="identity-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#4EA882"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#207A58"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#68B898"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#109870"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#28D498"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <path d="M 174,222 L 194,246 L 230,196" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Back arrow -->
+  <text x="24" y="95" font-family="Inter, sans-serif" font-size="22" fill="#1C1917">&#x2039;</text>
+
+  <!-- Hero: shield + name + REVOKED status -->
+  <use href="#identity-shield" x="148" y="80" width="80" height="104"/>
+
+  <text x="188" y="208" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Identity</text>
+
+  <!-- REVOKED chip (red) -->
+  <rect x="140" y="218" width="96" height="26" rx="13" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+  <text x="188" y="236" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#991B1B">Revoked</text>
+
+  <!-- Disabled Share button -->
+  <rect x="130" y="254" width="115" height="36" rx="18" fill="#D6D3D1" opacity="0.6"/>
+  <text x="188" y="277" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#A8A29E">Share</text>
+  <text x="188" y="304" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Revoked cachets cannot be shared</text>
+
+  <!-- Metadata rows -->
+  <text x="24" y="336" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Issued</text>
+  <text x="100" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Mar 24, 2026</text>
+  <text x="210" y="336" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Expires</text>
+  <text x="272" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Dec 24, 2026</text>
+
+  <text x="24" y="360" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Issuer</text>
+  <text x="100" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Veriff</text>
+
+  <!-- Revoked on row (red) -->
+  <text x="24" y="384" font-family="Inter, sans-serif" font-size="12" fill="#991B1B">Revoked</text>
+  <text x="100" y="384" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#991B1B">Apr 5, 2026</text>
+
+  <!-- Predicates section -->
+  <line x1="24" y1="404" x2="351" y2="404" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="24" y="432" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">What this proves</text>
+
+  <rect x="16" y="446" width="343" height="215" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+
+  <!-- Predicate 1 -->
+  <text x="40" y="477" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="477" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Age 18 or older</text>
+  <text x="60" y="493" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age is never shared</text>
+
+  <line x1="40" y1="505" x2="340" y2="505" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 2 -->
+  <text x="40" y="529" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="529" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Identity verified</text>
+  <text x="60" y="545" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name is never shared</text>
+
+  <line x1="40" y1="557" x2="340" y2="557" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 3 -->
+  <text x="40" y="581" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="581" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Liveness confirmed</text>
+  <text x="60" y="597" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Biometric data never leaves your device</text>
+
+  <line x1="40" y1="609" x2="340" y2="609" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 4 -->
+  <text x="40" y="633" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="633" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Nationality confirmed</text>
+  <text x="60" y="649" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only country, not passport number</text>
+
+  <!-- Related Activity section -->
+  <line x1="24" y1="680" x2="351" y2="680" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="24" y="708" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">Related activity</text>
+  <text x="351" y="708" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#10B981">See all</text>
+
+  <!-- Activity entry: Revocation event -->
+  <rect x="16" y="722" width="343" height="64" rx="12" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="42" cy="754" r="14" fill="#DC2626"/>
+  <text x="42" y="759" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="white">&#x2715;</text>
+  <text x="66" y="747" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">Cachet revoked</text>
+  <text x="66" y="765" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Apr 5 · You revoked this cachet</text>
+
+  <!-- No "Revoke this cachet" link — already revoked -->
+</svg>

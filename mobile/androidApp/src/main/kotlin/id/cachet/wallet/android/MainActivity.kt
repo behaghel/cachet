@@ -15,13 +15,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val demoMode = intent.getBooleanExtra("demo_mode", false)
         val demoEmpty = intent.getBooleanExtra("demo_empty", false)
+        val demoScenario = intent.getStringExtra("demo_scenario") ?: ""
         setContent {
             CachetWalletTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WalletApp(demoMode = demoMode, demoEmpty = demoEmpty)
+                    WalletApp(demoMode = demoMode, demoEmpty = demoEmpty, demoScenario = demoScenario)
                 }
             }
         }

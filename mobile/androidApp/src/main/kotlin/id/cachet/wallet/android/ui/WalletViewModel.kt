@@ -116,7 +116,13 @@ class WalletViewModel(
      */
     suspend fun awaitVerifierResult(): CachetResult {
         val session = activeVerifierSession
-            ?: return DemoFixtures.cachetResultPass
+            ?: return CachetResult(
+                cachetName = "Error",
+                allPassed = false, passedCount = 0, totalCount = 0,
+                predicates = emptyList(),
+                isError = true,
+                errorMessage = "No active verifier session"
+            )
 
         val packType = cachetTypeForPackId(session.packId)
 
@@ -246,10 +252,15 @@ class WalletViewModel(
                 }
             } else {
                 Log.d(TAG, "Demo: using static fixtures")
-                _uiState.value = WalletUiState.HasCredentials(
-                    credentials = DemoFixtures.credentials,
-                    vaultSummary = DemoFixtures.vaultSummary
-                )
+                val creds = DemoFixtures.credentials
+                _uiState.value = if (creds.isEmpty()) {
+                    WalletUiState.Empty
+                } else {
+                    WalletUiState.HasCredentials(
+                        credentials = creds,
+                        vaultSummary = DemoFixtures.vaultSummary
+                    )
+                }
             }
 
             _activityState.value = ActivityUiState(
@@ -417,14 +428,21 @@ class WalletViewModel(
             // populate the UI but don't store in the repository).
             val receiptCredential = credential?.credential ?: DemoFixtures.syntheticCredential
             generateConsentReceiptForShare(receiptCredential, request)
-            // "Trusted seller" demo always fails to showcase the fail screen
-            return if (request.question.contains("seller", ignoreCase = true))
-                DemoFixtures.cachetResultFail
-            else
-                DemoFixtures.cachetResultPass
+            // Build a pack-aware result via CachPackMapper so the result name,
+            // predicate count, and type match the selected pack.
+            val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
+            val allPassed = DemoFixtures.shouldPass(request)
+            return CachPackMapper.toCachetResult(matchingPack, allPassed)
         }
 
-        if (credential == null) return DemoFixtures.cachetResultPass
+        if (credential == null) return CachetResult(
+            cachetName = "No Credential",
+            allPassed = false,
+            passedCount = 0,
+            totalCount = request.predicates.size,
+            predicates = request.predicates.map { PredicateResult(it.claim, false, "No credential available") },
+            cachetType = request.cachetType ?: CachetType.IDENTITY
+        )
 
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
 

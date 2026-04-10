@@ -24,7 +24,7 @@ devenv shell -- android:install
 
 ### 2. Read the screen manifest
 
-Read `design/wireframes/MANIFEST.md` to get the ordered list of screens, their wireframe SVGs, and navigation steps.
+Read `design/wireframes/MANIFEST.md` to get the ordered list of screens, their wireframe SVGs, and navigation steps. Note both the main screens and the scenario-specific screens.
 
 ### 3. Capture onboarding screens (without demo_mode)
 
@@ -35,12 +35,12 @@ Launch the app normally (no `--ez demo_mode true`). For each onboarding wirefram
 - Tap "Next" to advance to the next onboarding page
 - After capturing all 4, tap "Skip" or proceed to complete onboarding
 
-### 4. Capture main tab screens (with demo_mode)
+### 4. Capture main tab screens (with demo_mode — happy scenario)
 
 Force-stop and relaunch in demo mode:
 ```
-adb shell am force-stop id.cachet.wallet.android
-adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_mode true
+adb shell am force-stop id.cachet.wallet.android.demo
+adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
 ```
 
 For each main tab wireframe in the manifest:
@@ -50,15 +50,34 @@ For each main tab wireframe in the manifest:
 - Run the **element-by-element checklist** (see below)
 - Scroll down if needed to check below-fold content
 
-### 5. Capture deeper flow screens
+### 5. Capture deeper flow screens (happy scenario)
 
 Follow the navigation steps in the manifest to reach overlay flows:
-- Empty Vault: `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true`
+- Empty Vault: `adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_empty true`
 - QR Share: tap a cachet card from My Cachets
 - Incoming Request: auto-transitions from QR Share after 4s
-- Cachet Result: tap "Verify & Share" on Incoming Request
+- Cachet Result (childcare pass): tap "Verify & Share" on Incoming Request (compare against `cachet-04-result-pass.svg`)
 
-### 6. Compile report
+### 6. Capture scenario-specific screens
+
+For each scenario in the Scenario-Specific Screens section of MANIFEST.md:
+
+1. Force-stop and relaunch with the scenario:
+   ```
+   adb shell am force-stop id.cachet.wallet.android.demo
+   adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario <name>
+   ```
+2. Navigate to the target screen using the nav steps in the manifest
+3. Capture screenshot and compare against the listed wireframe SVG
+4. Run the element-by-element checklist
+
+**Scenario walkthrough order:**
+- `revoked` scenario → capture vault (compare `holder-04-vault-revoked.svg`), then tap the revoked card → capture detail (compare `cachet-01-detail-revoked.svg`)
+- `seller-only` scenario → tap FAB, pick Seller pack → Verify & Share → capture result (compare `cachet-05-result-fail-seller.svg`)
+- `happy` scenario → tap FAB, pick Age pack → Verify & Share → capture result (compare `cachet-04-result-pass-age.svg`)
+- `happy` scenario → tap identity card → capture detail (compare `cachet-01-detail-hardware.svg` if hardware indicator visible)
+
+### 7. Compile report
 
 Output a markdown report with the structure shown in the Report Template section.
 
@@ -105,6 +124,9 @@ These are issues that have been caught before. Always verify they haven't regres
 2. **Vocabulary drift**: The brand uses "cachets", never "credentials" or "badges". Check every text string.
 3. **Component substitution**: Wireframes use specific shield icons (`<use href="#childcare-shield">` etc). The app must use `CachetMark(type=...)`, not colored circles or emoji as placeholder.
 4. **Layout order**: The wireframe's vertical element order is authoritative. Don't assume CTA buttons go at the bottom — read the wireframe SVG coordinates.
+5. **Pack selection bug** (fixed): Verify that selecting AGE pack in HOLDER mode shows age predicates on IncomingRequest, not childcare predicates. Selecting Seller should show seller predicates.
+6. **Revoked detail**: When viewing a revoked cachet, the Share button must be disabled and the "Revoke this cachet" link must be hidden.
+7. **Result type matches pack**: The cachet result screen must show the shield and name matching the selected pack (e.g., age-shield for Age Verified, seller-shield for seller fail), not always childcare.
 
 ## Report Template
 
@@ -113,17 +135,22 @@ These are issues that have been caught before. Always verify they haven't regres
 
 ### Summary
 - Screens reviewed: X/Y
+- Scenarios tested: [list scenario names]
 - Matches: N
 - Minor issues: N
 - Gaps: N
 
 ### Per-Screen Results
 
-| Screen | Wireframe | Verdict | Notes |
-|--------|-----------|---------|-------|
-| Onboarding 1 | holder-01-onboarding-1.svg | Match | — |
-| Home / My Cachets | holder-04-vault-my-trust.svg | Minor | ... |
-| ... | ... | ... | ... |
+| Screen | Wireframe | Scenario | Verdict | Notes |
+|--------|-----------|----------|---------|-------|
+| Onboarding 1 | holder-01-onboarding-1.svg | — | Match | — |
+| Home / My Cachets | holder-04-vault-my-trust.svg | happy | Match | — |
+| Vault (revoked) | holder-04-vault-revoked.svg | revoked | Minor | ... |
+| Revoked Detail | cachet-01-detail-revoked.svg | revoked | Match | — |
+| Age Result (pass) | cachet-04-result-pass-age.svg | happy | Match | — |
+| Seller Result (fail) | cachet-05-result-fail-seller.svg | seller-only | Match | — |
+| ... | ... | ... | ... | ... |
 
 ### Detailed Findings
 
@@ -154,5 +181,5 @@ For each non-Match screen:
 - Use `mcp__android__get_uilayout` to find tap coordinates for buttons.
 - Use `uiautomator dump` to verify exact pixel bounds when alignment looks wrong.
 - Wireframe SVGs contain HTML comments with screen descriptions — read them for context.
-- Demo fixtures in `ui/fixtures/DemoFixtures.kt` define the expected data for each screen.
+- Demo scenarios are defined in `ui/fixtures/ScenarioRegistry.kt`. Available names: happy, empty, revoked, expired, seller-only.
 - Read the wireframe SVG element coordinates to determine intended layout order — don't assume.
