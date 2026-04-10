@@ -288,9 +288,9 @@ in
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew --no-daemon :androidApp:installDebug
+    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
     echo "3. Launching app..."
-    $ADB shell am start -n id.cachet.wallet.android/.MainActivity
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
     echo "✅ Done! Backend running, app installed and launched."
     echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
   '';
