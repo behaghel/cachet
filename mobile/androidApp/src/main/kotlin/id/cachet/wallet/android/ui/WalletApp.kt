@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
+import id.cachet.wallet.android.ui.fixtures.HappyPathScenario
+import id.cachet.wallet.android.ui.fixtures.ScenarioRegistry
 import id.cachet.wallet.android.ui.mapper.CachPackMapper
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.theme.*
@@ -53,7 +55,16 @@ sealed class OverlayScreen {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
+fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenario: String = "") {
+    // Resolve and set the active demo scenario before ViewModel creation.
+    if (demoMode || demoEmpty) {
+        val scenario = when {
+            demoEmpty -> ScenarioRegistry.get("empty")
+            demoScenario.isNotBlank() -> ScenarioRegistry.get(demoScenario)
+            else -> HappyPathScenario
+        }
+        DemoFixtures.activeScenario = scenario
+    }
     val viewModel: WalletViewModel = koinViewModel { parametersOf(demoMode, demoEmpty) }
     val uiState by viewModel.uiState.collectAsState()
     val activityState by viewModel.activityState.collectAsState()
@@ -81,8 +92,9 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                 onPackSelected = { pack ->
                     when (screen.mode) {
                         PackPickerMode.HOLDER -> {
-                            overlay = null
-                            viewModel.startVeriffVerification()
+                            overlay = OverlayScreen.IncomingRequest(
+                                CachPackMapper.toVerificationRequest(pack)
+                            )
                         }
                         PackPickerMode.VERIFIER -> {
                             overlay = OverlayScreen.QrShare(
@@ -217,7 +229,9 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
                         }
                     } else {
                         // Demo fallback
-                        overlay = OverlayScreen.IncomingRequest(DemoFixtures.childcareRequest)
+                        overlay = OverlayScreen.IncomingRequest(
+                            CachPackMapper.toVerificationRequest(DemoFixtures.cachPacks.first())
+                        )
                     }
                 },
                 onClose = { overlay = null }
@@ -338,8 +352,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false) {
 private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.CachetType): String = when (type) {
     id.cachet.wallet.android.ui.components.CachetType.CHILDCARE -> "pack.childcare.readiness.es"
     id.cachet.wallet.android.ui.components.CachetType.SELLER -> "pack.safe.seller"
-    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.childcare.readiness"
-    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.childcare.readiness.es"
+    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.age.check"
+    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.identity.verification"
 }
 
 // -- Transient screens (loading, error, verification) --

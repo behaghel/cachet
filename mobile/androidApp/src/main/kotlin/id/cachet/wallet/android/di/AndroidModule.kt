@@ -5,7 +5,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import id.cachet.wallet.android.data.CredentialRepositoryImpl
 import id.cachet.wallet.android.ui.WalletViewModel
-import id.cachet.wallet.android.verification.MockVeriffService
+import id.cachet.wallet.android.BuildConfig
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.domain.crypto.AndroidKeyStoreKeyManager
@@ -41,8 +41,16 @@ val androidModule = module {
     // Key management (hardware-backed Android KeyStore)
     single<KeyManager> { AndroidKeyStoreKeyManager() }
 
-    // Verification — swap MockVeriffService for real Veriff SDK later
-    single<VeriffService> { MockVeriffService() }
+    // Verification — demo uses MockVeriffService, prod uses NoOpVeriffService (until real SDK)
+    single<VeriffService> {
+        if (BuildConfig.DEMO_ENABLED) {
+            Class.forName("id.cachet.wallet.android.verification.MockVeriffService")
+                .getDeclaredConstructor().newInstance() as VeriffService
+        } else {
+            Class.forName("id.cachet.wallet.android.verification.NoOpVeriffService")
+                .getDeclaredConstructor().newInstance() as VeriffService
+        }
+    }
 
     // ViewModels
     viewModel { params ->

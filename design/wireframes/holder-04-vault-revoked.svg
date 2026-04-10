@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    MY CACHETS TAB — REVOKED SCENARIO
+    Scenario: revoked. Shows 2 cards: identity (revoked, red border)
+    and childcare (verified, normal). Vault summary: 2 total, 1 verified, 1 revoked.
+  -->
+
+  <defs>
+    <symbol id="brand-shield" viewBox="0 0 400 480">
+      <path d="M 200 40 C 240 65, 340 68, 366 69 V 220 C 366 330, 300 400, 200 440 C 100 400, 34 330, 34 220 V 69 C 60 68, 160 65, 200 40 Z" fill="#10B981"/>
+      <path d="M 200 60 C 234 77, 330 80, 354 83 V 218 C 354 318, 294 384, 200 420 C 106 384, 46 318, 46 218 V 83 C 70 80, 166 77, 200 60 Z" fill="#059669"/>
+      <path d="M 200 80 C 228 90, 320 96, 342 99 V 218 C 342 308, 286 370, 200 404 C 114 370, 58 308, 58 218 V 99 C 80 96, 172 90, 200 80 Z" fill="#1E293B"/>
+      <path d="M 200 80 C 172 90, 80 96, 58 99 V 218 C 58 308, 114 370, 200 404 Z" fill="#263347"/>
+      <path d="M 200 138 C 280 138, 322 160, 320 268 C 318 332, 264 372, 200 404 Z" fill="#047857"/>
+      <path d="M 200 138 C 120 138, 78 160, 80 268 C 82 332, 136 372, 200 404 Z" fill="#10B981"/>
+      <path d="M 268 310 A 100 108 0 1 0 132 310" fill="none" stroke="#34D399" stroke-width="50" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="identity-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#4EA882"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#207A58"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#68B898"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#109870"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#28D498"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <path d="M 174,222 L 194,246 L 230,196" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      </g>
+    </symbol>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Header: mini logo + wordmark -->
+  <use href="#brand-shield" x="121" y="64" width="36" height="43"/>
+  <text x="210" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Cachet</text>
+
+  <!-- Segmented control — My Cachets active -->
+  <rect x="24" y="112" width="327" height="44" rx="22" fill="#F5F5F4"/>
+  <rect x="29" y="116" width="166" height="36" rx="18" fill="#1E293B"/>
+  <text x="112" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">My Cachets</text>
+  <text x="260" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#78716C">Activity</text>
+
+  <!-- Vault summary -->
+  <text x="24" y="188" font-family="Inter, sans-serif" font-size="13" fill="#78716C">2 cachets · 1 verified · 1 revoked</text>
+
+  <!-- Card 1: Identity — REVOKED (red border) -->
+  <rect x="16" y="208" width="343" height="172" rx="20" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="2"/>
+
+  <use href="#identity-shield" x="28" y="220" width="48" height="62"/>
+  <text x="88" y="248" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1C1917">Identity</text>
+
+  <!-- Revoked chip -->
+  <rect x="88" y="256" width="72" height="22" rx="11" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+  <text x="124" y="271" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#991B1B">Revoked</text>
+
+  <text x="88" y="300" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Issued by Veriff · Premium tier · Revoked</text>
+
+  <!-- Predicate pills -->
+  <rect x="28" y="316" width="56" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="56" y="332" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">Age 18+</text>
+  <rect x="92" y="316" width="72" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="128" y="332" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">ID Verified</text>
+  <rect x="172" y="316" width="64" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="204" y="332" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">Liveness</text>
+  <rect x="244" y="316" width="80" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="284" y="332" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">Nationality</text>
+
+  <text x="28" y="368" font-family="Inter, sans-serif" font-size="11" fill="#991B1B">Revoked on Apr 5, 2026</text>
+
+  <!-- Card 2: Childcare — verified (normal) -->
+  <rect x="16" y="396" width="343" height="172" rx="20" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+
+  <use href="#childcare-shield" x="28" y="408" width="48" height="62"/>
+  <text x="88" y="436" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1C1917">Childcare</text>
+
+  <!-- Verified chip -->
+  <rect x="88" y="444" width="72" height="22" rx="11" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="124" y="459" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#065F46">&#x2713; Active</text>
+
+  <text x="88" y="488" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Issued by Parents Association · Standard tier</text>
+
+  <!-- Predicate pills -->
+  <rect x="28" y="504" width="90" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="73" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">Criminal clear</text>
+  <rect x="126" y="504" width="72" height="24" rx="12" fill="#F5F5F4"/>
+  <text x="162" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#57534E">ID Verified</text>
+
+  <text x="28" y="556" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Shared 1 time · Last used 5 days ago</text>
+
+  <!-- Verify section -->
+  <line x1="24" y1="590" x2="351" y2="590" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="24" y="618" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#1C1917">Verify someone</text>
+  <text x="24" y="638" font-family="Inter, sans-serif" font-size="12" fill="#78716C">Pick a Cach'Pack to request proof</text>
+</svg>

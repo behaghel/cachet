@@ -4,7 +4,7 @@ Maps each wireframe SVG to the screen, composable, and navigation steps in demo 
 
 ## Onboarding (launch WITHOUT demo_mode)
 
-Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
+Launch: `adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity`
 
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
@@ -15,7 +15,7 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 
 ## Main Tabs (launch WITH demo_mode)
 
-**Launch:** `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_mode true`
+**Launch:** `adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true`
 
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
@@ -26,7 +26,7 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 
 | # | Wireframe | Screen | Nav Steps |
 |---|-----------|--------|-----------|
-| 7 | `holder-05-empty-vault.svg` | Empty Vault | `adb shell am start -n id.cachet.wallet.android/.MainActivity --ez demo_empty true` |
+| 7 | `holder-05-empty-vault.svg` | Empty Vault | `adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_empty true` |
 | 7b | `holder-06-pick-pack.svg` | Pick Pack (holder) | Tap FAB on My Cachets tab |
 | 8 | `cachet-01-detail.svg` | Cachet Detail | From My Cachets: tap any cachet card |
 | 9 | `cachet-02-qr-scan.svg` | QR Scanner (holder) | Tap FAB on Activity tab → "Scan" |
@@ -41,6 +41,18 @@ Launch: `adb shell am start -n id.cachet.wallet.android/.MainActivity`
 | 13 | `verify-01-new-request.svg` | New Request (pick pack) | Tap FAB on Activity tab → "New request" |
 | 14 | `verify-02-show-qr.svg` | Show QR (verifier waits) | Tap a Cach'Pack on New Request |
 | 15 | `cachet-04-result-pass.svg` | Result (pass) | After holder scans and consents |
+
+## Scenario-Specific Screens
+
+Launch with: `adb shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario <name>`
+
+| # | Wireframe | Screen | Scenario | Nav Steps |
+|---|-----------|--------|----------|-----------|
+| S1 | `cachet-01-detail-revoked.svg` | Revoked Detail | revoked | Tap revoked identity card |
+| S2 | `cachet-01-detail-hardware.svg` | Hardware-Secured Detail | happy | Tap identity card (when keyAlias present) |
+| S3 | `cachet-04-result-pass-age.svg` | Age Result (pass) | happy | Pick Pack → Age → Verify & Share |
+| S4 | `cachet-05-result-fail-seller.svg` | Seller Result (fail) | seller-only | Pick Pack → Seller → Verify & Share |
+| S5 | `holder-04-vault-revoked.svg` | Vault with Revoked Card | revoked | Direct after launch |
 
 ## Deprecated Wireframes
 
