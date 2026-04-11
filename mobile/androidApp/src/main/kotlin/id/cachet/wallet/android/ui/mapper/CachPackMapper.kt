@@ -13,10 +13,10 @@ object CachPackMapper {
         CachetType.CHILDCARE -> VerificationRequest(
             question = "Are you safe for childcare?",
             predicates = listOf(
-                RequestPredicate("You are 18 or older", "Your exact age will NOT be shared"),
-                RequestPredicate("Your identity is verified", "Your name will NOT be shared"),
-                RequestPredicate("No criminal record", "Only a clear/not-clear result"),
-                RequestPredicate("2+ verified references", "Referee names will NOT be shared")
+                RequestPredicate("You are 18 or older", "Your exact age will NOT be shared", DisclosureType.PREDICATE),
+                RequestPredicate("Your identity is verified", "Your name will NOT be shared", DisclosureType.PREDICATE),
+                RequestPredicate("No criminal record", "Only a clear/not-clear result", DisclosureType.PREDICATE),
+                RequestPredicate("2+ verified references", "Referee names will NOT be shared", DisclosureType.PREDICATE)
             ),
             retentionDays = 90,
             loggedInTransparencyLog = true,
@@ -25,10 +25,10 @@ object CachPackMapper {
         CachetType.SELLER -> VerificationRequest(
             question = "Are you a trusted seller?",
             predicates = listOf(
-                RequestPredicate("Your identity is verified", "Your name will NOT be shared"),
-                RequestPredicate("Platform history available", "Only summary metrics shared"),
-                RequestPredicate("Fulfilment rate above 95%", "Only a pass/fail result"),
-                RequestPredicate("Low chargeback rate", "Only a pass/fail result")
+                RequestPredicate("Your identity is verified", "Your name will NOT be shared", DisclosureType.PREDICATE),
+                RequestPredicate("Platform name", "Shared as-is from your credential", DisclosureType.RAW_VALUE),
+                RequestPredicate("Fulfilment rate above 95%", "Only a pass/fail result", DisclosureType.PREDICATE),
+                RequestPredicate("Low chargeback rate", "Only a pass/fail result", DisclosureType.PREDICATE)
             ),
             retentionDays = 90,
             loggedInTransparencyLog = true,
@@ -37,7 +37,7 @@ object CachPackMapper {
         CachetType.AGE -> VerificationRequest(
             question = "Are you old enough?",
             predicates = listOf(
-                RequestPredicate("You are 18 or older", "Your exact age will NOT be shared")
+                RequestPredicate("You are 18 or older", "Your exact age will NOT be shared", DisclosureType.PREDICATE)
             ),
             retentionDays = 30,
             loggedInTransparencyLog = true,
@@ -46,8 +46,8 @@ object CachPackMapper {
         CachetType.IDENTITY -> VerificationRequest(
             question = "Is your identity verified?",
             predicates = listOf(
-                RequestPredicate("Your identity is verified", "Your name will NOT be shared"),
-                RequestPredicate("Liveness check passed", "Only a pass/fail result")
+                RequestPredicate("Full name", "Shared as-is from your credential", DisclosureType.RAW_VALUE),
+                RequestPredicate("Liveness check passed", "Only a pass/fail result", DisclosureType.PREDICATE)
             ),
             retentionDays = 90,
             loggedInTransparencyLog = true,
@@ -67,7 +67,9 @@ object CachPackMapper {
                 PredicateResult(
                     label = pred.claim,
                     passed = allPassed,
-                    failReason = if (!allPassed) "Credential not available" else null
+                    failReason = if (!allPassed) "Credential not available" else null,
+                    privacyNote = pred.privacyNote,
+                    disclosureType = pred.disclosureType
                 )
             },
             validityLabel = if (allPassed) "${request.retentionDays} days" else null,

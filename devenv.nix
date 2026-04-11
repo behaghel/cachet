@@ -100,9 +100,19 @@ in
     echo "  ci:security         Security scan (gosec)"
     echo ""
     echo "Android (requires DEVENV_ENABLE_ANDROID=1):"
+    echo "  android:run         Backend + app (real mode, backend-driven)"
+    echo "  android:demo        Backend + app (demo mode, fixtures)"
+    echo "  android:install     Build + install + launch (no backend)"
     echo "  android:build       Build APK"
     echo "  android:emulator    Create + start emulator"
     echo "  android:test-unit   Run unit tests"
+    echo ""
+    echo "Android demo scenarios (switch on-the-fly after android:demo):"
+    echo "  android:happy        Happy path (Identity + Childcare + Seller)"
+    echo "  android:revoked      Revoked identity cachet"
+    echo "  android:expired      Expired credential"
+    echo "  android:seller-only  Seller cachet only"
+    echo "  android:empty        Empty vault (IDV onboarding)"
     echo ""
     echo "GCP (requires gcloud CLI):"
     echo "  gcp:setup           Setup GCP project"
@@ -264,20 +274,20 @@ in
     $ADB uninstall id.cachet.wallet.android.demo 2>/dev/null || $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
     cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
 
-    echo "Launching Cachet Wallet (demo — happy path)..."
-    if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true 2>&1 | grep -q "Error\|Exception"; then
+    echo "Launching Cachet Wallet..."
+    if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity 2>&1 | grep -q "Error\|Exception"; then
       echo "❌ Failed to launch app. Is the emulator running? (android:emulator)"
       exit 1
     fi
     # Verify the activity is in the foreground
     sleep 1
     if $ADB shell "dumpsys activity activities 2>/dev/null | grep -q 'id.cachet.wallet.android'"; then
-      echo "✅ App installed and launched"
+      echo "✅ App installed and launched (real mode — backend-driven)"
     else
       echo "⚠️ App installed but may not have launched. Check the emulator screen."
     fi
   '';
-  # Demo scenario launchers — use after android:install or android:run
+  # Demo scenario launchers — use after android:install
   scripts."android:happy".exec = ''
     set -euo pipefail
     ADB="$ANDROID_HOME/platform-tools/adb"
@@ -325,10 +335,27 @@ in
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
-    echo "3. Launching app (demo — happy path)..."
-    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
+    echo "3. Launching app (real mode — backend-driven)..."
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
     echo "✅ Done! Backend running, app installed and launched."
     echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
+    echo "💡 For demo mode with fixtures: android:demo"
+  '';
+  scripts."android:demo".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+
+    echo "🚀 Starting demo environment (fixtures only, no backend)..."
+    echo "1. Stopping backend services if running..."
+    devenv processes stop 2>/dev/null || true
+    echo "2. Building and installing Android app..."
+    unset ANDROID_SDK_ROOT
+    echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
+    echo "3. Launching app (demo mode — fixtures)..."
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
+    echo "✅ Done! App launched in demo mode with fixtures (no backend)."
+    echo "💡 Switch scenario: android:revoked, android:expired, android:seller-only"
   '';
   scripts."android:test".exec = ''
     echo "🧪 Running Android instrumented tests..."
@@ -833,8 +860,9 @@ EOF
       echo "⏱ [devenv] Shell init completed at $(date '+%Y-%m-%d %H:%M:%S')"
 
       echo "✅ Cachet devenv ready. Run dev:help for commands."
-      echo "   dev:services — start all   |  test:all — run tests"
-      echo "   dev:stop — stop all        |  ci:full  — full CI locally"
+      echo "   dev:services — start all   |  test:all  — run tests"
+      echo "   android:run  — real mode   |  android:demo — demo fixtures"
+      echo "   dev:stop — stop all        |  ci:full   — full CI locally"
     fi
   '';
 }

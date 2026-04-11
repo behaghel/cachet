@@ -87,11 +87,17 @@ class WalletViewModel(
             Log.d(TAG, "Request fetched from relay (verified=${verifiedRequest.isVerified}, verifier=${verifiedRequest.verifierName})")
             VerificationRequest(
                 question = payload.question,
-                predicates = payload.predicates.map { RequestPredicate(claim = it, privacyNote = "Only yes/no shared") },
+                predicates = payload.predicates.map { id ->
+                    RequestPredicate(
+                        claim = humanizePredicateId(id),
+                        privacyNote = privacyNoteForPredicate(id)
+                    )
+                },
                 retentionDays = 90,
                 loggedInTransparencyLog = true,
                 verifierName = verifiedRequest.verifierName,
-                isVerifierVerified = verifiedRequest.isVerified
+                isVerifierVerified = verifiedRequest.isVerified,
+                cachetType = cachetTypeForPackId(payload.packId)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch request from relay", e)
@@ -166,7 +172,8 @@ class WalletViewModel(
                     PredicateResult(
                         label = humanizePredicateId(p.predicateId),
                         passed = p.status == "satisfied",
-                        failReason = p.reason
+                        failReason = p.reason,
+                        privacyNote = privacyNoteForPredicate(p.predicateId)
                     )
                 },
                 validityLabel = "90 days",
@@ -205,15 +212,30 @@ class WalletViewModel(
     private fun parseRequestUri(qrPayload: String): String? = parseQrParam(qrPayload, "request_uri")
     private fun parseVerifierPubKey(qrPayload: String): String? = parseQrParam(qrPayload, "vk")
 
-    private fun humanizePredicateId(id: String): String = when (id) {
-        "age.ge.18" -> "Age 18+"
-        "age.ge.21" -> "Age 21+"
-        "identity.verified" -> "Identity verified"
-        "criminal.clear.es" -> "Criminal record clear (ES)"
+    internal fun humanizePredicateId(id: String): String = when (id) {
+        "age.ge.18" -> "You are 18 or older"
+        "age.ge.21" -> "You are 21 or older"
+        "identity.verified" -> "Your identity is verified"
+        "criminal.clear.es" -> "No criminal record (ES)"
         "firstaid.valid.es" -> "First aid certificate (ES)"
-        "references.verified" -> "References verified"
-        "liveness.verified" -> "Liveness check"
-        else -> id.replace(".", " ").replaceFirstChar { it.uppercase() }
+        "references.verified" -> "2+ verified references"
+        "liveness.verified" -> "Liveness check passed"
+        else -> if (id.contains(".")) id.replace(".", " ").replaceFirstChar { it.uppercase() } else id
+    }
+
+    private fun privacyNoteForPredicate(label: String): String {
+        val lower = label.lowercase()
+        return when {
+            "age" in lower -> "Your exact age will NOT be shared"
+            "identity" in lower || "id verified" in lower -> "Your name will NOT be shared"
+            "criminal" in lower -> "Only a clear/not-clear result"
+            "first aid" in lower -> "Only a valid/not-valid result"
+            "reference" in lower -> "Referee names will NOT be shared"
+            "liveness" in lower -> "Only a pass/fail result"
+            "nationality" in lower -> "Only country, not passport number"
+            "name" in lower -> "Shared as-is from your credential"
+            else -> "Only yes/no shared"
+        }
     }
 
     private fun humanizePackId(id: String): String = when (id) {
@@ -236,49 +258,20 @@ class WalletViewModel(
     // -- Existing flows --
 
     private fun loadDemoCredentials() {
-        // Set activity fixtures immediately so they're never overwritten by
-        // the async credential-loading coroutine below.
+        Log.d(TAG, "Demo: using static fixtures")
+        val creds = DemoFixtures.credentials
+        _uiState.value = if (creds.isEmpty()) {
+            WalletUiState.Empty
+        } else {
+            WalletUiState.HasCredentials(
+                credentials = creds,
+                vaultSummary = DemoFixtures.vaultSummary
+            )
+        }
         _activityState.value = ActivityUiState(
             historyGroups = DemoFixtures.historyGroups,
             receipts = DemoFixtures.receipts
         )
-
-        viewModelScope.launch {
-            val realResult = try {
-                issuanceUseCase.requestSDJWTCredential(
-                    clientId = "cachet-android-wallet",
-                    credentialTypes = listOf("VerifiableCredential", "IdentityCredential"),
-                    sessionId = "demo-session"
-                )
-            } catch (e: Exception) {
-                Log.d(TAG, "Demo: backend unavailable, using static fixtures", e)
-                null
-            }
-
-            if (realResult?.isSuccess == true) {
-                Log.d(TAG, "Demo: issued real SD-JWT credential from backend")
-                val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
-                _uiState.value = if (credentials.isEmpty()) {
-                    WalletUiState.Empty
-                } else {
-                    WalletUiState.HasCredentials(
-                        credentials = credentials.map { CredentialMapper.toCardUi(it) },
-                        vaultSummary = CredentialMapper.toVaultSummary(credentials)
-                    )
-                }
-            } else {
-                Log.d(TAG, "Demo: using static fixtures")
-                val creds = DemoFixtures.credentials
-                _uiState.value = if (creds.isEmpty()) {
-                    WalletUiState.Empty
-                } else {
-                    WalletUiState.HasCredentials(
-                        credentials = creds,
-                        vaultSummary = DemoFixtures.vaultSummary
-                    )
-                }
-            }
-        }
     }
 
     fun loadCredentials() {
