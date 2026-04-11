@@ -153,7 +153,7 @@ class WalletViewModel(
             }
             loadActivity()
 
-            CachetResult(
+            val cachetResult = CachetResult(
                 cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
                 allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty(),
                 passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
@@ -168,6 +168,8 @@ class WalletViewModel(
                 validityLabel = "90 days",
                 cachetType = packType
             )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
         } catch (e: Exception) {
             Log.e(TAG, "Relay verification failed", e)
             activeVerifierSession = null
@@ -433,7 +435,9 @@ class WalletViewModel(
             // predicate count, and type match the selected pack.
             val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
             val allPassed = DemoFixtures.shouldPass(request)
-            return CachPackMapper.toCachetResult(matchingPack, allPassed)
+            val result = CachPackMapper.toCachetResult(matchingPack, allPassed)
+            appendVerificationToActivity(result)
+            return result
         }
 
         if (credential == null) return CachetResult(
@@ -471,7 +475,7 @@ class WalletViewModel(
         // Refresh activity after sharing
         loadActivity()
 
-        return if (result != null && result.success) {
+        val cachetResult = if (result != null && result.success) {
             CachetResult(
                 cachetName = request.question.removeSuffix("?").trim(),
                 allPassed = true,
@@ -499,6 +503,8 @@ class WalletViewModel(
                 cachetType = request.cachetType
             )
         }
+        appendVerificationToActivity(cachetResult)
+        return cachetResult
     }
 
     private suspend fun generateConsentReceiptForShare(
@@ -520,7 +526,7 @@ class WalletViewModel(
             retentionPeriodDays = request.retentionDays
         )
         consentUseCase.generateConsentReceipt(credential, presentationRequest, consent)
-        loadActivity()
+        if (!demoMode) loadActivity()
     }
 
     private fun mapPredicateToDomain(uiClaim: String): String {
