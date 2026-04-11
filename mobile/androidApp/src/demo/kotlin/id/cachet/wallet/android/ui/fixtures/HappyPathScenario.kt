@@ -51,9 +51,9 @@ object HappyPathScenario : DemoScenario {
     override val vaultSummary = VaultSummaryUi(totalCount = 3, verifiedCount = 2, pendingCount = 1)
 
     override val cachPacks = listOf(
-        CachPackUi(id = "pack.childcare.readiness.es", question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
-        CachPackUi(id = "pack.safe.seller", question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER),
-        CachPackUi(id = "pack.childcare.readiness", question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE)
+        CachPackUi(id = PackIds.CHILDCARE_ES, question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
+        CachPackUi(id = PackIds.SAFE_SELLER, question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER),
+        CachPackUi(id = PackIds.CHILDCARE_BASE, question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE)
     )
 
     override val historyGroups = listOf(

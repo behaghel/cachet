@@ -25,7 +25,7 @@ object SellerOnlyScenario : DemoScenario {
     override val vaultSummary = VaultSummaryUi(totalCount = 1, verifiedCount = 0, pendingCount = 1)
 
     override val cachPacks = listOf(
-        CachPackUi(id = "pack.safe.seller", question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER)
+        CachPackUi(id = PackIds.SAFE_SELLER, question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER)
     )
 
     override val historyGroups = emptyList<HistoryGroup>()
