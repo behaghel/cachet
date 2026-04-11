@@ -308,24 +308,17 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         },
                         onRefresh = { viewModel.loadCredentials() },
                         onCardTapped = { card ->
-                            val detail = DemoFixtures.detailFor(card.localId)
-                            if (detail != null) {
-                                overlay = OverlayScreen.CachetDetail(detail)
+                            val demoDetail = DemoFixtures.detailFor(card.localId)
+                            if (demoDetail != null) {
+                                overlay = OverlayScreen.CachetDetail(demoDetail)
                             } else {
-                                // Fallback for non-demo cards: open QR share directly
-                                val type = card.cachetType ?: id.cachet.wallet.android.ui.components.CachetType.IDENTITY
-                                val syntheticPack = CachPackUi(
-                                    id = defaultPackIdForType(type),
-                                    question = card.displayName,
-                                    description = card.predicates.joinToString(", "),
-                                    proofCount = card.predicates.size,
-                                    cachetType = type
-                                )
-                                overlay = OverlayScreen.QrShare(
-                                    question = card.displayName,
-                                    predicates = card.predicates,
-                                    pack = syntheticPack
-                                )
+                                // Build detail from real credential data
+                                scope.launch {
+                                    val detail = viewModel.getDetailForCredential(card.localId)
+                                    if (detail != null) {
+                                        overlay = OverlayScreen.CachetDetail(detail)
+                                    }
+                                }
                             }
                         }
                     )

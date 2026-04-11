@@ -2,10 +2,12 @@
   <!--
     CACHET DETAIL — REVOKED STATE
     Scenario: revoked. Same layout as cachet-01-detail.svg but with:
+    - Forbidden sign (circle-slash) overlaying the shield badge
     - Red REVOKED status chip instead of green Active
-    - "Revoked on" metadata row
+    - "Revoked" date replaces "Expires" field (red text)
     - Share button disabled (greyed out) with explanation text
     - No revoke link at bottom (already revoked)
+    - Consistent two-column grid for metadata dates
   -->
 
   <defs>
@@ -34,8 +36,14 @@
   <!-- Back arrow -->
   <text x="24" y="95" font-family="Inter, sans-serif" font-size="22" fill="#1C1917">&#x2039;</text>
 
-  <!-- Hero: shield + name + REVOKED status -->
+  <!-- Hero: shield + forbidden overlay + name + REVOKED status -->
   <use href="#identity-shield" x="148" y="80" width="80" height="104"/>
+
+  <!-- Forbidden sign overlay (circle-slash) centred on shield -->
+  <g transform="translate(188, 128)" opacity="0.85">
+    <circle cx="0" cy="0" r="30" fill="none" stroke="#DC2626" stroke-width="5"/>
+    <line x1="-21" y1="21" x2="21" y2="-21" stroke="#DC2626" stroke-width="5" stroke-linecap="round"/>
+  </g>
 
   <text x="188" y="208" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#1C1917">Identity</text>
 
@@ -48,62 +56,60 @@
   <text x="188" y="277" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#A8A29E">Share</text>
   <text x="188" y="304" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Revoked cachets cannot be shared</text>
 
-  <!-- Metadata rows -->
+  <!-- Metadata rows — consistent two-column grid -->
+  <!-- Row 1: Issued / Revoked -->
   <text x="24" y="336" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Issued</text>
   <text x="100" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Mar 24, 2026</text>
-  <text x="210" y="336" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Expires</text>
-  <text x="272" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Dec 24, 2026</text>
+  <text x="210" y="336" font-family="Inter, sans-serif" font-size="12" fill="#991B1B">Revoked</text>
+  <text x="272" y="336" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#991B1B">Apr 5, 2026</text>
 
+  <!-- Row 2: Issuer -->
   <text x="24" y="360" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">Issuer</text>
   <text x="100" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#1C1917">Veriff</text>
 
-  <!-- Revoked on row (red) -->
-  <text x="24" y="384" font-family="Inter, sans-serif" font-size="12" fill="#991B1B">Revoked</text>
-  <text x="100" y="384" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#991B1B">Apr 5, 2026</text>
-
   <!-- Predicates section -->
-  <line x1="24" y1="404" x2="351" y2="404" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="24" y="432" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">What this proves</text>
+  <line x1="24" y1="380" x2="351" y2="380" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="24" y="408" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">What this proves</text>
 
-  <rect x="16" y="446" width="343" height="215" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <rect x="16" y="422" width="343" height="215" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
 
   <!-- Predicate 1 -->
-  <text x="40" y="477" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
-  <text x="60" y="477" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Age 18 or older</text>
-  <text x="60" y="493" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age is never shared</text>
+  <text x="40" y="453" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="453" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Age 18 or older</text>
+  <text x="60" y="469" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your exact age is never shared</text>
 
-  <line x1="40" y1="505" x2="340" y2="505" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="481" x2="340" y2="481" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 2 -->
-  <text x="40" y="529" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
-  <text x="60" y="529" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Identity verified</text>
-  <text x="60" y="545" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name is never shared</text>
+  <text x="40" y="505" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="505" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Identity verified</text>
+  <text x="60" y="521" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Your name is never shared</text>
 
-  <line x1="40" y1="557" x2="340" y2="557" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="533" x2="340" y2="533" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 3 -->
-  <text x="40" y="581" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
-  <text x="60" y="581" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Liveness confirmed</text>
-  <text x="60" y="597" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Biometric data never leaves your device</text>
+  <text x="40" y="557" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="557" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Liveness confirmed</text>
+  <text x="60" y="573" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Biometric data never leaves your device</text>
 
-  <line x1="40" y1="609" x2="340" y2="609" stroke="#F5F5F4" stroke-width="1"/>
+  <line x1="40" y1="585" x2="340" y2="585" stroke="#F5F5F4" stroke-width="1"/>
 
   <!-- Predicate 4 -->
-  <text x="40" y="633" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
-  <text x="60" y="633" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Nationality confirmed</text>
-  <text x="60" y="649" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only country, not passport number</text>
+  <text x="40" y="609" font-family="Inter, sans-serif" font-size="14" fill="#10B981">&#x2713;</text>
+  <text x="60" y="609" font-family="Inter, sans-serif" font-size="13" fill="#1C1917">Nationality confirmed</text>
+  <text x="60" y="625" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Only country, not passport number</text>
 
   <!-- Related Activity section -->
-  <line x1="24" y1="680" x2="351" y2="680" stroke="#E7E5E4" stroke-width="1"/>
-  <text x="24" y="708" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">Related activity</text>
-  <text x="351" y="708" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#10B981">See all</text>
+  <line x1="24" y1="656" x2="351" y2="656" stroke="#E7E5E4" stroke-width="1"/>
+  <text x="24" y="684" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">Related activity</text>
+  <text x="351" y="684" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#10B981">See all</text>
 
   <!-- Activity entry: Revocation event -->
-  <rect x="16" y="722" width="343" height="64" rx="12" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
-  <circle cx="42" cy="754" r="14" fill="#DC2626"/>
-  <text x="42" y="759" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="white">&#x2715;</text>
-  <text x="66" y="747" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">Cachet revoked</text>
-  <text x="66" y="765" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Apr 5 · You revoked this cachet</text>
+  <rect x="16" y="698" width="343" height="64" rx="12" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+  <circle cx="42" cy="730" r="14" fill="#DC2626"/>
+  <text x="42" y="735" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="white">&#x2715;</text>
+  <text x="66" y="723" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">Cachet revoked</text>
+  <text x="66" y="741" font-family="Inter, sans-serif" font-size="11" fill="#A8A29E">Apr 5 · You revoked this cachet</text>
 
   <!-- No "Revoke this cachet" link — already revoked -->
 </svg>

@@ -550,6 +550,16 @@ class WalletViewModel(
         }
     }
 
+    suspend fun getDetailForCredential(localId: String): CachetDetailUi? {
+        val stored = issuanceUseCase.getStoredCredentials().getOrNull()
+            ?.firstOrNull { it.localId == localId } ?: return null
+        val activity = consentUseCase.getConsentReceiptsByCredential(stored.credential.id)
+            .getOrNull()
+            ?.map { ActivityMapper.toHistoryEntry(it) }
+            ?: emptyList()
+        return CredentialMapper.toDetailUi(stored, activity)
+    }
+
     fun revokeCredential(localId: String) {
         viewModelScope.launch {
             issuanceUseCase.revokeCredential(localId)

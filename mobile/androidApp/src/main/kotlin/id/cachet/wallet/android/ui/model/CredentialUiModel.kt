@@ -19,7 +19,8 @@ data class CredentialCardUi(
 data class VaultSummaryUi(
     val totalCount: Int,
     val verifiedCount: Int,
-    val pendingCount: Int
+    val pendingCount: Int,
+    val revokedCount: Int = 0
 )
 
 data class CachPackUi(
@@ -41,5 +42,6 @@ data class CachetDetailUi(
     val predicates: List<RequestPredicate>,
     val relatedActivity: List<HistoryEntry>,
     val isRevoked: Boolean = false,
+    val revokedDate: String? = null,
     val keyAlias: String? = null
 )

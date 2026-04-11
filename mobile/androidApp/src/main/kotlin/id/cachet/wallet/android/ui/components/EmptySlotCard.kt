@@ -28,7 +28,7 @@ fun EmptySlotCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 192.dp)
+            .height(196.dp)
             .border(
                 width = 2.dp,
                 color = SurfaceBorder,

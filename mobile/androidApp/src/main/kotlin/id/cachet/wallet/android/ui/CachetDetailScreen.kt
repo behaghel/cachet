@@ -12,7 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,7 +65,26 @@ fun CachetDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CachetMark(type = detail.cachetType, size = 80.dp)
+                    Box(contentAlignment = Alignment.Center) {
+                        CachetMark(type = detail.cachetType, size = 80.dp)
+                        if (detail.isRevoked) {
+                            val forbiddenRed = Color(0xFFB91C1C)
+                            Canvas(modifier = Modifier.size(80.dp)) {
+                                val c = Offset(size.width / 2, size.height / 2)
+                                val r = size.minDimension / 2 * 0.75f
+                                val sw = 5.dp.toPx()
+                                drawCircle(color = forbiddenRed, radius = r, center = c, style = Stroke(width = sw))
+                                val offset = r * 0.707f
+                                drawLine(
+                                    color = forbiddenRed,
+                                    start = Offset(c.x - offset, c.y - offset),
+                                    end = Offset(c.x + offset, c.y + offset),
+                                    strokeWidth = sw,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = detail.displayName,
@@ -93,19 +116,20 @@ fun CachetDetailScreen(
 
             // ── Metadata rows ──
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    MetadataField(label = "Issued", value = detail.issuedDate)
-                    MetadataField(label = "Expires", value = detail.expiresDate)
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MetadataField(label = "Issued", value = detail.issuedDate)
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (detail.isRevoked && detail.revokedDate != null) {
+                            MetadataField(label = "Revoked", value = detail.revokedDate, valueColor = BrandWarm)
+                        } else {
+                            MetadataField(label = "Expires", value = detail.expiresDate)
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 MetadataField(label = "Issuer", value = detail.issuer)
-                if (detail.isRevoked) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    MetadataField(label = "Status", value = "Revoked", valueColor = BrandWarm)
-                }
                 // ── Hardware-backed indicator (#62) ──
                 if (detail.keyAlias != null) {
                     Spacer(modifier = Modifier.height(12.dp))
