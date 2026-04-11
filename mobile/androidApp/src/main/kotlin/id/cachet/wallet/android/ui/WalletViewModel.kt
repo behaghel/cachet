@@ -91,7 +91,8 @@ class WalletViewModel(
                 retentionDays = 90,
                 loggedInTransparencyLog = true,
                 verifierName = verifiedRequest.verifierName,
-                isVerifierVerified = verifiedRequest.isVerified
+                isVerifierVerified = verifiedRequest.isVerified,
+                cachetType = cachetTypeForPackId(payload.packId)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch request from relay", e)
