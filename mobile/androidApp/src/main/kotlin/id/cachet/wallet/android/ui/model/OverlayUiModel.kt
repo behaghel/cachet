@@ -33,7 +33,9 @@ data class VerificationRequest(
 data class PredicateResult(
     val label: String,
     val passed: Boolean,
-    val failReason: String? = null
+    val failReason: String? = null,
+    val privacyNote: String? = null,
+    val disclosureType: DisclosureType = DisclosureType.PREDICATE
 )
 
 data class CachetResult(

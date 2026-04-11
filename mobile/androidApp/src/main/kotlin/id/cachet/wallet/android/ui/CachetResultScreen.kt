@@ -299,27 +299,34 @@ fun CachetResultScreen(
 
 @Composable
 private fun PredicateResultRow(predicate: PredicateResult) {
-    Column {
-        Row(verticalAlignment = Alignment.Top) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = if (predicate.passed) "✓" else "✗",
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (predicate.passed) BrandAccent else BrandWarm,
+            modifier = Modifier.width(24.dp)
+        )
+        Column {
             Text(
-                text = if (predicate.passed) "✓" else "✗",
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (predicate.passed) BrandAccent else BrandWarm,
-                modifier = Modifier.width(24.dp)
+                text = predicate.label,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 13.sp),
+                color = if (predicate.passed) Color.White else BrandWarm
             )
-            Column {
+            if (!predicate.passed && predicate.failReason != null) {
                 Text(
-                    text = predicate.label,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 13.sp),
-                    color = if (predicate.passed) Color.White else BrandWarm
+                    text = predicate.failReason,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TrustNeutral
                 )
-                if (!predicate.passed && predicate.failReason != null) {
-                    Text(
-                        text = predicate.failReason,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TrustNeutral
-                    )
-                }
+            } else if (predicate.privacyNote != null) {
+                Text(
+                    text = predicate.privacyNote,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TrustNeutral
+                )
             }
         }
     }

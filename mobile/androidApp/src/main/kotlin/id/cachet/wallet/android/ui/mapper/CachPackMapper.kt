@@ -67,7 +67,9 @@ object CachPackMapper {
                 PredicateResult(
                     label = pred.claim,
                     passed = allPassed,
-                    failReason = if (!allPassed) "Credential not available" else null
+                    failReason = if (!allPassed) "Credential not available" else null,
+                    privacyNote = pred.privacyNote,
+                    disclosureType = pred.disclosureType
                 )
             },
             validityLabel = if (allPassed) "${request.retentionDays} days" else null,
