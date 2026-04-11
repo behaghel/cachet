@@ -15,6 +15,7 @@ import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.network.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -206,6 +207,42 @@ class VerificationActivityIntegrationTest {
             entries.isNotEmpty()
         )
         assertEquals(TrustStatus.INCOMPLETE, entries.first().status)
+    }
+
+    // ── Race condition: loadDemoCredentials must not overwrite activity ──
+
+    @Test
+    fun `demo activity state is set before async credential loading`() {
+        // Use StandardTestDispatcher so viewModelScope coroutines do NOT auto-run.
+        // This simulates the real app where the network call in loadDemoCredentials
+        // takes time (e.g. HTTP timeout). If activity state is set inside the async
+        // coroutine, it will be empty here — catching the race that caused the bug.
+        val stdDispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(stdDispatcher)
+        try {
+            val credRepo = FakeCredRepo()
+            val receiptRepo = InMemoryConsentReceiptRepository()
+            val consentUseCase = ConsentUseCase(credRepo, receiptRepo, MockTransparencyLogRepository())
+            val vm = WalletViewModel(
+                issuanceUseCase = IssuanceUseCase(credRepo, NoOpOpenID4VCIClient()),
+                veriffService = NoOpVeriffService(),
+                consentUseCase = consentUseCase,
+                verificationUseCase = VerificationUseCase(
+                    credRepo, ConfigurableVerifierClient(), ConfigurableRelayClient(), consentUseCase
+                ),
+                demoMode = true,
+                demoEmpty = false
+            )
+
+            // Without advancing the dispatcher, the async coroutine hasn't run yet.
+            // Activity state must already be populated (set synchronously in init).
+            assertTrue(
+                "Demo activity fixtures must be set synchronously, not inside the async coroutine",
+                vm.activityState.value.historyGroups.isNotEmpty()
+            )
+        } finally {
+            Dispatchers.setMain(testDispatcher)
+        }
     }
 }
 

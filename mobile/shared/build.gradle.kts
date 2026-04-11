@@ -67,6 +67,8 @@ sqldelight {
     databases {
         create("WalletDatabase") {
             packageName.set("id.cachet.wallet.db")
+            version = 2
+            srcDirs("src/commonMain/sqldelight")
         }
     }
 }

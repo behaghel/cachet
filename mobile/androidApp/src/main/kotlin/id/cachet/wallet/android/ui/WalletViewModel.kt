@@ -236,6 +236,13 @@ class WalletViewModel(
     // -- Existing flows --
 
     private fun loadDemoCredentials() {
+        // Set activity fixtures immediately so they're never overwritten by
+        // the async credential-loading coroutine below.
+        _activityState.value = ActivityUiState(
+            historyGroups = DemoFixtures.historyGroups,
+            receipts = DemoFixtures.receipts
+        )
+
         viewModelScope.launch {
             val realResult = try {
                 issuanceUseCase.requestSDJWTCredential(
@@ -271,11 +278,6 @@ class WalletViewModel(
                     )
                 }
             }
-
-            _activityState.value = ActivityUiState(
-                historyGroups = DemoFixtures.historyGroups,
-                receipts = DemoFixtures.receipts
-            )
         }
     }
 
