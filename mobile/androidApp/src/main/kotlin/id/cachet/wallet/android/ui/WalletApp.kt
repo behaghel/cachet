@@ -345,10 +345,10 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
 }
 
 private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.CachetType): String = when (type) {
-    id.cachet.wallet.android.ui.components.CachetType.CHILDCARE -> "pack.childcare.readiness.es"
-    id.cachet.wallet.android.ui.components.CachetType.SELLER -> "pack.safe.seller"
-    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.childcare.readiness"
-    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.identity.basic"
+    id.cachet.wallet.android.ui.components.CachetType.CHILDCARE -> PackIds.CHILDCARE_ES
+    id.cachet.wallet.android.ui.components.CachetType.SELLER -> PackIds.SAFE_SELLER
+    id.cachet.wallet.android.ui.components.CachetType.AGE -> PackIds.CHILDCARE_BASE
+    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> PackIds.IDENTITY_BASIC
 }
 
 // -- Transient screens (loading, error, verification) --

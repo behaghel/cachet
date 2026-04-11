@@ -209,11 +209,12 @@ class WalletViewModel(
     }
 
     private fun humanizePackId(id: String): String = when (id) {
-        "pack.childcare.readiness.es" -> "Childcare Ready (ES)"
-        "pack.childcare.readiness" -> "Childcare Ready"
-        "pack.childcare.readiness.fr" -> "Childcare Ready (FR)"
-        "pack.childcare.readiness.ee" -> "Childcare Ready (EE)"
-        "pack.safe.seller" -> "Safe Seller"
+        PackIds.CHILDCARE_ES -> "Childcare Ready (ES)"
+        PackIds.CHILDCARE_BASE -> "Childcare Ready"
+        PackIds.CHILDCARE_FR -> "Childcare Ready (FR)"
+        PackIds.CHILDCARE_EE -> "Childcare Ready (EE)"
+        PackIds.SAFE_SELLER -> "Safe Seller"
+        PackIds.IDENTITY_BASIC -> "Identity Verified"
         else -> id.removePrefix("pack.").replace(".", " ").replaceFirstChar { it.uppercase() }
     }
 

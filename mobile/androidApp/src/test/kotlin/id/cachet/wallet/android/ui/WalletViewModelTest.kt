@@ -3,6 +3,7 @@ package id.cachet.wallet.android.ui
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
+import id.cachet.wallet.android.ui.model.PackIds
 import id.cachet.wallet.android.ui.model.RequestPredicate
 import id.cachet.wallet.android.ui.model.VerificationRequest
 import id.cachet.wallet.domain.model.*
@@ -132,21 +133,21 @@ class WalletViewModelTest {
     @Test
     fun `cachetTypeForPackId maps childcare pack`() {
         val vm = createViewModel(demoEmpty = true)
-        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness.es"))
-        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness.fr"))
-        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId("pack.childcare.readiness"))
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId(PackIds.CHILDCARE_ES))
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId(PackIds.CHILDCARE_FR))
+        assertEquals(CachetType.CHILDCARE, vm.cachetTypeForPackId(PackIds.CHILDCARE_BASE))
     }
 
     @Test
     fun `cachetTypeForPackId maps seller pack`() {
         val vm = createViewModel(demoEmpty = true)
-        assertEquals(CachetType.SELLER, vm.cachetTypeForPackId("pack.safe.seller"))
+        assertEquals(CachetType.SELLER, vm.cachetTypeForPackId(PackIds.SAFE_SELLER))
     }
 
     @Test
-    fun `cachetTypeForPackId maps age pack`() {
+    fun `cachetTypeForPackId maps identity pack`() {
         val vm = createViewModel(demoEmpty = true)
-        assertEquals(CachetType.AGE, vm.cachetTypeForPackId("pack.age.check"))
+        assertEquals(CachetType.IDENTITY, vm.cachetTypeForPackId(PackIds.IDENTITY_BASIC))
     }
 
     @Test
