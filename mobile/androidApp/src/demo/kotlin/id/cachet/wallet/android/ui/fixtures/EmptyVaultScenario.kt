@@ -13,7 +13,7 @@ object EmptyVaultScenario : DemoScenario {
     override val receipts = emptyList<ReceiptItem>()
     override val cachetDetails = emptyMap<String, CachetDetailUi>()
     override val defaultScanPack = CachPackUi(
-        id = "pack.childcare.readiness.es",
+        id = PackIds.CHILDCARE_ES,
         question = "Safe for my kids?",
         description = "Identity, background check, references",
         proofCount = 4,
