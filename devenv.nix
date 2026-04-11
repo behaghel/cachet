@@ -345,17 +345,16 @@ in
     set -euo pipefail
     ADB="$ANDROID_HOME/platform-tools/adb"
 
-    echo "🚀 Starting demo environment..."
-    echo "1. Starting backend services (for relay)..."
-    devenv up --detach
-    sleep 3
+    echo "🚀 Starting demo environment (fixtures only, no backend)..."
+    echo "1. Stopping backend services if running..."
+    devenv processes stop 2>/dev/null || true
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
     echo "3. Launching app (demo mode — fixtures)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
-    echo "✅ Done! App launched in demo mode with fixtures."
+    echo "✅ Done! App launched in demo mode with fixtures (no backend)."
     echo "💡 Switch scenario: android:revoked, android:expired, android:seller-only"
   '';
   scripts."android:test".exec = ''
