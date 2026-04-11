@@ -329,6 +329,12 @@ class VerificationUseCase(
         val predicates = response.predicates.orEmpty()
         if (predicates.isEmpty()) return null
 
+        val outcome = if (response.summary?.cachetGranted == true) {
+            ConsentReceipt.OUTCOME_PASSED
+        } else {
+            ConsentReceipt.OUTCOME_INCOMPLETE
+        }
+
         val request = PresentationRequest(
             rpIdentifier = "did:web:cachet.id:verifier",
             rpDisplayName = "Cachet Verifier",
@@ -341,7 +347,7 @@ class VerificationUseCase(
             retentionPeriodUnderstood = true
         )
 
-        return consentUseCase.generateConsentReceipt(credential, request, consent).getOrNull()
+        return consentUseCase.generateConsentReceipt(credential, request, consent, outcome).getOrNull()
     }
 
     private fun toCredentialDTO(vc: VerifiableCredential): VerifiableCredentialDTO {

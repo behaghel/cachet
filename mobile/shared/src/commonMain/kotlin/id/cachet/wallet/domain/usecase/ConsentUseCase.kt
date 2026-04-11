@@ -21,7 +21,8 @@ class ConsentUseCase(
     suspend fun generateConsentReceipt(
         credential: VerifiableCredential,
         presentationRequest: PresentationRequest,
-        userConsent: ConsentDetails
+        userConsent: ConsentDetails,
+        outcome: String = ConsentReceipt.OUTCOME_PASSED
     ): Result<ConsentReceipt> {
         try {
             val receipt = ConsentReceipt(
@@ -32,7 +33,8 @@ class ConsentUseCase(
                 rpIdentifier = presentationRequest.rpIdentifier,
                 rpDisplayName = presentationRequest.rpDisplayName,
                 userConsent = userConsent,
-                credentialId = credential.id
+                credentialId = credential.id,
+                outcome = outcome
             )
             
             // Generate cryptographically secure hash and signature
