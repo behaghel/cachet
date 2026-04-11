@@ -1,0 +1,38 @@
+{
+  "id": "pack.identity.basic",
+  "version": "0.1.0",
+  "name": "Identity Verification",
+  "purpose": "Verify core identity attributes: age, document authenticity, liveness",
+  "jurisdictions": ["GLOBAL"],
+  "badge": {
+    "label": "Identity Verified",
+    "ttl": "P180D",
+    "jurisdiction": "GLOBAL"
+  },
+  "predicates": [
+    {
+      "id": "age.ge.18",
+      "claim": "age",
+      "operator": ">=",
+      "value": 18,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "identity.verified",
+      "claim": "verified",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    },
+    {
+      "id": "liveness.verified",
+      "claim": "liveness_verified",
+      "operator": "boolean",
+      "value": true,
+      "issuersAccepted": ["did:veriff:*"],
+      "proofType": "sd-jwt"
+    }
+  ]
+}
