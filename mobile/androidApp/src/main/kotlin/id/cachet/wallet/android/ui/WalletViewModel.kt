@@ -14,6 +14,7 @@ import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.domain.model.ConsentDetails
+import id.cachet.wallet.domain.model.ConsentReceipt
 import id.cachet.wallet.domain.model.PresentationRequest
 import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.usecase.ConsentUseCase
@@ -130,6 +131,9 @@ class WalletViewModel(
             val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
             activeVerifierSession = null
 
+            val allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty()
+            val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
+
             // Generate a consent receipt so the Activity tab reflects this verification
             val predicateIds = result.predicateResults.map { it.predicateId }
             if (predicateIds.isNotEmpty()) {
@@ -148,14 +152,14 @@ class WalletViewModel(
                         explicitConsent = true,
                         dataMinimizationAcknowledged = true,
                         retentionPeriodUnderstood = true
-                    )
+                    ),
+                    outcome = outcome
                 )
             }
-            loadActivity()
 
             val cachetResult = CachetResult(
                 cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
-                allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty(),
+                allPassed = allPassed,
                 passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
                 totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
                 predicates = result.predicateResults.map { p ->
@@ -173,8 +177,8 @@ class WalletViewModel(
         } catch (e: Exception) {
             Log.e(TAG, "Relay verification failed", e)
             activeVerifierSession = null
-            CachetResult(
-                cachetName = "Error",
+            val cachetResult = CachetResult(
+                cachetName = humanizePackId(session.packId),
                 allPassed = false,
                 passedCount = 0,
                 totalCount = 0,
@@ -183,6 +187,8 @@ class WalletViewModel(
                 isError = true,
                 errorMessage = e.message ?: "Verification could not be completed"
             )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
         }
     }
 
@@ -430,11 +436,12 @@ class WalletViewModel(
             // Use the real credential if available, otherwise a synthetic one (demo fixtures
             // populate the UI but don't store in the repository).
             val receiptCredential = credential?.credential ?: DemoFixtures.syntheticCredential
-            generateConsentReceiptForShare(receiptCredential, request)
-            // Build a pack-aware result via CachPackMapper so the result name,
-            // predicate count, and type match the selected pack.
             val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
             val allPassed = DemoFixtures.shouldPass(request)
+            val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
+            generateConsentReceiptForShare(receiptCredential, request, outcome)
+            // Build a pack-aware result via CachPackMapper so the result name,
+            // predicate count, and type match the selected pack.
             val result = CachPackMapper.toCachetResult(matchingPack, allPassed)
             appendVerificationToActivity(result)
             return result
@@ -509,7 +516,8 @@ class WalletViewModel(
 
     private suspend fun generateConsentReceiptForShare(
         credential: VerifiableCredential,
-        request: VerificationRequest
+        request: VerificationRequest,
+        outcome: String = ConsentReceipt.OUTCOME_PASSED
     ) {
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
         val presentationRequest = PresentationRequest(
@@ -525,7 +533,7 @@ class WalletViewModel(
             retentionPeriodUnderstood = true,
             retentionPeriodDays = request.retentionDays
         )
-        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent)
+        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent, outcome)
         if (!demoMode) loadActivity()
     }
 
