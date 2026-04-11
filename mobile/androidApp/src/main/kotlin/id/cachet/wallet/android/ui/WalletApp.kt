@@ -347,8 +347,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
 private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.CachetType): String = when (type) {
     id.cachet.wallet.android.ui.components.CachetType.CHILDCARE -> "pack.childcare.readiness.es"
     id.cachet.wallet.android.ui.components.CachetType.SELLER -> "pack.safe.seller"
-    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.age.check"
-    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.identity.verification"
+    id.cachet.wallet.android.ui.components.CachetType.AGE -> "pack.childcare.readiness"
+    id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "pack.identity.basic"
 }
 
 // -- Transient screens (loading, error, verification) --
