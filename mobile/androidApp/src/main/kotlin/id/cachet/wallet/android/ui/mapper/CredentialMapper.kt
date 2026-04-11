@@ -2,7 +2,10 @@ package id.cachet.wallet.android.ui.mapper
 
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
+import id.cachet.wallet.android.ui.model.CachetDetailUi
 import id.cachet.wallet.android.ui.model.CredentialCardUi
+import id.cachet.wallet.android.ui.model.HistoryEntry
+import id.cachet.wallet.android.ui.model.RequestPredicate
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
 import id.cachet.wallet.domain.model.CredentialSubject
 import id.cachet.wallet.domain.model.StoredCredential
@@ -32,11 +35,36 @@ object CredentialMapper {
     }
 
     fun toVaultSummary(credentials: List<StoredCredential>): VaultSummaryUi {
-        val verified = credentials.count { !it.isRevoked }
+        val revoked = credentials.count { it.isRevoked }
+        val verified = credentials.size - revoked
         return VaultSummaryUi(
             totalCount = credentials.size,
             verifiedCount = verified,
-            pendingCount = credentials.size - verified
+            pendingCount = 0,
+            revokedCount = revoked
+        )
+    }
+
+    fun toDetailUi(
+        stored: StoredCredential,
+        relatedActivity: List<HistoryEntry> = emptyList()
+    ): CachetDetailUi {
+        val vc = stored.credential
+        val subject = vc.credentialSubject
+        return CachetDetailUi(
+            localId = stored.localId,
+            displayName = getCredentialDisplayName(vc.type),
+            cachetType = cachetTypeForTypes(vc.type) ?: CachetType.IDENTITY,
+            trustStatus = if (stored.isRevoked) TrustStatus.REVOKED else TrustStatus.VERIFIED,
+            issuedDate = formatDate(vc.issuanceDate),
+            expiresDate = vc.expirationDate?.let { formatDate(it) } ?: "—",
+            issuer = getIssuerDisplayName(vc.issuer),
+            predicates = getPredicates(subject).map { claim ->
+                RequestPredicate(claim = claim, privacyNote = "Only yes/no shared")
+            },
+            relatedActivity = relatedActivity,
+            isRevoked = stored.isRevoked,
+            keyAlias = stored.keyAlias
         )
     }
 
@@ -104,5 +132,13 @@ object CredentialMapper {
         append("Issued by $issuer")
         if (tier != null) append("  ·  $tier")
         if (expiry != null) append("  ·  $expiry")
+    }
+
+    private val MONTH_NAMES = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+    private fun formatDate(isoDate: String): String {
+        val instant = try { Instant.parse(isoDate) } catch (_: Exception) { return isoDate }
+        val dt = instant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        return "${MONTH_NAMES[dt.monthNumber - 1]} ${dt.dayOfMonth}, ${dt.year}"
     }
 }

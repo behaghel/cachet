@@ -1,0 +1,2 @@
+-- Migration from version 1 to 2: add outcome column to consent_receipts
+ALTER TABLE consent_receipts ADD COLUMN outcome TEXT NOT NULL DEFAULT 'passed';

@@ -14,6 +14,7 @@ import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.verification.VeriffResult
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.domain.model.ConsentDetails
+import id.cachet.wallet.domain.model.ConsentReceipt
 import id.cachet.wallet.domain.model.PresentationRequest
 import id.cachet.wallet.domain.model.VerifiableCredential
 import id.cachet.wallet.domain.usecase.ConsentUseCase
@@ -130,6 +131,9 @@ class WalletViewModel(
             val result = verificationUseCase.awaitAndVerifyRelayResponse(session)
             activeVerifierSession = null
 
+            val allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty()
+            val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
+
             // Generate a consent receipt so the Activity tab reflects this verification
             val predicateIds = result.predicateResults.map { it.predicateId }
             if (predicateIds.isNotEmpty()) {
@@ -148,14 +152,14 @@ class WalletViewModel(
                         explicitConsent = true,
                         dataMinimizationAcknowledged = true,
                         retentionPeriodUnderstood = true
-                    )
+                    ),
+                    outcome = outcome
                 )
             }
-            loadActivity()
 
-            CachetResult(
+            val cachetResult = CachetResult(
                 cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
-                allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty(),
+                allPassed = allPassed,
                 passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
                 totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
                 predicates = result.predicateResults.map { p ->
@@ -168,11 +172,13 @@ class WalletViewModel(
                 validityLabel = "90 days",
                 cachetType = packType
             )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
         } catch (e: Exception) {
             Log.e(TAG, "Relay verification failed", e)
             activeVerifierSession = null
-            CachetResult(
-                cachetName = "Error",
+            val cachetResult = CachetResult(
+                cachetName = humanizePackId(session.packId),
                 allPassed = false,
                 passedCount = 0,
                 totalCount = 0,
@@ -181,6 +187,8 @@ class WalletViewModel(
                 isError = true,
                 errorMessage = e.message ?: "Verification could not be completed"
             )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
         }
     }
 
@@ -228,6 +236,13 @@ class WalletViewModel(
     // -- Existing flows --
 
     private fun loadDemoCredentials() {
+        // Set activity fixtures immediately so they're never overwritten by
+        // the async credential-loading coroutine below.
+        _activityState.value = ActivityUiState(
+            historyGroups = DemoFixtures.historyGroups,
+            receipts = DemoFixtures.receipts
+        )
+
         viewModelScope.launch {
             val realResult = try {
                 issuanceUseCase.requestSDJWTCredential(
@@ -263,11 +278,6 @@ class WalletViewModel(
                     )
                 }
             }
-
-            _activityState.value = ActivityUiState(
-                historyGroups = DemoFixtures.historyGroups,
-                receipts = DemoFixtures.receipts
-            )
         }
     }
 
@@ -428,12 +438,15 @@ class WalletViewModel(
             // Use the real credential if available, otherwise a synthetic one (demo fixtures
             // populate the UI but don't store in the repository).
             val receiptCredential = credential?.credential ?: DemoFixtures.syntheticCredential
-            generateConsentReceiptForShare(receiptCredential, request)
-            // Build a pack-aware result via CachPackMapper so the result name,
-            // predicate count, and type match the selected pack.
             val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
             val allPassed = DemoFixtures.shouldPass(request)
-            return CachPackMapper.toCachetResult(matchingPack, allPassed)
+            val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
+            generateConsentReceiptForShare(receiptCredential, request, outcome)
+            // Build a pack-aware result via CachPackMapper so the result name,
+            // predicate count, and type match the selected pack.
+            val result = CachPackMapper.toCachetResult(matchingPack, allPassed)
+            appendVerificationToActivity(result)
+            return result
         }
 
         if (credential == null) return CachetResult(
@@ -471,7 +484,7 @@ class WalletViewModel(
         // Refresh activity after sharing
         loadActivity()
 
-        return if (result != null && result.success) {
+        val cachetResult = if (result != null && result.success) {
             CachetResult(
                 cachetName = request.question.removeSuffix("?").trim(),
                 allPassed = true,
@@ -499,11 +512,14 @@ class WalletViewModel(
                 cachetType = request.cachetType
             )
         }
+        appendVerificationToActivity(cachetResult)
+        return cachetResult
     }
 
     private suspend fun generateConsentReceiptForShare(
         credential: VerifiableCredential,
-        request: VerificationRequest
+        request: VerificationRequest,
+        outcome: String = ConsentReceipt.OUTCOME_PASSED
     ) {
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
         val presentationRequest = PresentationRequest(
@@ -519,8 +535,8 @@ class WalletViewModel(
             retentionPeriodUnderstood = true,
             retentionPeriodDays = request.retentionDays
         )
-        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent)
-        loadActivity()
+        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent, outcome)
+        if (!demoMode) loadActivity()
     }
 
     private fun mapPredicateToDomain(uiClaim: String): String {
@@ -532,6 +548,16 @@ class WalletViewModel(
             "liveness" in lower -> "liveness_verified"
             else -> uiClaim.lowercase().replace(" ", "_")
         }
+    }
+
+    suspend fun getDetailForCredential(localId: String): CachetDetailUi? {
+        val stored = issuanceUseCase.getStoredCredentials().getOrNull()
+            ?.firstOrNull { it.localId == localId } ?: return null
+        val activity = consentUseCase.getConsentReceiptsByCredential(stored.credential.id)
+            .getOrNull()
+            ?.map { ActivityMapper.toHistoryEntry(it) }
+            ?: emptyList()
+        return CredentialMapper.toDetailUi(stored, activity)
     }
 
     fun revokeCredential(localId: String) {

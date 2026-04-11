@@ -212,6 +212,44 @@ class WalletViewModelTest {
         val activity = vm.activityState.value
         assertTrue("Activity receipts should not be empty after share", activity.receipts.isNotEmpty())
     }
+
+    // ── shareCredential atomically logs to activity history ──
+
+    @Test
+    fun `shareCredential appends to activity history without UI callback`() = runTest {
+        val credRepo = InMemoryCredentialRepository()
+        val consentRepo = InMemoryConsentReceiptRepository()
+        val consentUseCase = ConsentUseCase(credRepo, consentRepo, MockTransparencyLogRepository())
+        val vm = WalletViewModel(
+            issuanceUseCase = IssuanceUseCase(credRepo, StubOpenID4VCIClient()),
+            veriffService = FakeVeriffService(VeriffResult.Success("s1")),
+            consentUseCase = consentUseCase,
+            verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
+            demoMode = true,
+            demoEmpty = false
+        )
+
+        // Simulate 3 verifications — no UI callback, no "View" tap
+        repeat(3) {
+            vm.shareCredential(
+                VerificationRequest(
+                    question = "Are you safe for childcare?",
+                    predicates = listOf(RequestPredicate("Age 18+", "Age not shared")),
+                    cachetType = CachetType.CHILDCARE
+                )
+            )
+        }
+
+        // All 3 must appear in activity — logged atomically by shareCredential
+        val verificationEntries = vm.activityState.value.historyGroups
+            .flatMap { it.entries }
+            .filter { it.time == "Just now" }
+        assertEquals(
+            "Expected 3 activity entries from 3 verifications, got ${verificationEntries.size}",
+            3,
+            verificationEntries.size
+        )
+    }
 }
 
 // ── Stubs ──

@@ -120,6 +120,7 @@ object HappyPathScenario : DemoScenario {
                 RequestPredicate("Liveness confirmed", "Biometric data never leaves your device"),
                 RequestPredicate("Nationality confirmed", "Only country, not passport number")
             ),
+            keyAlias = "android-keystore-demo-identity",
             relatedActivity = listOf(
                 HistoryEntry("rd3", "Festival Entrada", "1 proof shared \u00B7 \u2713 Logged", "Today", "", VerificationDirection.RECEIVED, TrustStatus.PASSED),
                 HistoryEntry("rd4", "Freelance platform", "2 proofs shared \u00B7 \u2713 Logged", "Mar 28", "", VerificationDirection.RECEIVED, TrustStatus.PASSED)

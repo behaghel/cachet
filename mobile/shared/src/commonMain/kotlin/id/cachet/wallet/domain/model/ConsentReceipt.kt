@@ -20,12 +20,18 @@ data class ConsentReceipt(
     val rpDisplayName: String,
     val userConsent: ConsentDetails,
     val credentialId: String,
+    val outcome: String = OUTCOME_PASSED,
     val receiptHash: String? = null,
     val signature: String? = null,
     val salt: String? = null,
     // Phase 2B: Transparency log integration
     val transparencyLogEntry: TransparencyLogEntry? = null
 ) {
+    companion object {
+        const val OUTCOME_PASSED = "passed"
+        const val OUTCOME_INCOMPLETE = "incomplete"
+    }
+
     /**
      * Generate a cryptographically secure hash of this consent receipt for transparency logging
      */
@@ -46,6 +52,7 @@ data class ConsentReceipt(
             "predicates:${predicatesProven.sorted().joinToString(",")}",
             "rp:$rpIdentifier",
             "credential:$credentialId",
+            "outcome:$outcome",
             "consent:${userConsent.toCanonicalString()}"
         ).joinToString("|")
     }

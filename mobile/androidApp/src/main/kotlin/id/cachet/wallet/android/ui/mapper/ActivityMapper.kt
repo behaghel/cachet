@@ -32,6 +32,11 @@ object ActivityMapper {
     }
 
     fun toHistoryEntry(receipt: ConsentReceipt): HistoryEntry {
+        val status = when (receipt.outcome) {
+            ConsentReceipt.OUTCOME_PASSED -> TrustStatus.PASSED
+            ConsentReceipt.OUTCOME_INCOMPLETE -> TrustStatus.INCOMPLETE
+            else -> TrustStatus.PENDING
+        }
         return HistoryEntry(
             id = receipt.id,
             title = receipt.purpose,
@@ -39,7 +44,7 @@ object ActivityMapper {
             time = formatTime(receipt.timestamp),
             proofSummary = "${receipt.predicatesProven.size} ${if (receipt.predicatesProven.size == 1) "proof" else "proofs"} shared",
             direction = VerificationDirection.RECEIVED,
-            status = TrustStatus.PASSED
+            status = status
         )
     }
 

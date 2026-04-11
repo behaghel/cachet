@@ -264,8 +264,8 @@ in
     $ADB uninstall id.cachet.wallet.android.demo 2>/dev/null || $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
     cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
 
-    echo "Launching Cachet Wallet (demo)..."
-    if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity 2>&1 | grep -q "Error\|Exception"; then
+    echo "Launching Cachet Wallet (demo — happy path)..."
+    if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true 2>&1 | grep -q "Error\|Exception"; then
       echo "❌ Failed to launch app. Is the emulator running? (android:emulator)"
       exit 1
     fi
@@ -276,6 +276,42 @@ in
     else
       echo "⚠️ App installed but may not have launched. Check the emulator screen."
     fi
+  '';
+  # Demo scenario launchers — use after android:install or android:run
+  scripts."android:happy".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+    $ADB shell am force-stop id.cachet.wallet.android.demo
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario happy
+    echo "✅ Launched: happy path (Identity + Childcare + Seller)"
+  '';
+  scripts."android:revoked".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+    $ADB shell am force-stop id.cachet.wallet.android.demo
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario revoked
+    echo "✅ Launched: revoked scenario (Identity revoked, Childcare active)"
+  '';
+  scripts."android:expired".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+    $ADB shell am force-stop id.cachet.wallet.android.demo
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario expired
+    echo "✅ Launched: expired scenario"
+  '';
+  scripts."android:seller-only".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+    $ADB shell am force-stop id.cachet.wallet.android.demo
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --es demo_scenario seller-only
+    echo "✅ Launched: seller-only scenario"
+  '';
+  scripts."android:empty".exec = ''
+    set -euo pipefail
+    ADB="$ANDROID_HOME/platform-tools/adb"
+    $ADB shell am force-stop id.cachet.wallet.android.demo
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true --ez demo_empty true
+    echo "✅ Launched: empty vault (IDV onboarding)"
   '';
   scripts."android:run".exec = ''
     set -euo pipefail
@@ -289,8 +325,8 @@ in
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
-    echo "3. Launching app..."
-    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
+    echo "3. Launching app (demo — happy path)..."
+    $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
     echo "✅ Done! Backend running, app installed and launched."
     echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
   '';

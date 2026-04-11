@@ -253,7 +253,8 @@ class CredentialMapperTest {
         val summary = CredentialMapper.toVaultSummary(creds)
         assertEquals(3, summary.totalCount)
         assertEquals(2, summary.verifiedCount)
-        assertEquals(1, summary.pendingCount)
+        assertEquals(0, summary.pendingCount)
+        assertEquals(1, summary.revokedCount)
     }
 
     private fun makeStored(id: String, isRevoked: Boolean) = StoredCredential(

@@ -7,10 +7,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,7 +65,26 @@ fun CachetDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CachetMark(type = detail.cachetType, size = 80.dp)
+                    Box(contentAlignment = Alignment.Center) {
+                        CachetMark(type = detail.cachetType, size = 80.dp)
+                        if (detail.isRevoked) {
+                            val forbiddenRed = Color(0xFFB91C1C)
+                            Canvas(modifier = Modifier.size(80.dp)) {
+                                val c = Offset(size.width / 2, size.height / 2)
+                                val r = size.minDimension / 2 * 0.75f
+                                val sw = 5.dp.toPx()
+                                drawCircle(color = forbiddenRed, radius = r, center = c, style = Stroke(width = sw))
+                                val offset = r * 0.707f
+                                drawLine(
+                                    color = forbiddenRed,
+                                    start = Offset(c.x - offset, c.y - offset),
+                                    end = Offset(c.x + offset, c.y + offset),
+                                    strokeWidth = sw,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = detail.displayName,
@@ -72,23 +97,67 @@ fun CachetDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     SealButton(
                         text = "Share",
-                        onClick = onShare
+                        onClick = onShare,
+                        enabled = !detail.isRevoked
                     )
+                    if (detail.isRevoked) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Revoked credentials cannot be shared",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = BrandWarm,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
             // ── Metadata rows ──
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    MetadataField(label = "Issued", value = detail.issuedDate)
-                    MetadataField(label = "Expires", value = detail.expiresDate)
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MetadataField(label = "Issued", value = detail.issuedDate)
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (detail.isRevoked && detail.revokedDate != null) {
+                            MetadataField(label = "Revoked", value = detail.revokedDate, valueColor = BrandWarm)
+                        } else {
+                            MetadataField(label = "Expires", value = detail.expiresDate)
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 MetadataField(label = "Issuer", value = detail.issuer)
+                // ── Hardware-backed indicator (#62) ──
+                if (detail.keyAlias != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = SurfaceElevated)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = "Hardware-secured",
+                            tint = BrandAccent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Hardware-secured",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = BrandAccent
+                            )
+                            Text(
+                                text = "Bound to your device's secure element",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextTertiary
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -159,27 +228,29 @@ fun CachetDetailScreen(
                 }
             }
 
-            // ── Revoke link ──
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Revoke this cachet",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = BrandWarm,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onRevoke)
-                        .padding(vertical = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(32.dp))
+            // ── Revoke link (hidden when already revoked) ──
+            if (!detail.isRevoked) {
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Revoke this cachet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = BrandWarm,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onRevoke)
+                            .padding(vertical = 8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MetadataField(label: String, value: String) {
+private fun MetadataField(label: String, value: String, valueColor: Color = TextPrimary) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
@@ -191,7 +262,7 @@ private fun MetadataField(label: String, value: String) {
             text = value,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
-            color = TextPrimary
+            color = valueColor
         )
     }
 }

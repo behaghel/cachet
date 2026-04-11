@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
 import id.cachet.wallet.android.ui.model.CredentialCardUi
@@ -67,6 +68,9 @@ private fun MyCachetsGrid(
     onStartVerification: () -> Unit,
     onCardTapped: (CredentialCardUi) -> Unit
 ) {
+    // Sort: active first (preserve order), revoked last
+    val sorted = credentials.sortedBy { it.isRevoked }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -76,6 +80,12 @@ private fun MyCachetsGrid(
         ) {
             // Summary bar — full width
             item(span = { GridItemSpan(maxLineSpan) }) {
+                val summaryParts = buildList {
+                    add("${summary.totalCount} cachets")
+                    if (summary.verifiedCount > 0) add("${summary.verifiedCount} verified")
+                    if (summary.pendingCount > 0) add("${summary.pendingCount} pending")
+                    if (summary.revokedCount > 0) add("${summary.revokedCount} revoked")
+                }
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -83,7 +93,7 @@ private fun MyCachetsGrid(
                     border = BorderStroke(1.dp, TrustVerifiedBorder)
                 ) {
                     Text(
-                        text = "${summary.totalCount} cachets  ·  ${summary.verifiedCount} verified  ·  ${summary.pendingCount} pending",
+                        text = summaryParts.joinToString("  \u00B7  "),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = TrustVerifiedText
@@ -92,7 +102,7 @@ private fun MyCachetsGrid(
             }
 
             // Cachet grid cards
-            items(credentials, key = { it.localId }) { card ->
+            items(sorted, key = { it.localId }) { card ->
                 CachetGridCard(card = card, onClick = { onCardTapped(card) })
             }
 
@@ -122,6 +132,7 @@ private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(196.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -136,9 +147,11 @@ private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val dimmed = if (card.isRevoked) 0.4f else 1f
+
             // Shield mark
             if (card.cachetType != null) {
-                CachetMark(type = card.cachetType, size = 56.dp)
+                CachetMark(type = card.cachetType, size = 56.dp, modifier = Modifier.alpha(dimmed))
             }
 
             // Display name
@@ -148,17 +161,19 @@ private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.alpha(dimmed)
             )
 
-            // Trust status
+            // Trust status — stays full opacity
             TrustStatusChip(status = card.trustStatus)
 
             // Freshness
             Text(
                 text = card.freshnessLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = TextTertiary
+                color = TextTertiary,
+                modifier = Modifier.alpha(dimmed)
             )
         }
     }

@@ -34,7 +34,7 @@ object RevokedScenario : DemoScenario {
         )
     )
 
-    override val vaultSummary = VaultSummaryUi(totalCount = 2, verifiedCount = 1, pendingCount = 1)
+    override val vaultSummary = VaultSummaryUi(totalCount = 2, verifiedCount = 1, pendingCount = 0, revokedCount = 1)
 
     override val cachPacks = HappyPathScenario.cachPacks
 
@@ -72,6 +72,8 @@ object RevokedScenario : DemoScenario {
                 RequestPredicate("Liveness confirmed", "Biometric data never leaves your device"),
                 RequestPredicate("Nationality confirmed", "Only country, not passport number")
             ),
+            isRevoked = true,
+            revokedDate = "Apr 5, 2026",
             relatedActivity = listOf(
                 HistoryEntry("rd-rev1", "Cachet revoked", "You revoked this cachet", "Apr 5", "", VerificationDirection.DECLINED, TrustStatus.INCOMPLETE)
             )
