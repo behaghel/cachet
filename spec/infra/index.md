@@ -1,10 +1,9 @@
 ---
 domain: infra
-type: generic
 status: draft
 last-reviewed: 2026-04-12
 ---
 
 # Infrastructure
 
-Docker Compose for local dev, Cloud Run deployment configuration.
+> See spec/domains.yaml for description, classification, code paths, and context map.

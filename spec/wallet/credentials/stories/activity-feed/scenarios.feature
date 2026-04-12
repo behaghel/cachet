@@ -1,13 +1,23 @@
+@story:activity-feed @domain:wallet/credentials @priority:high @status:draft
 Feature: Activity Feed
   As a returning-holder
   I want to see my verification history
   So that I know when and where my credentials were shared
+
+  Context:
+    Second tab on home screen. Shows chronological verification events.
+    Tab switching is defined in @story:my-cachets (not duplicated here).
+
+  Out of scope:
+    - Filtering by date range or verifier
+    - Activity search
 
   Background:
     Given the app is launched in demo mode
     And the "happy" demo scenario is loaded
 
   # AC-1: Chronological list
+  @wireframe:activity-01-tab.svg
   Scenario: Viewing activity history
     When I am on the "Activity" tab
     Then I see a chronological list of verification events
@@ -37,14 +47,3 @@ Feature: Activity Feed
     Given no verification events have occurred
     When I am on the "Activity" tab
     Then I see an empty state message
-
-  # AC-6: Tab switching
-  Scenario: Switching to My Cachets tab
-    Given I am on the "Activity" tab
-    When I tap the "My Cachets" segment
-    Then I am on the "My Cachets" tab
-
-  # Wireframe: activity-01-tab.svg
-  Scenario: Visual match — activity tab
-    When I am on the "Activity" tab
-    Then the screen matches wireframe "activity-01-tab.svg"

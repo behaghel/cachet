@@ -1,20 +1,12 @@
 ---
 domain: common
-type: shared-kernel
 status: draft
 last-reviewed: 2026-04-12
-consumers:
-  - verification
-  - issuance
-  - registry
-  - receipts
-  - relay
 ---
 
 # Common (Shared Kernel)
 
-HTTP server infrastructure (chi router, middleware, health, logging, tracing),
-OpenAPI-generated model types, and shared schemas.
+> See spec/domains.yaml for description, classification, code paths, and context map.
 
 ## Shared Types
 
