@@ -54,6 +54,7 @@ yarn-error.log*
 # Android
 local.properties
 mobile/*/build/
+# network_security_config.xml is generated at build time by generateNetworkSecurityConfig task
 mobile/.gradle/
 mobile/*/.gradle/
 mobile/*/local.properties
