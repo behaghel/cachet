@@ -118,7 +118,7 @@ This project handles verifiable credentials and identity data. All code changes 
 
 1. **Never hardcode secrets** — use secretspec/env vars (see `.env.ci` for CI pattern)
 2. **Validate all input** — especially JWT claims, webhook payloads, credential presentations
-3. **Local-first verification** — the verifier never trusts the relay/transport layer (see `docs/VERIFICATION_PROTOCOL.md`)
+3. **Local-first verification** — the verifier never trusts the relay/transport layer (see `spec/security/verification-protocol.md`)
 4. **Minimal PII logging** — never log credential contents, only session IDs and status codes
 5. **Use `/health` not `/healthz`** — Cloud Run intercepts `/healthz`
 6. **Run `ci:security` before merging** — gosec must pass clean
@@ -126,7 +126,7 @@ This project handles verifiable credentials and identity data. All code changes 
 8. **SD-JWT cryptographic verification** — never trust credential fields by string matching; verify issuer JWS signature, KB-JWT holder binding, nonce, and audience
 9. **Hardware-backed keys** — holder signing keys must be StrongBox/Secure Enclave backed; no software-only keys for credential operations
 
-Security specification: `docs/VERIFICATION_PROTOCOL.md` (threat model in Section 3, crypto requirements in Section 5)
+Security specification: `spec/security/verification-protocol.md` (threat model in Section 3, crypto requirements in Section 5)
 
 ### Security Tooling
 

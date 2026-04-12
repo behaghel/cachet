@@ -1,22 +1,14 @@
 ---
 domain: security
-type: core
 status: draft
 last-reviewed: 2026-04-12
-governs:
-  - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/crypto/
-  - services/verifier/internal/eval/sdjwt_parser.go
-  - services/verifier/internal/eval/kbjwt.go
-  - services/verifier/internal/jwe/
-  - services/issuance-gateway/internal/credential/sdjwt.go
-  - docs/VERIFICATION_PROTOCOL.md
 ---
 
 # Security Domain — Behavioral Spec
 
 ## 1. Threat Model
 
-14 threats identified in VERIFICATION_PROTOCOL.md Section 3.
+14 threats identified in verification-protocol.md Section 3.
 
 | ID | Threat | Severity | Mitigation | Status |
 |----|--------|----------|------------|--------|
