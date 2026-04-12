@@ -1,4 +1,4 @@
-package id.cachet.wallet.android.ui
+package id.cachet.wallet.android.ui.onboarding
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

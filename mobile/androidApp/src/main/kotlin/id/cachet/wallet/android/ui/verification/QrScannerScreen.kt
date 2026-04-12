@@ -1,4 +1,4 @@
-package id.cachet.wallet.android.ui
+package id.cachet.wallet.android.ui.verification
 
 import android.Manifest
 import android.content.pm.PackageManager

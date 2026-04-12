@@ -41,15 +41,12 @@ domains:
       onboarding:
         description: First-launch experience — educate user, establish trust concept.
         code-paths:
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/OnboardingScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/onboarding/
         spec-path: spec/wallet/onboarding/
       credentials:
         description: Credential vault — list, detail, empty state, revocation display.
         code-paths:
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/HomeScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CachetDetailScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CredentialsScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/ActivityScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/credentials/
           - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/repository/
           - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/model/
         spec-path: spec/wallet/credentials/
@@ -58,16 +55,9 @@ domains:
           Verification interaction — QR scanning, incoming requests, consent,
           presentation, result display.
         code-paths:
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/QrScannerScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/QrShareScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/IncomingRequestScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/VerificationResultScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CachetResultScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/PackPickerScreen.kt
-          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/PackListScreen.kt
-          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/usecase/VerificationUseCase.kt
-          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/VerifierClient.kt
-          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/RelayClient.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/verification/
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/usecase/
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/
           - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/verification/
         spec-path: spec/wallet/verification-flow/
 

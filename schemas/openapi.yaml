@@ -119,7 +119,137 @@ paths:
             Webhook acknowledged — session not approved
             or failed quality validation
 
+  /status/{listId}:
+    get:
+      summary: Get StatusList2021 credential
+      description: >-
+        Returns a StatusList2021Credential containing the revocation
+        bitstring for the given list
+      operationId: getStatusList
+      tags: [issuance-gateway]
+      security: []
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          description: Status list identifier
+          schema:
+            type: string
+      responses:
+        "200":
+          description: StatusList2021 bitstring credential
+          headers:
+            Cache-Control:
+              description: Caching directive for the status list
+              schema:
+                type: string
+                example: "max-age=300"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusList2021Credential"
+
+  /status/{listId}/revoke:
+    post:
+      summary: Revoke a credential by index
+      description: Sets the bit at the given index in the status list bitstring
+      operationId: revokeCredential
+      tags: [issuance-gateway]
+      security: []
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          description: Status list identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeRequest"
+      responses:
+        "200":
+          description: Credential revoked successfully
+        "400":
+          description: Invalid index
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /.well-known/jwks.json:
+    get:
+      summary: Issuer JWKS endpoint
+      description: Returns the issuer's ECDSA public key set as a JWKS document
+      operationId: getIssuerJwks
+      tags: [issuance-gateway]
+      security: []
+      responses:
+        "200":
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JWKS"
+
   # ── Verifier ───────────────────────────────────────────────────────
+
+  /sessions:
+    post:
+      summary: Create a verification session
+      description: Creates a time-bound, one-time-use verification session
+      operationId: createSession
+      tags: [verifier]
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRequest"
+      responses:
+        "200":
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  /.well-known/did.json:
+    get:
+      summary: Verifier DID document
+      description: >-
+        Serves the verifier's DID document for Request Object
+        verification (JsonWebKey2020 verification method)
+      operationId: getVerifierDid
+      tags: [verifier]
+      security: []
+      responses:
+        "200":
+          description: DID document
+          content:
+            application/json:
+              schema:
+                type: object
+                description: >-
+                  W3C DID document. Structure follows the DID Core
+                  specification with JsonWebKey2020 verification methods.
+                properties:
+                  id:
+                    type: string
+                    description: DID identifier
+                    example: "did:web:cachet.id"
+                  verificationMethod:
+                    type: array
+                    description: Verification methods for this DID
+                    items:
+                      type: object
+                      additionalProperties: true
+                additionalProperties: true
+        "404":
+          description: No IdentitySigner configured
 
   /packs:
     get:
@@ -577,7 +707,150 @@ components:
               format: date-time
               description: When verification was performed
 
+    # ── StatusList / Revocation ───────────────────────────────────
+
+    StatusList2021Credential:
+      type: object
+      description: >-
+        W3C Verifiable Credential containing a StatusList2021
+        revocation bitstring
+      properties:
+        "@context":
+          type: array
+          items:
+            type: string
+          example:
+            - "https://www.w3.org/2018/credentials/v1"
+            - "https://w3id.org/vc/status-list/2021/v1"
+        id:
+          type: string
+          format: uri
+          description: Status list credential URI
+        type:
+          type: array
+          items:
+            type: string
+          example: ["VerifiableCredential", "StatusList2021Credential"]
+        issuer:
+          type: string
+          description: Issuer DID
+        issuanceDate:
+          type: string
+          format: date-time
+        credentialSubject:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+              enum: [StatusList2021]
+            statusPurpose:
+              type: string
+              enum: [revocation]
+            encodedList:
+              type: string
+              description: GZIP-compressed, base64-encoded bitstring
+      additionalProperties: true
+
+    RevokeRequest:
+      type: object
+      required: [index]
+      properties:
+        index:
+          type: integer
+          description: Bit position in the status list to set (revoke)
+          example: 42
+
+    # ── Issuer JWKS ────────────────────────────────────────────────
+
+    JWKS:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          description: Array of JSON Web Key objects
+          items:
+            type: object
+            description: JWK object (RFC 7517)
+            properties:
+              kty:
+                type: string
+                description: Key type
+                example: "EC"
+              crv:
+                type: string
+                description: Elliptic curve
+                example: "P-256"
+              x:
+                type: string
+                description: X coordinate (base64url)
+              y:
+                type: string
+                description: Y coordinate (base64url)
+              kid:
+                type: string
+                description: Key identifier
+              use:
+                type: string
+                description: Key usage
+                example: "sig"
+              alg:
+                type: string
+                description: Algorithm
+                example: "ES256"
+            additionalProperties: true
+
     # ── Verifier ───────────────────────────────────────────────────
+
+    SessionRequest:
+      type: object
+      description: Optional parameters for session creation
+      properties:
+        packId:
+          type: string
+          description: Pack identifier to scope the session
+          example: "pack.childcare.readiness.es"
+        question:
+          type: string
+          description: Verification question to display
+          example: "Are you childcare-ready in Spain?"
+        predicates:
+          type: array
+          items:
+            type: string
+          description: Predicate IDs to evaluate
+          example: ["age.ge.18", "identity.verified"]
+
+    SessionResponse:
+      type: object
+      required: [sessionId, nonce, verifierDid]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Unique session identifier (UUID v4)
+        nonce:
+          type: string
+          description: Cryptographically random nonce (base64url-encoded)
+        verifierDid:
+          type: string
+          description: Verifier's DID
+          example: "did:web:cachet.id"
+        ephemeralPubKey:
+          type: string
+          nullable: true
+          description: >-
+            X25519 ephemeral public key for E2E encryption
+            (base64url-encoded, null if key generation failed)
+        requestObject:
+          type: string
+          nullable: true
+          description: >-
+            Signed JWT Request Object
+            (null if no IdentitySigner configured)
 
     Pack:
       type: object
