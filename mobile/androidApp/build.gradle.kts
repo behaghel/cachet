@@ -15,7 +15,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // CucumberTestRunner extends CucumberAndroidJUnitRunner extends AndroidJUnitRunner
+        // — runs both Cucumber .feature scenarios and regular JUnit4 instrumented tests
+        testInstrumentationRunner = "id.cachet.wallet.android.bdd.CucumberTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
