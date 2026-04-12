@@ -56,6 +56,8 @@ local.properties
 mobile/*/build/
 # Generated at build time by generateNetworkSecurityConfig task
 mobile/androidApp/src/main/res/xml/network_security_config.xml
+# Generated at build time by copyBddFeatureFiles task (source of truth: spec/)
+mobile/androidApp/src/androidTest/assets/features/*.feature
 mobile/.gradle/
 mobile/*/.gradle/
 mobile/*/local.properties

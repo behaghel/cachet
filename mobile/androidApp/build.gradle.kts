@@ -169,6 +169,35 @@ $domainEntries
     }
 }
 
+// Copy BDD .feature files from spec/ into androidTest assets at build time.
+// Source of truth is spec/{domain}/stories/{story}/scenarios.feature — each is
+// renamed to {story}.feature so Cucumber finds them by story name.
+tasks.register("copyBddFeatureFiles") {
+    description = "Copies spec/ .feature files into androidTest assets"
+    group = "android"
+
+    val specRoot = rootProject.file("../spec")
+    val outputDir = file("src/androidTest/assets/features")
+
+    inputs.dir(specRoot)
+    outputs.dir(outputDir)
+
+    doLast {
+        outputDir.mkdirs()
+        // Clean stale copies
+        outputDir.listFiles()?.filter { it.extension == "feature" }?.forEach { it.delete() }
+
+        specRoot.walkTopDown()
+            .filter { it.name == "scenarios.feature" }
+            .forEach { featureFile ->
+                // Parent dir name is the story name: spec/.../stories/first-launch/scenarios.feature → first-launch.feature
+                val storyName = featureFile.parentFile.name
+                featureFile.copyTo(File(outputDir, "$storyName.feature"), overwrite = true)
+            }
+        println("BDD features: copied ${outputDir.listFiles()?.count { it.extension == "feature" } ?: 0} files")
+    }
+}
+
 afterEvaluate {
-    tasks.findByName("preBuild")?.dependsOn("generateNetworkSecurityConfig")
+    tasks.findByName("preBuild")?.dependsOn("generateNetworkSecurityConfig", "copyBddFeatureFiles")
 }
