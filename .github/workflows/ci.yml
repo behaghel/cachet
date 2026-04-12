@@ -118,6 +118,69 @@ jobs:
       - name: Validate OpenAPI schema
         run: redocly lint schemas/openapi.yaml
 
+  # BDD scenarios (Cucumber + Compose on emulator)
+  bdd:
+    name: BDD Scenarios
+    runs-on: ubuntu-latest
+    needs: [android]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Enable KVM for emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
+        with:
+          cache-prefix: bdd
+          disk-threshold-gb: 8
+          enable-android-cache: true
+          enable-android-sdk: true
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          cp .env.ci .env
+
+      - name: Sync feature files
+        shell: bash
+        run: |
+          devenv shell -- bash -c '
+            find spec -name "scenarios.feature" -exec sh -c '\''
+              story=$(basename $(dirname "$1"))
+              cp "$1" mobile/androidApp/src/androidTest/assets/features/"$story".feature
+            '\'' _ {} \;
+          '
+
+      - name: Start emulator
+        shell: bash
+        run: devenv shell -- android:emulator
+        timeout-minutes: 5
+
+      - name: Run BDD scenarios
+        shell: bash
+        run: |
+          devenv shell -- bash -c '
+            unset ANDROID_SDK_ROOT
+            echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+            cd mobile && ./gradlew --no-daemon :androidApp:connectedDemoDebugAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.class=id.cachet.wallet.android.bdd.CucumberTestRunner
+          '
+        timeout-minutes: 15
+
+      - name: Upload BDD test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-test-results
+          path: mobile/androidApp/build/reports/androidTests/
+
   # Integration tests using devenv
   integration:
     name: Integration Tests
