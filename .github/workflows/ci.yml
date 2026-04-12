@@ -153,7 +153,7 @@ jobs:
       - name: Start emulator
         shell: bash
         run: devenv shell -- android:emulator
-        timeout-minutes: 5
+        timeout-minutes: 10
 
       - name: Run BDD scenarios
         shell: bash
