@@ -1,14 +1,12 @@
 ---
 domain: issuance
-type: core
 status: draft
 last-reviewed: 2026-04-12
 ---
 
 # Issuance
 
-Credential lifecycle management — OAuth2 token exchange, SD-JWT VC issuance
-via OpenID4VCI, Veriff identity verification webhooks, StatusList2021 revocation.
+> See spec/domains.yaml for description, classification, code paths, and context map.
 
 ## Ubiquitous Language
 
@@ -28,12 +26,6 @@ via OpenID4VCI, Veriff identity verification webhooks, StatusList2021 revocation
 ## Invariants
 
 <!-- TODO: e.g., "a credential is never issued without a completed Veriff session", "revocation index is unique per credential" -->
-
-## Context Map Relationships
-
-- **wallet** (open-host-service): Wallet consumes issuance via OpenID4VCI protocol
-- **common** (shared-kernel): Uses server infra and generated model types
-- **security** (partnership): Uses SD-JWT signing, credential building
 
 ## Domain Events
 

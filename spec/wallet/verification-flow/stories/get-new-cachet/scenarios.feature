@@ -1,12 +1,22 @@
+@story:get-new-cachet @domain:wallet/verification-flow @priority:high @status:draft
 Feature: Get New Cachet
   As a first-time-user or returning-holder
   I want to browse available Trust Packs and start the credential acquisition flow
   So that I can earn a new cachet
 
+  Context:
+    Pack picker in holder mode. Reachable from empty vault CTA and FAB.
+    Selecting a pack initiates Veriff session or demo consent.
+
+  Out of scope:
+    - Pack search/filter
+    - Pack comparison
+
   Background:
     Given the app is launched in demo mode
 
   # AC-1: Pack list from registry
+  @wireframe:holder-06-pick-pack.svg
   Scenario: Viewing available packs
     Given I am on the Pack Picker screen in holder mode
     Then I see all available Trust Packs from the registry
@@ -30,20 +40,13 @@ Feature: Get New Cachet
     When I press back
     Then I return to the vault screen
 
-  # AC-5: Reachable from vault FAB
-  Scenario: Accessing from My Cachets FAB
-    Given I am on the "My Cachets" tab
-    When I tap the floating action button
+  # AC-5: Reachable from multiple entry points
+  Scenario Outline: Accessing pack picker from <entry_point>
+    Given <precondition>
+    When I <action>
     Then I am on the Pack Picker screen in holder mode
 
-  # AC-5: Reachable from empty vault CTA
-  Scenario: Accessing from empty vault
-    Given the "empty" demo scenario is loaded
-    And I am on the empty vault screen
-    When I tap "Get your first cachet"
-    Then I am on the Pack Picker screen in holder mode
-
-  # Wireframe: holder-06-pick-pack.svg
-  Scenario: Visual match — pack picker
-    Given I am on the Pack Picker screen in holder mode
-    Then the screen matches wireframe "holder-06-pick-pack.svg"
+    Examples:
+      | entry_point    | precondition                                                    | action                       |
+      | My Cachets FAB | I am on the "My Cachets" tab                                   | tap the floating action button |
+      | empty vault    | the "empty" demo scenario is loaded and I am on the empty vault screen | tap "Get your first cachet"  |

@@ -1,14 +1,12 @@
 ---
 domain: security
-type: core
 status: draft
 last-reviewed: 2026-04-12
 ---
 
 # Security
 
-Cryptographic foundation — JWS/JWE/SD-JWT verification, DID resolution,
-key management (StrongBox/Secure Enclave), holder binding, threat model.
+> See spec/domains.yaml for description, classification, code paths, and context map.
 
 ## Ubiquitous Language
 
@@ -30,12 +28,6 @@ key management (StrongBox/Secure Enclave), holder binding, threat model.
 ## Invariants
 
 <!-- TODO: from VERIFICATION_PROTOCOL.md — 14 threats, crypto requirements -->
-
-## Context Map Relationships
-
-- **wallet** (partnership): Provides crypto primitives for key management
-- **verification** (partnership): Provides JWS/JWE verification, DID resolution
-- **issuance** (partnership): Provides SD-JWT signing, credential building
 
 ## Domain Events
 

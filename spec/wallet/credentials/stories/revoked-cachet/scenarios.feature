@@ -1,13 +1,24 @@
+@story:revoked-cachet @domain:wallet/credentials @priority:high @status:draft
 Feature: Revoked Cachet
   As a revoked-holder
   I want to clearly understand that a credential has been revoked
   So that I know my next steps
+
+  Context:
+    Revocation detected via StatusList2021 check (not local state).
+    Revoked cards visually muted in vault, banner in detail.
+    CTA to re-acquire the credential.
+
+  Out of scope:
+    - Automatic re-acquisition
+    - Revocation push notifications
 
   Background:
     Given the app is launched in demo mode
     And the "revoked" demo scenario is loaded
 
   # AC-1: Visual distinction in vault
+  @wireframe:holder-04-vault-revoked.svg
   Scenario: Revoked card in vault is visually distinct
     When I am on the "My Cachets" tab
     Then the revoked cachet card has muted colors
@@ -20,6 +31,7 @@ Feature: Revoked Cachet
     And only the revoked cachet card is visually muted
 
   # AC-2: Revocation banner in detail
+  @wireframe:cachet-01-detail-revoked.svg
   Scenario: Revoked detail shows revocation banner
     Given I am on the "My Cachets" tab
     When I tap the revoked cachet card
@@ -44,13 +56,3 @@ Feature: Revoked Cachet
     When the status list indicates revocation
     Then the credential is displayed as revoked in the vault
     And the detail screen shows the revocation banner
-
-  # Wireframe: cachet-01-detail-revoked.svg
-  Scenario: Visual match — revoked detail
-    Given I am viewing the revoked cachet detail
-    Then the screen matches wireframe "cachet-01-detail-revoked.svg"
-
-  # Wireframe: holder-04-vault-revoked.svg
-  Scenario: Visual match — vault with revoked card
-    When I am on the "My Cachets" tab
-    Then the screen matches wireframe "holder-04-vault-revoked.svg"

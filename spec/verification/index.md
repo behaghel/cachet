@@ -1,14 +1,12 @@
 ---
 domain: verification
-type: core
 status: draft
 last-reviewed: 2026-04-12
 ---
 
 # Verification
 
-Credential evaluation engine — verifies presentations against policies,
-resolves DIDs, checks revocation status, evaluates predicates.
+> See spec/domains.yaml for description, classification, code paths, and context map.
 
 ## Ubiquitous Language
 
@@ -29,14 +27,6 @@ resolves DIDs, checks revocation status, evaluates predicates.
 ## Invariants
 
 <!-- TODO: what must never break — e.g., "a cachet is never awarded without cryptographic verification of all required credentials" -->
-
-## Context Map Relationships
-
-- **registry** (customer-supplier): Fetches pack definitions via GET /packs
-- **receipts** (customer-supplier): Sends consent events to receipts log
-- **common** (shared-kernel): Uses server infra and generated model types
-- **security** (partnership): Uses JWS/JWE verification, DID resolution
-- **wallet** (upstream via ACL): Wallet consumes verification API through anti-corruption layer
 
 ## Domain Events
 

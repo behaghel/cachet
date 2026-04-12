@@ -1,7 +1,16 @@
+@story:verifier-request @domain:verification @priority:high @status:draft
 Feature: Verifier Request
   As a verifier
   I want to select a Trust Pack and generate a QR code
   So that a holder can scan it and share their credentials with me
+
+  Context:
+    Verifier mode: select pack, show QR, wait for holder scan.
+    QR encodes session URL. Result appears automatically when holder completes.
+
+  Out of scope:
+    - Batch verification (multiple holders)
+    - QR expiration/refresh
 
   Background:
     Given the app is launched in demo mode
@@ -13,11 +22,13 @@ Feature: Verifier Request
     Then I am on the Pack Picker screen in verifier mode
 
   # AC-2: Same packs available
+  @wireframe:verify-01-new-request.svg
   Scenario: Verifier sees same packs as holder
     Given I am on the Pack Picker screen in verifier mode
     Then I see the same Trust Packs available to holders
 
   # AC-3: Selecting a pack generates QR
+  @wireframe:verify-02-show-qr.svg
   Scenario: Selecting a pack shows QR code
     Given I am on the Pack Picker screen in verifier mode
     When I tap on a Trust Pack
@@ -43,13 +54,3 @@ Feature: Verifier Request
     When a holder scans and completes the verification
     Then the session status updates
     And I see the Verification Result screen
-
-  # Wireframe: verify-01-new-request.svg
-  Scenario: Visual match — new request
-    Given I am on the Pack Picker screen in verifier mode
-    Then the screen matches wireframe "verify-01-new-request.svg"
-
-  # Wireframe: verify-02-show-qr.svg
-  Scenario: Visual match — show QR
-    Given I am on the Show QR screen
-    Then the screen matches wireframe "verify-02-show-qr.svg"
