@@ -268,16 +268,33 @@ in
       exit 1
     fi
 
+    # Kill stale adb server and remove cached keys that may cause "unauthorized"
+    adb kill-server 2>/dev/null || true
+    rm -f "$HOME/.android/adbkey" "$HOME/.android/adbkey.pub" 2>/dev/null || true
+
     echo "Starting Android emulator..."
     # Headless in CI, windowed for local dev
     WINDOW_FLAG=""
     if [ -n "''${CI:-}" ] || [ -z "''${DISPLAY:-}''${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
       WINDOW_FLAG="-no-window"
     fi
-    emulator @cachet-emulator -no-audio -no-snapshot-load -metrics-collection $WINDOW_FLAG &
+    emulator @cachet-emulator -no-audio -no-snapshot-load -no-snapshot-save -wipe-data -metrics-collection $WINDOW_FLAG &
     echo "Waiting for emulator to boot..."
+    adb start-server
     adb wait-for-device
-    # wait-for-device returns as soon as adb connects; wait for full boot
+    # wait-for-device returns when device appears; wait for it to be authorized
+    echo "Waiting for device authorization..."
+    for i in $(seq 1 60); do
+      STATE=$(adb get-state 2>/dev/null || echo "unknown")
+      if [ "$STATE" = "device" ]; then break; fi
+      sleep 2
+    done
+    if [ "$(adb get-state 2>/dev/null)" != "device" ]; then
+      echo "❌ Device not authorized after 120s"
+      adb devices -l
+      exit 1
+    fi
+    # Wait for full boot
     adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done' 2>/dev/null
     echo "✅ Android emulator ready"
   '';
