@@ -135,12 +135,10 @@ runs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
+          ~/.gradle/build-cache
           ~/.android/cache
           mobile/.gradle
-          mobile/build
-          mobile/androidApp/build
-          mobile/shared/build
-        key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'devenv.nix') }}
+        key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'mobile/gradle/libs.versions.toml') }}
         restore-keys: |
           ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
           ${{ runner.os }}-android-
@@ -148,12 +146,23 @@ runs:
     # Android SDK Nix store paths are cached via Cachix (which understands closures).
     # Do NOT cache /nix/store/*android* directly — symlinks break when
     # target store paths (emulator, platform-tools) aren't in the glob.
+    #
+    # Use a targeted fingerprint (only android config lines from devenv.nix) so
+    # script or env-var changes don't invalidate the AVD cache.
+    - name: Compute Android SDK cache key
+      if: inputs.enable-android-cache == 'true'
+      id: android-sdk-key
+      shell: bash
+      run: |
+        SDK_HASH=$(grep -E '^\s*(android|platforms\.version|buildTools\.version|systemImageTypes|abis|emulator\.enable|ndk\.enable|systemImages\.enable|languages\.java)' devenv.nix | sha256sum | cut -d' ' -f1)
+        echo "hash=$SDK_HASH" >> "$GITHUB_OUTPUT"
+
     - name: Cache Android AVD config
       if: inputs.enable-android-cache == 'true'
       uses: actions/cache@v5
       with:
         path: ~/.android
-        key: ${{ runner.os }}-android-avd-${{ hashFiles('devenv.nix') }}
+        key: ${{ runner.os }}-android-avd-${{ steps.android-sdk-key.outputs.hash }}
         restore-keys: |
           ${{ runner.os }}-android-avd-
 
@@ -164,3 +173,15 @@ runs:
         echo "Building devenv shell for ${{ inputs.cache-prefix }}..."
         devenv shell --help > /dev/null || true
         echo "devenv shell cached for ${{ inputs.cache-prefix }}"
+
+    # Push devenv derivations to Cachix so future cold-cache runs fetch
+    # pre-built binaries instead of building from source (~5 min).
+    # Requires a Cachix cache with push access (set CACHIX_AUTH_TOKEN).
+    - name: Push derivations to Cachix
+      if: inputs.cachix-auth-token != ''
+      shell: bash
+      run: |
+        if command -v cachix &>/dev/null; then
+          echo "Pushing devenv store paths to Cachix..."
+          nix-store -qR ~/.nix-profile 2>/dev/null | cachix push devenv || true
+        fi

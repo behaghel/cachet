@@ -7,6 +7,28 @@ on:
     branches: [main]
 
 jobs:
+  # Detect which parts of the codebase changed to skip expensive jobs
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            android:
+              - 'mobile/**'
+              - 'schemas/**'
+              - 'sdk/**'
+              - 'spec/**/scenarios.feature'
+              - 'devenv.nix'
+              - '.github/workflows/ci.yml'
+
   # Backend services using devenv (lightweight)
   backend:
     name: Backend (Go Services)
@@ -35,19 +57,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail  # Exit on any error, undefined vars, or pipe failures
-          
+
           echo "📦 Step 1: Installing dependencies..."
           devenv shell -- secretspec run --provider dotenv -- ci:deps
-          
+
           echo "🧪 Step 2: Running tests..."
           devenv shell -- secretspec run --provider dotenv -- ci:test
-          
+
           echo "🔍 Step 3: Running linter..."
           devenv shell -- secretspec run --provider dotenv -- ci:lint
-          
+
           echo "🔒 Step 4: Running security scan..."
           devenv shell -- secretspec run --provider dotenv -- ci:security
-          
+
           echo "✅ All backend CI steps completed successfully"
 
       - name: Upload coverage
@@ -59,8 +81,11 @@ jobs:
           fail_ci_if_error: false
 
   # Android app using devenv (consistent with backend)
+  # Skipped when no mobile-related files changed (see scheduled workflow for safety net)
   android:
-    name: Android App  
+    name: Android App
+    needs: [changes]
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -90,6 +115,13 @@ jobs:
       - name: Build Android APK
         shell: bash
         run: devenv shell -- android:build
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-debug-apk
+          path: mobile/androidApp/build/outputs/apk/demo/debug/*.apk
+          retention-days: 1
 
       # Note: Skipping unit tests temporarily due to compilation issues - will fix separately
       # - name: Run Android tests
@@ -123,7 +155,8 @@ jobs:
   bdd:
     name: BDD Scenarios
     runs-on: ubuntu-latest
-    needs: [android]
+    needs: [changes, android]
+    if: needs.changes.outputs.android == 'true' && !failure() && !cancelled()
     continue-on-error: true
 
     steps:
@@ -149,6 +182,12 @@ jobs:
         shell: bash
         run: |
           cp .env.ci .env
+
+      - name: Download APK from Android job
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-debug-apk
+          path: mobile/androidApp/build/outputs/apk/demo/debug/
 
       # Feature files are synced from spec/ by Gradle copyBddFeatureFiles task at build time
 

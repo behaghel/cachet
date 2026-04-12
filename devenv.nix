@@ -304,7 +304,7 @@ in
     unset ANDROID_SDK_ROOT
     # Generate local.properties from devenv's ANDROID_HOME (avoids stale committed paths)
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew --no-daemon :androidApp:assembleDemoDebug
+    cd mobile && ./gradlew :androidApp:assembleDemoDebug
   '';
   scripts."android:install".exec = ''
     set -euo pipefail
@@ -315,7 +315,7 @@ in
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     # Uninstall previous version if signatures differ (common after re-signing)
     $ADB uninstall id.cachet.wallet.android.demo 2>/dev/null || $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
-    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug
 
     echo "Launching Cachet Wallet..."
     if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity 2>&1 | grep -q "Error\|Exception"; then
@@ -377,7 +377,7 @@ in
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug
     echo "3. Launching app (real mode — backend-driven)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
     echo "✅ Done! Backend running, app installed and launched."
@@ -394,7 +394,7 @@ in
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew --no-daemon :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug
     echo "3. Launching app (demo mode — fixtures)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
     echo "✅ Done! App launched in demo mode with fixtures (no backend)."
@@ -537,7 +537,7 @@ in
     (cd generated/go && go vet ./...)
 
     echo "2. Verifying generated Kotlin models compile against mobile..."
-    (cd mobile && ./gradlew --no-daemon :shared:compileCommonMainKotlinMetadata)
+    (cd mobile && ./gradlew :shared:compileCommonMainKotlinMetadata)
 
     echo "✅ Schema compatibility checks passed!"
   '';
