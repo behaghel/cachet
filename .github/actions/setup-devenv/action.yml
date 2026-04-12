@@ -145,16 +145,17 @@ runs:
           ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
           ${{ runner.os }}-android-
 
-    - name: Cache Android SDK
+    # Android SDK Nix store paths are cached via Cachix (which understands closures).
+    # Do NOT cache /nix/store/*android* directly — symlinks break when
+    # target store paths (emulator, platform-tools) aren't in the glob.
+    - name: Cache Android AVD config
       if: inputs.enable-android-cache == 'true'
-      uses: actions/cache@v5  
+      uses: actions/cache@v5
       with:
-        path: |
-          ~/.android
-          /nix/store/*android*
-        key: ${{ runner.os }}-android-sdk-${{ hashFiles('devenv.nix') }}
+        path: ~/.android
+        key: ${{ runner.os }}-android-avd-${{ hashFiles('devenv.nix') }}
         restore-keys: |
-          ${{ runner.os }}-android-sdk-
+          ${{ runner.os }}-android-avd-
 
     # Pre-build devenv shell to cache it
     - name: Build and cache devenv shell
