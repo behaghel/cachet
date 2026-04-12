@@ -19,6 +19,25 @@ in
   claude.code.enable = true;
   claude.code.hooks.git-hooks-run.enable = false; # prek runs at commit time via git hooks, not on every edit
 
+  # Enable Veriff plugins for Claude Code (project-level settings.json is a Nix store symlink,
+  # so /plugin install can't write to it — declare plugins here instead)
+  files."${config.devenv.root}/.claude/settings.json".json = {
+    enabledPlugins = {
+      "spec-driven@veriff-plugins" = true;
+      "spec-tdd@veriff-plugins" = true;
+      "domain-tree@veriff-plugins" = true;
+      "ux-stories@veriff-plugins" = true;
+    };
+    extraKnownMarketplaces = {
+      veriff-plugins = {
+        source = {
+          source = "git";
+          url = "git@github.com:Veriff/claude-plugins.git";
+        };
+      };
+    };
+  };
+
   # Android SDK + emulator (optional, heavy — ~2GB)
   # Enable with: export DEVENV_ENABLE_ANDROID=1
   android = lib.mkIf enableAndroid {
@@ -106,6 +125,7 @@ in
     echo "  android:build       Build APK"
     echo "  android:emulator    Create + start emulator"
     echo "  android:test-unit   Run unit tests"
+    echo "  android:bdd         Run BDD scenarios (Cucumber + Compose)"
     echo ""
     echo "Android demo scenarios (switch on-the-fly after android:demo):"
     echo "  android:happy        Happy path (Identity + Childcare + Seller)"
@@ -365,6 +385,20 @@ in
     cd mobile && gradle :androidApp:connectedDemoDebugAndroidTest
     echo "✅ Android tests completed!"
     echo "📊 Test results available in mobile/androidApp/build/reports/androidTests/"
+  '';
+  scripts."android:bdd".exec = ''
+    echo "🥒 Running BDD scenarios (Cucumber + Compose)..."
+    echo "1. Syncing feature files from spec/ to androidTest assets..."
+    find spec -name "scenarios.feature" -exec sh -c '
+      story=$(basename $(dirname "$1"))
+      cp "$1" mobile/androidApp/src/androidTest/assets/features/"$story".feature
+    ' _ {} \;
+    echo "2. Checking emulator connection..."
+    adb devices | grep device || (echo "❌ No Android emulator detected. Run 'android:emulator' first." && exit 1)
+    echo "3. Running BDD tests..."
+    cd mobile && gradle :androidApp:connectedDemoDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=id.cachet.wallet.android.bdd.CucumberTestRunner
+    echo "✅ BDD scenarios completed!"
+    echo "📊 Results: mobile/androidApp/build/reports/androidTests/"
   '';
   scripts."android:test-unit".exec = ''
     echo "🧪 Running unit tests..."

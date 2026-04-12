@@ -17,15 +17,23 @@ Project-specific addenda for `$devenv-project-workflow`:
 - Respect current service ports and local wiring: Verifier `8081`, Registry `8082`, Receipts `8083`, Issuance Gateway `8090`, and Android emulator access via `10.0.2.2:8090`.
 - Preserve SecretSpec integration across local and deployed flows. Changes to secrets/bootstrap/deploy behavior should continue to work with `.env` locally and Secret Manager in GCP.
 
-Use [$spec-driven-tdd](/Users/hubertbehaghel/.codex/skills/spec-driven-tdd/SKILL.md) for behavior changes that should start from an explicit spec and proceed via vertical-slice TDD.
+**Note:** The `$spec-driven-tdd` skill is retired. Its functionality is now split across four Claude Code plugins enabled in `devenv.nix`:
 
-Project-specific addenda for `$spec-driven-tdd`:
+- **spec-driven** — Spec collection (`/spec-driven:collect-spec`), verification, adversarial review (`spec-challenger`)
+- **spec-tdd** — Iterative vertical-slice TDD (`/spec-tdd:plan`, `/spec-tdd:iterate`, `tdd-coach`)
+- **domain-tree** — Domain-driven structure (`/domain-tree:init`, `/domain-tree:check`, `boundary-enforcer`)
+- **ux-stories** — User-story-driven UX (`/ux-stories:write`, `/ux-stories:scenarios`, `/ux-stories:deliver`, `story-guardian`)
 
-- This repo does not currently have a `spec/` tree. When a change needs specification-first work, create or extend `spec/` before implementation rather than burying the new behavior in ad hoc notes.
-- Use existing artifacts as source material when drafting specs: OpenAPI files in `api/`, architecture docs in `docs/`, trust-pack docs in `docs/PACKS/`, receipts examples in `docs/RECEIPTS/`, and mobile/backend code paths under `mobile/` and `services/`.
+The `spec/` tree is now established with `spec/domains.yaml`, behavioral specs, user stories, BDD scenarios, and personas. See `CLAUDE.md` for workflow details.
+
+Project-specific addenda:
+
 - Follow the repo's idiomatic test layout. For Go services, prefer package-local `*_test.go` files instead of forcing a top-level `test/` directory.
-- Define vertical slices as full request or user flows through the relevant surface. For service work, that usually means contract or request shape, handler/service behavior, and verification of the observable API result. For mobile work, include the emulator-backed flow where applicable.
+- Define vertical slices as full request or user flows through the relevant surface.
 - Any spec or test updates involving health checks must use `/health`. The `/healthz` path is forbidden here for architectural reasons and is guarded by `scripts/check-healthz.sh`.
+- UX changes require a user story in `spec/{domain}/stories/` before implementation.
+- Core domain changes require a behavioral spec in `spec/{domain}/spec.md` before implementation.
+- Shared kernel changes require notification of all consumers listed in `spec/domains.yaml`.
 
 ## ⚠️ Health Endpoints - CRITICAL LEARNING
 **🚨 NEVER use `/healthz` for health checks in this project!**
