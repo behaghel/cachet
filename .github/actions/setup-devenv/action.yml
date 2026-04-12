@@ -138,6 +138,9 @@ runs:
           ~/.gradle/build-cache
           ~/.android/cache
           mobile/.gradle
+          mobile/build
+          mobile/androidApp/build
+          mobile/shared/build
         key: ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*', 'mobile/**/gradle-wrapper.properties', 'mobile/gradle/libs.versions.toml') }}
         restore-keys: |
           ${{ runner.os }}-android-${{ hashFiles('mobile/**/*.gradle*') }}-
