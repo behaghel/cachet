@@ -1,5 +1,9 @@
 # Screen Manifest
 
+> **Note:** As of 2026-04-12, wireframes are also copied into story directories under `spec/`.
+> The canonical wireframe source remains `design/wireframes/`. Story copies are for co-location.
+> See `spec/domains.yaml` for the domain tree and story index.
+
 Maps each wireframe SVG to the screen, composable, and navigation steps in demo mode.
 
 ## Onboarding (launch WITHOUT demo_mode)

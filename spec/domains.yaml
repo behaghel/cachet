@@ -1,0 +1,238 @@
+# Cachet Domain Tree
+# Generated: 2026-04-12
+# Convention: spec/{domain}/index.md mirrors code paths below
+
+domains:
+  verification:
+    description: >
+      Credential evaluation engine — verifies presentations against policies,
+      resolves DIDs, checks revocation status, evaluates predicates.
+    type: core
+    language: go
+    code-paths:
+      - services/verifier/
+    spec-path: spec/verification/
+
+  issuance:
+    description: >
+      Credential lifecycle management — OAuth2 token exchange, SD-JWT VC issuance
+      via OpenID4VCI, Veriff identity verification webhooks, StatusList2021 revocation.
+    type: core
+    language: go
+    code-paths:
+      - services/issuance-gateway/
+    spec-path: spec/issuance/
+
+  wallet:
+    description: >
+      Mobile trust wallet — user-facing app for holding, presenting, and managing
+      verifiable credentials. Kotlin Multiplatform with Android UI.
+    type: core
+    language: kotlin
+    code-paths:
+      - mobile/shared/
+      - mobile/androidApp/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/mapper/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/model/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/data/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/di/
+    spec-path: spec/wallet/
+    subdomains:
+      onboarding:
+        description: First-launch experience — educate user, establish trust concept.
+        code-paths:
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/OnboardingScreen.kt
+        spec-path: spec/wallet/onboarding/
+      credentials:
+        description: Credential vault — list, detail, empty state, revocation display.
+        code-paths:
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/HomeScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CachetDetailScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CredentialsScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/ActivityScreen.kt
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/repository/
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/model/
+        spec-path: spec/wallet/credentials/
+      verification-flow:
+        description: >
+          Verification interaction — QR scanning, incoming requests, consent,
+          presentation, result display.
+        code-paths:
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/QrScannerScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/QrShareScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/IncomingRequestScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/VerificationResultScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/CachetResultScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/PackPickerScreen.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/PackListScreen.kt
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/usecase/VerificationUseCase.kt
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/VerifierClient.kt
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/RelayClient.kt
+          - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/verification/
+        spec-path: spec/wallet/verification-flow/
+
+  registry:
+    description: >
+      Trust Pack registry — serves pack definitions and policy manifests
+      with DID-based signing.
+    type: supporting
+    language: go
+    code-paths:
+      - services/registry/
+    spec-path: spec/registry/
+
+  receipts:
+    description: >
+      Consent receipts and transparency logging — audit trail for verification
+      events and user consent decisions.
+    type: supporting
+    language: go
+    code-paths:
+      - services/receipts-log/
+    spec-path: spec/receipts/
+
+  relay:
+    description: >
+      Session relay — forwards verification sessions between wallet and verifier
+      over ephemeral channels.
+    type: supporting
+    language: go
+    code-paths:
+      - services/relay/
+    spec-path: spec/relay/
+
+  common:
+    description: >
+      Shared kernel — HTTP server infrastructure (chi router, middleware, health,
+      logging, tracing), OpenAPI-generated model types, and shared schemas.
+    type: shared-kernel
+    language: go
+    code-paths:
+      - services/common/
+      - generated/go/
+      - schemas/
+      - api/
+      - sdk/
+      - testdata/
+    spec-path: spec/common/
+    consumers:
+      - verification
+      - issuance
+      - registry
+      - receipts
+      - relay
+
+  security:
+    description: >
+      Cryptographic foundation — JWS/JWE/SD-JWT verification, DID resolution,
+      key management (StrongBox/Secure Enclave), holder binding, threat model.
+    type: core
+    language: mixed  # Go (backend) + Kotlin (mobile)
+    code-paths:
+      - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/crypto/
+      - services/verifier/internal/eval/
+      - services/verifier/internal/jwe/
+      - services/verifier/internal/identity/
+      - services/issuance-gateway/internal/credential/
+    spec-path: spec/security/
+
+  ux:
+    description: >
+      Design system — wireframes, design tokens (colors, spacing, typography,
+      motion), theme, and reusable UI components.
+    type: supporting
+    language: kotlin
+    code-paths:
+      - design/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/theme/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/components/
+    spec-path: spec/ux/
+
+  infra:
+    description: Infrastructure and deployment — Docker Compose, Cloud Run config.
+    type: generic
+    language: yaml
+    code-paths:
+      - infra/
+    spec-path: spec/infra/
+
+  cicd:
+    description: CI/CD pipelines — GitHub Actions workflows, dev scripts, automation.
+    type: generic
+    language: yaml
+    code-paths:
+      - .github/workflows/
+      - scripts/
+    spec-path: spec/cicd/
+
+# How domains interact — DDD integration patterns
+context-map:
+  - upstream: issuance
+    downstream: wallet
+    pattern: open-host-service
+    protocol: OpenID4VCI
+    notes: Wallet consumes issuance gateway via standardized OpenID4VCI protocol
+
+  - upstream: verification
+    downstream: wallet
+    pattern: anti-corruption-layer
+    protocol: HTTP REST
+    notes: VerifierClient in wallet translates verifier API into domain models
+
+  - upstream: relay
+    downstream: wallet
+    pattern: conformist
+    protocol: HTTP REST
+    notes: Wallet conforms to relay session format, minimal translation
+
+  - upstream: registry
+    downstream: verification
+    pattern: customer-supplier
+    protocol: HTTP REST (GET /packs)
+    notes: Verifier fetches pack definitions from registry
+
+  - upstream: common
+    downstream: verification
+    pattern: shared-kernel
+    notes: Shared server infra and generated model types
+
+  - upstream: common
+    downstream: issuance
+    pattern: shared-kernel
+    notes: Shared server infra and generated model types
+
+  - upstream: common
+    downstream: registry
+    pattern: shared-kernel
+    notes: Shared server infra
+
+  - upstream: common
+    downstream: receipts
+    pattern: shared-kernel
+    notes: Shared server infra and generated model types
+
+  - upstream: common
+    downstream: relay
+    pattern: shared-kernel
+    notes: Shared server infra
+
+  - upstream: verification
+    downstream: receipts
+    pattern: customer-supplier
+    protocol: HTTP REST (POST /receipts)
+    notes: Receipts log receives consent events from verification flows
+
+  - upstream: security
+    downstream: wallet
+    pattern: partnership
+    notes: Wallet uses crypto primitives for key management, SD-JWT parsing, KB-JWT
+
+  - upstream: security
+    downstream: verification
+    pattern: partnership
+    notes: Verifier uses JWS/JWE verification, DID resolution, status list checking
+
+  - upstream: security
+    downstream: issuance
+    pattern: partnership
+    notes: Issuance gateway uses SD-JWT signing, credential building

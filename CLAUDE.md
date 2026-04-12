@@ -143,3 +143,64 @@ The project has pre-commit hooks managed by devenv for:
 - `prettier` - Code formatting
 
 Run hooks manually: `devenv shell -- pre-commit run`
+
+## Plugin-Driven Development Workflow
+
+This project uses four Claude Code plugins for structured development:
+
+- **spec-driven** — Spec collection, verification, adversarial review
+- **spec-tdd** — Iterative vertical-slice TDD from specs
+- **domain-tree** — Domain-driven structure with context map enforcement
+- **ux-stories** — User-story-driven UX with BDD+TDD
+
+### For UX changes:
+
+```
+/ux-stories:write → wireframes → /ux-stories:scenarios → spec-challenger → /ux-stories:deliver
+```
+
+1. Write a user story with persona, goal, and acceptance criteria
+2. Create/update wireframes in the story's `wireframes/` directory
+3. Generate BDD scenarios from ACs
+4. Challenge the spec to find gaps
+5. Deliver via BDD+TDD orchestration
+
+### For backend changes:
+
+```
+/spec-driven:collect-spec → spec-challenger → /spec-tdd:plan → /spec-tdd:iterate
+```
+
+1. Collect a behavioral spec for the change
+2. Challenge the spec adversarially
+3. Plan vertical-slice TDD iterations
+4. Iterate red-green-refactor
+
+### Process rules:
+
+- No UX code change without a user story in `spec/{domain}/stories/`
+- No wireframe modification to match implementation (fix implementation instead)
+- No BDD scenario without a wireframe reference
+- Core domains require spec approval before implementation
+- Shared kernel changes require notification of all consumers
+- Spec-on-touch: first modification to any domain requires its spec
+
+### Domain tree:
+
+- `spec/domains.yaml` — domain manifest with classifications and context map
+- `spec/{domain}/index.md` — domain overview and ubiquitous language
+- `spec/{domain}/spec.md` — behavioral specification (core domains)
+- `spec/{domain}/stories/{story}/` — user stories with wireframes and BDD scenarios
+- `spec/personas.md` — user personas
+
+### Enforcement agents:
+
+- `story-guardian` — watches for UX code changes without stories
+- `boundary-enforcer` — watches for domain boundary violations
+- `tdd-coach` — watches for TDD discipline violations
+
+### BDD Testing:
+
+- `devenv shell -- android:bdd` — run Cucumber + Compose BDD scenarios
+- Feature files: `spec/{domain}/stories/{story}/scenarios.feature`
+- Step definitions: `mobile/androidApp/src/androidTest/kotlin/id/cachet/wallet/android/bdd/steps/`
