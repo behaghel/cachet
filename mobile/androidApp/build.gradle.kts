@@ -64,7 +64,7 @@ android {
     }
     sourceSets {
         getByName("androidTest") {
-            assets.srcDirs("src/androidTest/assets")
+            assets.directories.add("src/androidTest/assets")
         }
     }
 }
@@ -120,18 +120,15 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
 }
 
-// Generate network_security_config.xml at build time with static base IPs + detected local IP.
-// Output goes to a generated res directory so the source file is never modified.
-val generatedResDir = layout.buildDirectory.dir("generated/res/networkSecurity")
-
+// Generate network_security_config.xml at build time.
+// The file is written to src/main/res/xml/ (gitignored) and fully regenerated
+// each build — no stale IPs accumulate.
 tasks.register("generateNetworkSecurityConfig") {
     description = "Generates network_security_config.xml with base IPs + detected local IP"
     group = "android"
 
-    outputs.dir(generatedResDir)
-
     doLast {
-        val xmlDir = generatedResDir.get().dir("xml").asFile
+        val xmlDir = file("src/main/res/xml")
         xmlDir.mkdirs()
 
         // Base IPs that every developer needs (emulator loopback + localhost)
@@ -170,11 +167,6 @@ $domainEntries
 """
         )
     }
-}
-
-// Wire generated res into all variants and run before resource merging
-android.applicationVariants.configureEach {
-    registerGeneratedResFolders(generatedResDir.map { files(it) })
 }
 
 afterEvaluate {
