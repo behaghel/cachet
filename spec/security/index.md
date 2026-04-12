@@ -27,7 +27,7 @@ last-reviewed: 2026-04-12
 
 ## Invariants
 
-<!-- TODO: from VERIFICATION_PROTOCOL.md — 14 threats, crypto requirements -->
+<!-- TODO: from verification-protocol.md — 14 threats, crypto requirements -->
 
 ## Domain Events
 

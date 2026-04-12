@@ -1,16 +1,7 @@
 ---
 domain: verification
-type: core
 status: draft
 last-reviewed: 2026-04-12
-governs:
-  - services/verifier/server.go
-  - services/verifier/internal/eval/
-  - services/verifier/internal/statuslist/
-  - services/verifier/internal/session/
-  - services/verifier/internal/jwe/
-  - services/verifier/internal/identity/
-  - services/verifier/internal/pack/
 ---
 
 # Verification Domain — Behavioral Spec

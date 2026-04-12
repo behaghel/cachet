@@ -1,14 +1,7 @@
 ---
 domain: issuance
-type: core
 status: draft
 last-reviewed: 2026-04-12
-governs:
-  - services/issuance-gateway/server.go
-  - services/issuance-gateway/internal/credential/
-  - services/issuance-gateway/internal/oauth/
-  - services/issuance-gateway/internal/statuslist/
-  - services/issuance-gateway/internal/veriff/
 ---
 
 # Issuance Domain — Behavioral Spec
