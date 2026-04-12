@@ -257,10 +257,16 @@ in
       ABI="x86_64"
     fi
     echo "Host architecture: $HOST_ARCH → using ABI: $ABI"
-    avdmanager create avd --force --name cachet-emulator --package "system-images;android-36;google_apis_playstore;$ABI" || true
-    # Ensure the .android dir exists (avoids .ini file warnings)
+    # Ensure the .android dir exists before avdmanager (avoids .ini file warnings)
     mkdir -p "$HOME/.android"
     touch "$HOME/.android/emu-update-last-check.ini"
+    # Pipe 'no' to avoid interactive "custom hardware profile?" prompt that hangs in CI
+    echo no | avdmanager create avd --force --name cachet-emulator --package "system-images;android-36;google_apis_playstore;$ABI"
+    # Verify AVD was created
+    if ! avdmanager list avd -c 2>/dev/null | grep -q cachet-emulator; then
+      echo "❌ AVD creation failed. Check system image availability."
+      exit 1
+    fi
 
     echo "Starting Android emulator..."
     # Headless in CI, windowed for local dev

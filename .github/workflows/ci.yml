@@ -148,15 +148,7 @@ jobs:
         run: |
           cp .env.ci .env
 
-      - name: Sync feature files
-        shell: bash
-        run: |
-          devenv shell -- bash -c '
-            find spec -name "scenarios.feature" -exec sh -c '\''
-              story=$(basename $(dirname "$1"))
-              cp "$1" mobile/androidApp/src/androidTest/assets/features/"$story".feature
-            '\'' _ {} \;
-          '
+      # Feature files are synced from spec/ by Gradle copyBddFeatureFiles task at build time
 
       - name: Start emulator
         shell: bash
