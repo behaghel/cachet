@@ -1,4 +1,4 @@
-package id.cachet.wallet.android.ui
+package id.cachet.wallet.android.ui.verification
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable

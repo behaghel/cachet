@@ -1,4 +1,4 @@
-package id.cachet.wallet.android.ui
+package id.cachet.wallet.android.ui.credentials
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -23,6 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.sp
+import id.cachet.wallet.android.ui.ErrorScreen
+import id.cachet.wallet.android.ui.LoadingScreen
+import id.cachet.wallet.android.ui.VerificationScreen
+import id.cachet.wallet.android.ui.WalletUiState
 import id.cachet.wallet.android.ui.components.*
 import id.cachet.wallet.android.ui.model.CredentialCardUi
 import id.cachet.wallet.android.ui.model.VaultSummaryUi
