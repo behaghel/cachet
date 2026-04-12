@@ -120,15 +120,24 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
 }
 
-// Task to automatically update network security config with local development IP
-tasks.register("updateNetworkSecurityConfig") {
-    description = "Updates network_security_config.xml with the current machine's IP address"
+// Generate network_security_config.xml at build time with static base IPs + detected local IP.
+// Output goes to a generated res directory so the source file is never modified.
+val generatedResDir = layout.buildDirectory.dir("generated/res/networkSecurity")
+
+tasks.register("generateNetworkSecurityConfig") {
+    description = "Generates network_security_config.xml with base IPs + detected local IP"
     group = "android"
 
-    doLast {
-        val networkConfigFile = file("src/main/res/xml/network_security_config.xml")
+    outputs.dir(generatedResDir)
 
-        // Get local IP address using shell command (cross-platform)
+    doLast {
+        val xmlDir = generatedResDir.get().dir("xml").asFile
+        xmlDir.mkdirs()
+
+        // Base IPs that every developer needs (emulator loopback + localhost)
+        val domains = mutableListOf("10.0.2.2", "localhost", "127.0.0.1")
+
+        // Detect local IP for physical-device / adb-over-wifi testing
         val osName = System.getProperty("os.name").lowercase()
         val getIpCommand = when {
             osName.contains("windows") -> listOf("powershell", "-Command", "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' | Where-Object {\$_.IPAddress -like '192.168.*' -or \$_.IPAddress -like '10.*' -or \$_.IPAddress -like '172.*'}).IPAddress")
@@ -137,49 +146,37 @@ tasks.register("updateNetworkSecurityConfig") {
         }
 
         try {
-            val process = ProcessBuilder(getIpCommand)
-                .redirectErrorStream(true)
-                .start()
-
+            val process = ProcessBuilder(getIpCommand).redirectErrorStream(true).start()
             val localIP = process.inputStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
-
-            if (exitCode == 0 && localIP.isNotEmpty() && localIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+".toRegex())) {
-                println("Detected local IP: $localIP")
-
-                if (networkConfigFile.exists()) {
-                    val content = networkConfigFile.readText()
-
-                    // Check if IP is already present
-                    if (!content.contains("<domain includeSubdomains=\"false\">$localIP</domain>")) {
-                        // Add the IP to the domain-config section
-                        val updatedContent = content.replace(
-                            "</domain-config>",
-                            "        <domain includeSubdomains=\"false\">$localIP</domain>\n    </domain-config>"
-                        )
-
-                        networkConfigFile.writeText(updatedContent)
-                        println("Updated network_security_config.xml with IP: $localIP")
-                    } else {
-                        println("IP $localIP already present in network_security_config.xml")
-                    }
-                } else {
-                    println("network_security_config.xml not found")
-                }
-            } else {
-                println("Could not detect local IP address (got: '$localIP')")
-                println("You may need to manually add your IP to network_security_config.xml")
+            if (process.waitFor() == 0 && localIP.matches("\\d+\\.\\d+\\.\\d+\\.\\d+".toRegex())) {
+                domains.add(localIP)
+                println("Network security config: added local IP $localIP")
             }
         } catch (e: Exception) {
-            println("Error detecting IP: ${e.message}")
-            println("You may need to manually add your IP to network_security_config.xml")
+            println("Network security config: could not detect local IP (${e.message})")
         }
+
+        val domainEntries = domains.joinToString("\n") {
+            "        <domain includeSubdomains=\"false\">$it</domain>"
+        }
+
+        File(xmlDir, "network_security_config.xml").writeText(
+            """<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+$domainEntries
+    </domain-config>
+</network-security-config>
+"""
+        )
     }
 }
 
-// Hook into pre-build tasks to auto-update network config
+// Wire generated res into all variants and run before resource merging
+android.applicationVariants.configureEach {
+    registerGeneratedResFolders(generatedResDir.map { files(it) })
+}
+
 afterEvaluate {
-    tasks.findByName("preBuild")?.dependsOn("updateNetworkSecurityConfig")
-    tasks.findByName("preDebugBuild")?.dependsOn("updateNetworkSecurityConfig")
-    tasks.findByName("preReleaseBuild")?.dependsOn("updateNetworkSecurityConfig")
+    tasks.findByName("preBuild")?.dependsOn("generateNetworkSecurityConfig")
 }
