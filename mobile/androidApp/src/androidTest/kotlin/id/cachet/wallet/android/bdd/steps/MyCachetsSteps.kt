@@ -1,64 +1,61 @@
 package id.cachet.wallet.android.bdd.steps
 
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import id.cachet.wallet.android.MainActivity
+import id.cachet.wallet.android.bdd.BddTestContext
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import org.junit.Rule
 
 /**
  * Step definitions for the my-cachets story.
+ *
+ * Shared steps like "I tap the floating action button" and "I see a {string}
+ * call to action" are in CommonSteps.
  */
 class MyCachetsSteps {
 
-    @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    private val rule get() = BddTestContext.sharedRule!!
 
     @Then("I see cachet cards for each stored credential")
     fun iSeeCachetCardsForEachStoredCredential() {
-        // TODO: assert on semantic test tags for cachet cards
-        // In demo happy scenario, expect at least one card
-        composeTestRule.onAllNodesWithTag("cachet_card").fetchSemanticsNodes().isNotEmpty()
+        val nodes = rule.onAllNodesWithTag("cachet_card", useUnmergedTree = true).fetchSemanticsNodes()
+        assert(nodes.isNotEmpty()) { "Expected at least one cachet card" }
     }
 
     @Then("each card shows the cachet name, badge icon, and trust status")
     fun eachCardShowsDetails() {
-        // TODO: verify card content — needs semantic test tags on card components
+        rule.onAllNodesWithTag("trust_status_chip").onFirst().assertIsDisplayed()
     }
 
     @When("I tap on a cachet card")
     fun iTapOnACachetCard() {
-        composeTestRule.onAllNodesWithTag("cachet_card").onFirst().performClick()
+        rule.onNodeWithTag("cachet_card_0").performClick()
+        rule.waitForIdle()
     }
 
     @Then("I am navigated to the Cachet Detail screen")
     fun iAmNavigatedToCachetDetailScreen() {
-        // TODO: assert detail screen is shown — needs semantic test tag
+        rule.onNodeWithTag("cachet_detail_screen").assertIsDisplayed()
     }
 
     @Then("I see an empty state illustration")
     fun iSeeAnEmptyStateIllustration() {
-        composeTestRule.onNodeWithContentDescription("Empty vault").assertExists()
-    }
-
-    @Then("I see a {string} call to action")
-    fun iSeeCallToAction(ctaText: String) {
-        composeTestRule.onNodeWithText(ctaText, substring = true).assertExists()
-    }
-
-    @When("I tap the floating action button")
-    fun iTapTheFloatingActionButton() {
-        composeTestRule.onNodeWithContentDescription("Add").performClick()
+        rule.onNodeWithText("Your vault is empty").assertIsDisplayed()
     }
 
     @Then("I am navigated to the Pack Picker in holder mode")
     fun iAmNavigatedToThePackPickerInHolderMode() {
-        // TODO: assert pack picker screen in holder mode
+        rule.onNodeWithText("Get a new cachet").assertIsDisplayed()
+    }
+
+    @Given("the {string} demo scenario is loaded and I am on the empty vault screen")
+    fun theDemoScenarioIsLoadedAndIAmOnTheEmptyVaultScreen(scenario: String) {
+        rule.onNodeWithText("Your vault is empty").assertIsDisplayed()
     }
 }

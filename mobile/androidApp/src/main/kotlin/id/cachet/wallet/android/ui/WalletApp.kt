@@ -71,7 +71,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
         val scenario = when {
             demoEmpty -> ScenarioRegistry.get("empty")
             demoScenario.isNotBlank() -> ScenarioRegistry.get(demoScenario)
-            else -> HappyPathScenario
+            else -> DemoFixtures.activeScenario
         }
         DemoFixtures.activeScenario = scenario
     }
