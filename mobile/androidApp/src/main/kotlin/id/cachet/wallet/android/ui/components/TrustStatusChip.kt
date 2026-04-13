@@ -7,6 +7,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,7 +35,7 @@ fun TrustStatusChip(
     }
 
     Surface(
-        modifier = modifier.border(1.dp, border, RoundedCornerShape(11.dp)),
+        modifier = modifier.testTag("trust_status_chip").border(1.dp, border, RoundedCornerShape(11.dp)),
         shape = RoundedCornerShape(11.dp),
         color = bg
     ) {

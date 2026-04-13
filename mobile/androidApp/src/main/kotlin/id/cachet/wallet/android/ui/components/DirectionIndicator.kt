@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import id.cachet.wallet.android.ui.theme.BrandAccent
 import id.cachet.wallet.android.ui.theme.BrandPrimary
@@ -37,7 +38,13 @@ fun DirectionIndicator(
         VerificationDirection.DECLINED -> TextTertiary
     }
 
-    Canvas(modifier = modifier.size(size)) {
+    val tag = when (direction) {
+        VerificationDirection.GIVEN -> "direction_shared"
+        VerificationDirection.RECEIVED -> "direction_received"
+        VerificationDirection.DECLINED -> "direction_declined"
+    }
+
+    Canvas(modifier = modifier.size(size).testTag(tag)) {
         val center = Offset(this.size.width / 2, this.size.height / 2)
         val radius = this.size.minDimension / 2
 

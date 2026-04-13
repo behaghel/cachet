@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -145,6 +146,7 @@ fun ActivityScreen(
             // Scan QR (holder flow)
             SmallFloatingActionButton(
                 onClick = onScanQr,
+                modifier = Modifier.testTag("fab_scan_qr"),
                 containerColor = BrandPrimary,
                 contentColor = TextOnBrand,
                 shape = CircleShape
@@ -154,6 +156,7 @@ fun ActivityScreen(
             // New request (verifier flow)
             FloatingActionButton(
                 onClick = onStartVerification,
+                modifier = Modifier.testTag("fab_new_request"),
                 containerColor = BrandAccent,
                 contentColor = TextOnBrand,
                 shape = CircleShape
@@ -182,7 +185,7 @@ private fun HistoryEntryCard(entry: HistoryEntry) {
     val isDeclined = entry.direction == VerificationDirection.DECLINED
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("activity_entry"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceCard),
         border = BorderStroke(1.dp, SurfaceBorder)

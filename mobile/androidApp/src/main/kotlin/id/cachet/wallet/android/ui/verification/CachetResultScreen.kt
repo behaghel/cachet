@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -96,7 +97,7 @@ fun CachetResultScreen(
     val accentColor = if (result.allPassed) BrandAccent else BrandWarm
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("verification_result"),
         color = BrandPrimaryDark
     ) {
         LazyColumn(
@@ -300,7 +301,7 @@ fun CachetResultScreen(
 @Composable
 private fun PredicateResultRow(predicate: PredicateResult) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("predicate_result_row"),
         verticalAlignment = Alignment.Top
     ) {
         Text(

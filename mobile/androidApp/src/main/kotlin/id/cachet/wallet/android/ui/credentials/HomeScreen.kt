@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,7 +108,8 @@ private fun MyCachetsGrid(
 
             // Cachet grid cards
             items(sorted, key = { it.localId }) { card ->
-                CachetGridCard(card = card, onClick = { onCardTapped(card) })
+                val tag = if (card.isRevoked) "cachet_card_revoked" else "cachet_card_${sorted.indexOf(card)}"
+                CachetGridCard(card = card, onClick = { onCardTapped(card) }, testTag = tag)
             }
 
             // Empty slot — "Get a new cachet"
@@ -121,7 +123,8 @@ private fun MyCachetsGrid(
             onClick = onStartVerification,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 8.dp),
+                .padding(bottom = 8.dp)
+                .testTag("fab_get_cachet"),
             containerColor = BrandPrimary,
             contentColor = Color.White,
             shape = CircleShape
@@ -132,12 +135,13 @@ private fun MyCachetsGrid(
 }
 
 @Composable
-private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}) {
+private fun CachetGridCard(card: CredentialCardUi, onClick: () -> Unit = {}, testTag: String = "cachet_card") {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(196.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .testTag(testTag),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (card.isRevoked) SurfaceElevated else SurfaceCard
