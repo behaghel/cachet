@@ -1,0 +1,102 @@
+name: Android Scheduled Build
+
+on:
+  schedule:
+    # Twice daily: 8am and 4pm UTC (10am and 6pm EEST)
+    - cron: '0 8 * * *'
+    - cron: '0 16 * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  android:
+    name: Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
+        with:
+          cache-prefix: android
+          disk-threshold-gb: 8
+          enable-android-cache: true
+          enable-android-sdk: true
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          cp .env.ci .env
+
+      - name: Check Android SDK version sync
+        shell: bash
+        run: bash scripts/check-android-version-sync.sh
+
+      - name: Build Android APK
+        shell: bash
+        run: devenv shell -- android:build
+
+  bdd:
+    name: BDD Scenarios
+    runs-on: ubuntu-latest
+    needs: [android]
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Enable KVM for emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup devenv environment
+        uses: ./.github/actions/setup-devenv
+        with:
+          cache-prefix: bdd
+          disk-threshold-gb: 8
+          enable-android-cache: true
+          enable-android-sdk: true
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Setup CI secrets
+        shell: bash
+        run: |
+          cp .env.ci .env
+
+      - name: Start emulator
+        id: emulator
+        shell: bash
+        run: |
+          devenv shell -- android:emulator || {
+            echo "::warning::Emulator failed to start (non-blocking)"
+            echo "started=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          echo "started=true" >> "$GITHUB_OUTPUT"
+        timeout-minutes: 10
+
+      - name: Run BDD scenarios
+        if: steps.emulator.outputs.started == 'true'
+        shell: bash
+        run: |
+          devenv shell -- bash -c '
+            unset ANDROID_SDK_ROOT
+            echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+            cd mobile && ./gradlew --no-daemon :androidApp:connectedDemoDebugAndroidTest
+          ' || {
+            echo "::warning::BDD scenarios failed (non-blocking until step definitions are complete)"
+            exit 0
+          }
+        timeout-minutes: 15
+
+      - name: Upload BDD test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-test-results
+          path: mobile/androidApp/build/reports/androidTests/
