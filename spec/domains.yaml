@@ -116,15 +116,17 @@ domains:
     description: >
       Cryptographic foundation — JWS/JWE/SD-JWT verification, DID resolution,
       key management (StrongBox/Secure Enclave), holder binding, threat model.
-    type: core
+      Cross-cutting shared kernel: defines crypto contracts consumed by
+      verification, issuance, and wallet.
+    type: shared-kernel
     language: mixed  # Go (backend) + Kotlin (mobile)
     code-paths:
       - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/crypto/
-      - services/verifier/internal/eval/
-      - services/verifier/internal/jwe/
-      - services/verifier/internal/identity/
-      - services/issuance-gateway/internal/credential/
     spec-path: spec/security/
+    consumers:
+      - verification
+      - issuance
+      - wallet
 
   ux:
     description: >
@@ -214,15 +216,15 @@ context-map:
 
   - upstream: security
     downstream: wallet
-    pattern: partnership
+    pattern: shared-kernel
     notes: Wallet uses crypto primitives for key management, SD-JWT parsing, KB-JWT
 
   - upstream: security
     downstream: verification
-    pattern: partnership
+    pattern: shared-kernel
     notes: Verifier uses JWS/JWE verification, DID resolution, status list checking
 
   - upstream: security
     downstream: issuance
-    pattern: partnership
+    pattern: shared-kernel
     notes: Issuance gateway uses SD-JWT signing, credential building
