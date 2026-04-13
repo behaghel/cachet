@@ -99,35 +99,4 @@ object DemoFixtures {
         loggedInTransparencyLog = true
     )
 
-    @Deprecated("Use CachPackMapper.toCachetResult(pack, allPassed) for pack-aware results")
-    val cachetResultPass = CachetResult(
-        cachetName = "Childcare Ready",
-        allPassed = true,
-        passedCount = 4,
-        totalCount = 4,
-        predicates = listOf(
-            PredicateResult("Age 18 or older", true),
-            PredicateResult("Identity verified", true),
-            PredicateResult("No criminal record", true),
-            PredicateResult("2+ verified references", true)
-        ),
-        validityLabel = "90 days",
-        cachetType = CachetType.CHILDCARE
-    )
-
-    @Deprecated("Use CachPackMapper.toCachetResult(pack, allPassed) for pack-aware results")
-    val cachetResultFail = CachetResult(
-        cachetName = "Incomplete",
-        allPassed = false,
-        passedCount = 2,
-        totalCount = 4,
-        predicates = listOf(
-            PredicateResult("Age 18 or older", true),
-            PredicateResult("Identity verified", true),
-            PredicateResult("No criminal record", false, "Credential not available"),
-            PredicateResult("2+ verified references", false, "Only 1 reference on file")
-        ),
-        validityLabel = null,
-        cachetType = CachetType.CHILDCARE
-    )
 }
