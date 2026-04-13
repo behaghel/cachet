@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -32,7 +33,7 @@ fun IncomingRequestScreen(
     onClose: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("incoming_request_screen"),
         color = SurfaceBackground
     ) {
         LazyColumn(
@@ -275,7 +276,8 @@ private fun PredicateRow(predicate: RequestPredicate) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag("predicate_chip"),
         verticalAlignment = Alignment.Top
     ) {
         Surface(

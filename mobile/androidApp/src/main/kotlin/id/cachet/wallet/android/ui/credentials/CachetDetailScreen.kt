@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -36,7 +37,7 @@ fun CachetDetailScreen(
     onSeeAllActivity: () -> Unit = {}
 ) {
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("cachet_detail_screen"),
         color = SurfaceBackground
     ) {
         LazyColumn(
@@ -269,7 +270,7 @@ private fun MetadataField(label: String, value: String, valueColor: Color = Text
 
 @Composable
 private fun DetailPredicateRow(predicate: RequestPredicate) {
-    Row(verticalAlignment = Alignment.Top) {
+    Row(modifier = Modifier.testTag("predicate_row"), verticalAlignment = Alignment.Top) {
         Text(
             text = "\u2713",
             style = MaterialTheme.typography.bodyMedium,

@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,7 +43,7 @@ fun PackPickerScreen(
     val closeColor = if (isHolder) TextTertiary else Color(0xFF94A3B8)
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("pack_picker_screen"),
         color = bgColor
     ) {
         LazyColumn(
@@ -95,7 +96,8 @@ fun PackPickerScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onPackSelected(pack) },
+                        .clickable { onPackSelected(pack) }
+                        .testTag("pack_card"),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = cardColor),
                     border = cardBorder

@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -83,7 +84,7 @@ fun QrScannerScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFF0F0F0F)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().testTag("qr_scanner_screen")) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // ── Header ──
                 Spacer(modifier = Modifier.height(48.dp))
@@ -123,6 +124,7 @@ fun QrScannerScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 32.dp)
                         .aspectRatio(311f / 380f)
+                        .testTag("qr_viewfinder")
                 ) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
