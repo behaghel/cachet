@@ -2,6 +2,8 @@ package id.cachet.wallet.android.ui.onboarding
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.cachet.wallet.android.ui.components.*
 import id.cachet.wallet.android.ui.theme.*
+import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
     val title: String,
@@ -68,7 +71,9 @@ private val pages = listOf(
 fun OnboardingScreen(
     onComplete: () -> Unit
 ) {
-    var currentPage by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+    val scope = rememberCoroutineScope()
+    val currentPage = pagerState.currentPage
     val page = pages[currentPage]
 
     Surface(
@@ -128,56 +133,58 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.weight(0.2f))
 
-            // ── Illustration ──
-            when (currentPage) {
-                0 -> DemandTrustIllustration()
-                1 -> BrandShieldMark(size = 160.dp)
-                2 -> CachetCardsIllustration()
-                3 -> ReceiptListIllustration()
+            // ── Swipeable page content ──
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { pageIndex ->
+                val p = pages[pageIndex]
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Illustration
+                    when (pageIndex) {
+                        0 -> DemandTrustIllustration()
+                        1 -> BrandShieldMark(size = 160.dp)
+                        2 -> CachetCardsIllustration()
+                        3 -> ReceiptListIllustration()
+                    }
+
+                    Spacer(modifier = Modifier.weight(0.3f))
+
+                    // Title
+                    Text(
+                        text = p.title,
+                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 28.sp),
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Description
+                    Text(
+                        text = p.description,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+                        color = Color(0xFF94A3B8),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Key point card
+                    KeyPointCard(
+                        icon = p.keyIcon,
+                        title = p.keyTitle,
+                        subtitle = p.keySubtitle
+                    )
+
+                    Spacer(modifier = Modifier.weight(0.4f))
+                }
             }
-
-            Spacer(modifier = Modifier.weight(0.3f))
-
-            // ── Title ──
-            Text(
-                text = page.title,
-                style = MaterialTheme.typography.displaySmall.copy(fontSize = 28.sp),
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ── Description ──
-            Text(
-                text = page.description,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
-                color = Color(0xFF94A3B8),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── Key point card ──
-            KeyPointCard(
-                icon = page.keyIcon,
-                title = page.keyTitle,
-                subtitle = page.keySubtitle
-            )
-
-
-            Spacer(modifier = Modifier.weight(0.4f))
-
-            // ── Step indicator ──
-            Text(
-                text = "${currentPage + 1} of ${pages.size}",
-                style = MaterialTheme.typography.labelSmall,
-                color = TrustNeutral
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             // ── Pagination dots ──
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -197,7 +204,7 @@ fun OnboardingScreen(
                 text = page.ctaLabel,
                 onClick = {
                     if (currentPage < pages.lastIndex) {
-                        currentPage++
+                        scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
                     } else {
                         onComplete()
                     }
