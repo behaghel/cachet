@@ -15,6 +15,9 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
+  agent-marketplace:
+    url: github:behaghel/nixos-config
+    flake: false
 allowUnfree: true
 
 # SecretSpec integration with dotenv provider

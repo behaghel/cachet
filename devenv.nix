@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, inputs, ... }:
 
 let
   # Enable Android only when DEVENV_ENABLE_ANDROID is set
@@ -7,6 +7,10 @@ let
   # Service list — single source of truth for all per-service scripts
   goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" ];
   forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
+
+  # Agent marketplace — declarative plugin management for Claude Code
+  mp = import (inputs.agent-marketplace + "/marketplace/lib.nix") { inherit lib; };
+  devenvWorkflow = mp.select [ "devenv-workflow" ];
 in
 {
     
@@ -17,7 +21,11 @@ in
   languages.java.enable = true;            # Needed for Gradle/Kotlin mobile builds
   languages.java.gradle.enable = true;
   claude.code.enable = true;
-  claude.code.hooks.git-hooks-run.enable = false; # prek runs at commit time via git hooks, not on every edit
+  claude.code.hooks = mp.hooks // {
+    git-hooks-run.enable = false; # pre-commit runs at commit time via git hooks, not on every edit
+  };
+  claude.code.commands = devenvWorkflow.commands;
+  claude.code.mcpServers.devenv = mp.mcpServers.devenv;
 
   # Enable Veriff plugins for Claude Code (project-level settings.json is a Nix store symlink,
   # so /plugin install can't write to it — declare plugins here instead)
