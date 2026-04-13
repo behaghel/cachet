@@ -1,5 +1,6 @@
 package id.cachet.wallet.android
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,13 +17,21 @@ class MainActivity : ComponentActivity() {
         val demoMode = intent.getBooleanExtra("demo_mode", false)
         val demoEmpty = intent.getBooleanExtra("demo_empty", false)
         val demoScenario = intent.getStringExtra("demo_scenario") ?: ""
+        val deepLinkUri = if (intent?.action == Intent.ACTION_VIEW) {
+            intent.data?.toString()
+        } else null
         setContent {
             CachetWalletTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WalletApp(demoMode = demoMode, demoEmpty = demoEmpty, demoScenario = demoScenario)
+                    WalletApp(
+                        demoMode = demoMode,
+                        demoEmpty = demoEmpty,
+                        demoScenario = demoScenario,
+                        deepLinkUri = deepLinkUri
+                    )
                 }
             }
         }

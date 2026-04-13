@@ -66,7 +66,7 @@ sealed class OverlayScreen {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenario: String = "") {
+fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenario: String = "", deepLinkUri: String? = null) {
     // Resolve and set the active demo scenario before ViewModel creation.
     val effectiveDemoMode = demoMode || DemoFixtures.isDemoActive
     if (effectiveDemoMode || demoEmpty) {
@@ -105,6 +105,17 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
             isOnboarded = true
         })
         return
+    }
+
+    // -- Deep link handling --
+    LaunchedEffect(deepLinkUri) {
+        if (deepLinkUri != null && deepLinkUri.startsWith("cachet://")) {
+            qrPayload = deepLinkUri
+            val request = viewModel.fetchRequestFromRelay(deepLinkUri)
+            if (request != null) {
+                overlay = OverlayScreen.IncomingRequest(request)
+            }
+        }
     }
 
     // -- Overlay screens (full-screen, above tabs) --
