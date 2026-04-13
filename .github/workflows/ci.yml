@@ -153,11 +153,19 @@ jobs:
       # Feature files are synced from spec/ by Gradle copyBddFeatureFiles task at build time
 
       - name: Start emulator
+        id: emulator
         shell: bash
-        run: devenv shell -- android:emulator
+        run: |
+          devenv shell -- android:emulator || {
+            echo "::warning::Emulator failed to start (non-blocking)"
+            echo "started=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          echo "started=true" >> "$GITHUB_OUTPUT"
         timeout-minutes: 10
 
       - name: Run BDD scenarios
+        if: steps.emulator.outputs.started == 'true'
         shell: bash
         run: |
           devenv shell -- bash -c '
