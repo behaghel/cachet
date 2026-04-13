@@ -72,10 +72,11 @@ mobile/*/.externalNativeBuild/
 # Per-service API specs (generated from schemas/openapi.yaml via schema:split)
 api/openapi.*.yaml
 
-# Claude Code (Nix-managed symlink, local permissions, agent worktrees)
+# Claude Code (Nix-managed symlink, local permissions, agent worktrees, plans)
 .claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
+.claude/plans/
 
 # DevEnv
 .devenv/
