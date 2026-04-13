@@ -27,7 +27,6 @@ jobs:
               - 'sdk/**'
               - 'spec/**/scenarios.feature'
               - 'devenv.nix'
-              - '.github/workflows/ci.yml'
 
   # Backend services using devenv (lightweight)
   backend:
