@@ -58,22 +58,44 @@ object CachPackMapper {
     fun toCachetResult(pack: CachPackUi, allPassed: Boolean): CachetResult {
         val request = toVerificationRequest(pack)
         val name = if (allPassed) cachetName(pack.cachetType) else "Incomplete"
+        val failReasons = if (!allPassed) failReasonsFor(pack.cachetType) else emptyMap()
+        val predicates = request.predicates.mapIndexed { idx, pred ->
+            val failed = failReasons.containsKey(idx)
+            PredicateResult(
+                label = pred.claim,
+                passed = !failed,
+                failReason = failReasons[idx],
+                privacyNote = pred.privacyNote,
+                disclosureType = pred.disclosureType
+            )
+        }
+        val passedCount = predicates.count { it.passed }
         return CachetResult(
             cachetName = name,
             allPassed = allPassed,
-            passedCount = if (allPassed) request.predicates.size else 0,
+            passedCount = passedCount,
             totalCount = request.predicates.size,
-            predicates = request.predicates.map { pred ->
-                PredicateResult(
-                    label = pred.claim,
-                    passed = allPassed,
-                    failReason = if (!allPassed) "Credential not available" else null,
-                    privacyNote = pred.privacyNote,
-                    disclosureType = pred.disclosureType
-                )
-            },
+            predicates = predicates,
             validityLabel = if (allPassed) "${request.retentionDays} days" else null,
             cachetType = pack.cachetType
+        )
+    }
+
+    /** Per-predicate failure reasons by index. Only the listed indices fail. */
+    private fun failReasonsFor(type: CachetType): Map<Int, String> = when (type) {
+        CachetType.CHILDCARE -> mapOf(
+            2 to "Credential not available",
+            3 to "Only 1 reference on file"
+        )
+        CachetType.SELLER -> mapOf(
+            2 to "Fulfilment rate below threshold",
+            3 to "Chargeback data unavailable"
+        )
+        CachetType.AGE -> mapOf(
+            0 to "Age credential expired"
+        )
+        CachetType.IDENTITY -> mapOf(
+            1 to "Liveness check not completed"
         )
     }
 

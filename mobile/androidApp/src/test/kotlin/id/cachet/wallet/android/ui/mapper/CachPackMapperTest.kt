@@ -51,12 +51,31 @@ class CachPackMapperTest {
     }
 
     @Test
-    fun `not all passed returns Incomplete and zero passed`() {
+    fun `not all passed returns Incomplete with mixed predicates`() {
         val pack = makePack(CachetType.SELLER)
         val result = CachPackMapper.toCachetResult(pack, allPassed = false)
         assertEquals("Incomplete", result.cachetName)
         assertFalse(result.allPassed)
-        assertEquals(0, result.passedCount)
+        // Seller: indices 0,1 pass; indices 2,3 fail
+        assertEquals(2, result.passedCount)
+        assertEquals(4, result.totalCount)
+        assertTrue(result.predicates[0].passed)
+        assertTrue(result.predicates[1].passed)
+        assertFalse(result.predicates[2].passed)
+        assertEquals("Fulfilment rate below threshold", result.predicates[2].failReason)
+        assertFalse(result.predicates[3].passed)
+        assertEquals("Chargeback data unavailable", result.predicates[3].failReason)
         assertNull(result.validityLabel)
+    }
+
+    @Test
+    fun `childcare fail has 2 of 4 passed`() {
+        val pack = makePack(CachetType.CHILDCARE)
+        val result = CachPackMapper.toCachetResult(pack, allPassed = false)
+        assertEquals(2, result.passedCount)
+        assertTrue(result.predicates[0].passed)
+        assertTrue(result.predicates[1].passed)
+        assertFalse(result.predicates[2].passed)
+        assertFalse(result.predicates[3].passed)
     }
 }
