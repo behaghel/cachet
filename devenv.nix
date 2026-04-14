@@ -30,6 +30,27 @@ in
   # Enable Veriff plugins for Claude Code (project-level settings.json is a Nix store symlink,
   # so /plugin install can't write to it — declare plugins here instead)
   files."${config.devenv.root}/.claude/settings.json".json = {
+    permissions = {
+      allow = [
+        "Read"
+        "Glob"
+        "Grep"
+        "Bash(git *)"
+      ];
+    };
+    hooks = {
+      PreToolUse = [
+        {
+          matcher = "Bash";
+          hooks = [
+            {
+              type = "command";
+              command = ".claude/hooks/allow-compound-bash.sh";
+            }
+          ];
+        }
+      ];
+    };
     enabledPlugins = {
       "spec-driven@veriff-plugins" = true;
       "spec-tdd@veriff-plugins" = true;
