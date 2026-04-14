@@ -7,19 +7,20 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import id.cachet.wallet.android.ui.WalletApp
 import id.cachet.wallet.android.ui.theme.CachetWalletTheme
 
 class MainActivity : ComponentActivity() {
+    private val deepLinkUri = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val demoMode = intent.getBooleanExtra("demo_mode", false)
         val demoEmpty = intent.getBooleanExtra("demo_empty", false)
         val demoScenario = intent.getStringExtra("demo_scenario") ?: ""
-        val deepLinkUri = if (intent?.action == Intent.ACTION_VIEW) {
-            intent.data?.toString()
-        } else null
+        deepLinkUri.value = extractDeepLink(intent)
         setContent {
             CachetWalletTheme {
                 Surface(
@@ -30,10 +31,18 @@ class MainActivity : ComponentActivity() {
                         demoMode = demoMode,
                         demoEmpty = demoEmpty,
                         demoScenario = demoScenario,
-                        deepLinkUri = deepLinkUri
+                        deepLinkUri = deepLinkUri.value
                     )
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        deepLinkUri.value = extractDeepLink(intent)
+    }
+
+    private fun extractDeepLink(intent: Intent?): String? =
+        if (intent?.action == Intent.ACTION_VIEW) intent.data?.toString() else null
 }
