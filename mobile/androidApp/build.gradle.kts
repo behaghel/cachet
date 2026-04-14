@@ -130,8 +130,10 @@ tasks.register("generateNetworkSecurityConfig") {
     description = "Generates network_security_config.xml with base IPs + detected local IP"
     group = "android"
 
+    // Resolve path eagerly so doLast doesn't capture the build-script reference
+    val xmlDir = layout.projectDirectory.dir("src/main/res/xml").asFile
+
     doLast {
-        val xmlDir = file("src/main/res/xml")
         xmlDir.mkdirs()
 
         // Base IPs that every developer needs (emulator loopback + localhost)
