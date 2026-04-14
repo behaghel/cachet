@@ -73,7 +73,7 @@ in
     enable = true;
     platforms.version = [ "36" ];
     buildTools.version = [ "36.0.0" ];
-    systemImageTypes = [ "google_apis_playstore" ];
+    systemImageTypes = [ "google_apis" ];
     abis = [ "arm64-v8a" "x86_64" ];
     emulator.enable = true;
     ndk.enable = true;
@@ -290,7 +290,7 @@ in
     mkdir -p "$HOME/.android"
     touch "$HOME/.android/emu-update-last-check.ini"
     # Pipe 'no' to avoid interactive "custom hardware profile?" prompt that hangs in CI
-    echo no | avdmanager create avd --force --name cachet-emulator --package "system-images;android-36;google_apis_playstore;$ABI"
+    echo no | avdmanager create avd --force --name cachet-emulator --package "system-images;android-36;google_apis;$ABI"
     # Verify AVD was created
     if ! avdmanager list avd -c 2>/dev/null | grep -q cachet-emulator; then
       echo "❌ AVD creation failed. Check system image availability."
@@ -307,7 +307,7 @@ in
     if [ -n "''${CI:-}" ] || [ -z "''${DISPLAY:-}''${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
       WINDOW_FLAG="-no-window"
     fi
-    emulator @cachet-emulator -no-audio -no-snapshot-load -no-snapshot-save -wipe-data -metrics-collection $WINDOW_FLAG &
+    emulator @cachet-emulator -no-audio -no-boot-anim -no-snapshot-load -no-snapshot-save -wipe-data -metrics-collection $WINDOW_FLAG &
     echo "Waiting for emulator to boot..."
     adb start-server
     adb wait-for-device
