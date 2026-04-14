@@ -18,7 +18,7 @@ compose-bom = "2026.03.01"
 
 # KotlinX
 kotlinx-coroutines = "1.10.2"
-kotlinx-serialization = "1.10.0"
+kotlinx-serialization = "1.11.0"
 kotlinx-datetime = "0.7.1"
 
 # Ktor
