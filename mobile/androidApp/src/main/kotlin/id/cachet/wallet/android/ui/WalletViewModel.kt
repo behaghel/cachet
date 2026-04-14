@@ -372,6 +372,24 @@ class WalletViewModel(
         }
     }
 
+    /**
+     * Empty vault → identity verification. In demo mode, simulate by loading
+     * only the identity credential. In prod, delegate to Veriff.
+     */
+    fun startIdentityVerification() {
+        if (demoMode) {
+            val identity = DemoFixtures.credentials.firstOrNull { it.cachetType == CachetType.IDENTITY }
+            if (identity != null) {
+                _uiState.value = WalletUiState.HasCredentials(
+                    credentials = listOf(identity),
+                    vaultSummary = VaultSummaryUi(totalCount = 1, verifiedCount = 1, pendingCount = 0)
+                )
+            }
+            return
+        }
+        startVeriffVerification()
+    }
+
     fun startVeriffVerification() {
         if (demoMode) return
         viewModelScope.launch {

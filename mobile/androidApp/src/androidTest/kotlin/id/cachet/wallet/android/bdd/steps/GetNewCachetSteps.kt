@@ -55,5 +55,20 @@ class GetNewCachetSteps {
         rule.onNodeWithText("Verification Request").assertIsDisplayed()
     }
 
-    // AC-5: Entry point assertion — uses "I am on the Pack Picker screen in {word} mode" from CommonSteps
+    // AC-1: Empty vault → identity verification (not pack picker)
+    @Then("the identity verification flow begins")
+    fun theIdentityVerificationFlowBegins() {
+        // In demo mode, identity verification is simulated instantly —
+        // the vault transitions from empty to showing the identity cachet.
+        rule.waitForIdle()
+        rule.onNodeWithText("Identity").assertIsDisplayed()
+    }
+
+    @Then("I do not see the Pack Picker screen")
+    fun iDoNotSeeThePackPickerScreen() {
+        rule.onAllNodesWithText("Pick a Trust Pack", substring = true)
+            .fetchSemanticsNodes().let { nodes ->
+                assert(nodes.isEmpty()) { "Pack Picker should not be visible from empty vault" }
+            }
+    }
 }

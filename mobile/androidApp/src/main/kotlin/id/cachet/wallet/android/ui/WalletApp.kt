@@ -339,7 +339,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     0 -> HomeScreen(
                         uiState = uiState,
                         onStartVerification = {
-                            overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
+                            if (uiState is WalletUiState.Empty) {
+                                viewModel.startIdentityVerification()
+                            } else {
+                                overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
+                            }
                         },
                         onRefresh = { viewModel.loadCredentials() },
                         onCardTapped = { card ->

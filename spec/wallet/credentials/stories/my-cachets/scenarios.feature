@@ -30,13 +30,19 @@ Feature: My Cachets
     When I tap on a cachet card
     Then I am navigated to the Cachet Detail screen
 
-  # AC-4: Empty vault state
+  # AC-4: Empty vault state — CTA leads to identity verification, not pack picker
   @wireframe:holder-05-empty-vault.svg
   Scenario: Viewing empty vault
     Given the "empty" demo scenario is loaded
     When I am on the "My Cachets" tab
     Then I see an empty state illustration
     And I see a "Get your first cachet" call to action
+
+  Scenario: Empty vault CTA starts identity verification
+    Given the "empty" demo scenario is loaded
+    And I am on the "My Cachets" tab
+    When I tap "Get your first cachet"
+    Then the identity verification flow begins
 
   # AC-5: FAB to acquire new cachet
   Scenario: Acquiring a new cachet from vault
