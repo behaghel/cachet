@@ -10,6 +10,11 @@ import id.cachet.wallet.domain.model.VerifiableCredential
  * it means demo code leaked into a non-demo code path.
  */
 object DemoFixtures {
+    @Volatile
+    var isDemoActive: Boolean
+        get() = false
+        set(_) = error("Demo not available in production")
+
     var activeScenario: Any
         get() = error("Demo not available in production")
         set(_) = error("Demo not available in production")

@@ -136,7 +136,10 @@ fun CachetDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider(color = SurfaceElevated)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.testTag("hardware_indicator")
+                    ) {
                         Icon(
                             Icons.Default.Shield,
                             contentDescription = "Hardware-secured",

@@ -1,6 +1,8 @@
 package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import id.cachet.wallet.android.bdd.BddTestContext
@@ -28,22 +30,34 @@ class FirstLaunchSteps {
         rule.onNodeWithText(headline).assertIsDisplayed()
     }
 
+    private val onboardingTitles = listOf(
+        "Don't take their word for it",
+        "Your trust, portable",
+        "Your trust, your rules",
+        "Every share, on the record"
+    )
+
     @Given("I am on onboarding screen {int}")
     fun iAmOnOnboardingScreen(screenNumber: Int) {
+        rule.waitForIdle()
+        // If already on the target screen, just verify (handles @Then usage)
+        val expectedTitle = onboardingTitles[screenNumber - 1]
+        try {
+            rule.onNodeWithText(expectedTitle).assertIsDisplayed()
+            return
+        } catch (_: AssertionError) {}
+        // Navigate from screen 1
         repeat(screenNumber - 1) {
             rule.onNodeWithText("Next").performClick()
             rule.waitForIdle()
         }
     }
 
-    @Then("I am on onboarding screen {int}")
-    fun iAmOnOnboardingScreenAssertion(screenNumber: Int) {
-        rule.waitForIdle()
-    }
-
     @Then("the screen conveys {string}")
     fun theScreenConveys(message: String) {
-        rule.onNodeWithText(message, substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText(message, substring = true, ignoreCase = true)
+            .onFirst()
+            .assertIsDisplayed()
     }
 
     @Then("I am on the empty vault screen")

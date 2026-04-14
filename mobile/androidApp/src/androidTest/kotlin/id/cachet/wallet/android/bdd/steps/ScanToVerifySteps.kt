@@ -1,7 +1,10 @@
 package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -43,9 +46,10 @@ class ScanToVerifySteps {
     // AC-2: Scanning valid QR
     @When("I scan a valid verifier QR code")
     fun iScanAValidVerifierQRCode() {
-        // In demo mode, the QR scanner auto-scans after 2 seconds
-        Thread.sleep(3000)
-        rule.waitForIdle()
+        // In demo mode, the QR scanner auto-scans after 2 seconds then transitions
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Then("I see the Incoming Request screen")
@@ -60,8 +64,9 @@ class ScanToVerifySteps {
         rule.waitForIdle()
         rule.onNodeWithTag("fab_scan_qr").performClick()
         rule.waitForIdle()
-        Thread.sleep(3000)
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Then("I see the verifier name")
@@ -90,20 +95,24 @@ class ScanToVerifySteps {
 
     @Then("the type indicates whether it is selective, always, or never disclosed")
     fun theTypeIndicatesDisclosureLevel() {
-        rule.onNodeWithText("NOT be shared", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("NOT be shared", substring = true).onFirst().assertIsDisplayed()
     }
 
     // AC-5: Consent decision
     @Then("the verification is performed and I see the Verification Result screen")
     fun theVerificationIsPerformedAndISeeTheResult() {
-        Thread.sleep(2000)
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 10000) {
+            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithTag("verification_result").assertIsDisplayed()
     }
 
     @Then("I return to the Activity tab and no credentials are shared")
     fun iReturnToTheActivityTabAndNoCredentialsAreShared() {
-        rule.onNodeWithText("Activity").assertIsDisplayed()
+        // Wait for overlay to close and tabs to appear
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodesWithText("My Cachets").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     // AC-6: Invalid QR handling

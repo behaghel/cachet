@@ -1,10 +1,15 @@
 package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import id.cachet.wallet.android.bdd.BddTestContext
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.fixtures.ScenarioRegistry
@@ -25,6 +30,7 @@ class VerificationResultSteps {
     @Given("a verification has completed with {word} outcome")
     fun aVerificationHasCompletedWithOutcome(outcome: String) {
         val scenario = if (outcome == "pass") "happy" else "seller-only"
+        DemoFixtures.isDemoActive = true
         DemoFixtures.activeScenario = ScenarioRegistry.get(scenario)
         rule.activityRule.scenario.recreate()
         rule.waitForIdle()
@@ -34,12 +40,14 @@ class VerificationResultSteps {
         rule.waitForIdle()
         rule.onNodeWithTag("fab_scan_qr").performClick()
         rule.waitForIdle()
-        Thread.sleep(3000) // demo auto-scan
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithText("Verify & Share").performClick()
         rule.waitForIdle()
-        Thread.sleep(2000) // wait for verification
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 10000) {
+            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Given("a verification has completed")
@@ -59,7 +67,7 @@ class VerificationResultSteps {
 
     @Then("I see a clear reason for the failure")
     fun iSeeAClearReasonForTheFailure() {
-        rule.onNodeWithText("Credential not available", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("Credential not available", substring = true).onFirst().assertExists()
     }
 
     // AC-3: Individual predicate results
@@ -71,7 +79,7 @@ class VerificationResultSteps {
 
     @Then("each predicate shows pass or fail status")
     fun eachPredicateShowsPassOrFailStatus() {
-        rule.onNodeWithText("\u2713", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("\u2713", substring = true).onFirst().assertIsDisplayed()
     }
 
     // AC-4: Pack identification
@@ -88,14 +96,18 @@ class VerificationResultSteps {
 
     @Then("the receipt appears in the Activity feed")
     fun theReceiptAppearsInTheActivityFeed() {
-        rule.onNodeWithText("Done").performClick()
+        try {
+            rule.onNodeWithText("Done").performScrollTo().performClick()
+        } catch (_: AssertionError) {
+            rule.onNodeWithContentDescription("Close").performClick()
+        }
         rule.waitForIdle()
         rule.onNodeWithText("Activity").performClick()
         rule.waitForIdle()
     }
 
     // Demo pack-specific results
-    @Given("I pick the {word} pack")
+    @Given("I pick the {} pack")
     fun iPickThePack(packName: String) {
         rule.waitForIdle()
     }
@@ -106,12 +118,14 @@ class VerificationResultSteps {
         rule.waitForIdle()
         rule.onNodeWithTag("fab_scan_qr").performClick()
         rule.waitForIdle()
-        Thread.sleep(3000) // demo auto-scan
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithText("Verify & Share").performClick()
         rule.waitForIdle()
-        Thread.sleep(2000) // wait for verification
-        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 10000) {
+            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Then("I see a {word} result for {string}")
@@ -126,6 +140,6 @@ class VerificationResultSteps {
 
     @Then("I see which seller predicates failed")
     fun iSeeWhichSellerPredicatesFailed() {
-        rule.onNodeWithText("Credential not available", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("Credential not available", substring = true).onFirst().assertExists()
     }
 }

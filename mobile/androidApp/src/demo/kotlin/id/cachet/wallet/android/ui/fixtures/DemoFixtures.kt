@@ -16,9 +16,12 @@ import id.cachet.wallet.domain.model.VerifiableCredential
  */
 object DemoFixtures {
 
+    /** Flag for BDD tests to activate demo mode without intent extras. */
+    @Volatile
+    var isDemoActive: Boolean = false
+
     /** The active scenario. Set once during app init before any composable reads it. */
     var activeScenario: DemoScenario = HappyPathScenario
-        internal set
 
     /** Synthetic credential for consent receipt generation when no real credential is in the repo. */
     val syntheticCredential = VerifiableCredential(

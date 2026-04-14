@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
@@ -67,7 +68,8 @@ sealed class OverlayScreen {
 @Composable
 fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenario: String = "") {
     // Resolve and set the active demo scenario before ViewModel creation.
-    if (demoMode || demoEmpty) {
+    val effectiveDemoMode = demoMode || DemoFixtures.isDemoActive
+    if (effectiveDemoMode || demoEmpty) {
         val scenario = when {
             demoEmpty -> ScenarioRegistry.get("empty")
             demoScenario.isNotBlank() -> ScenarioRegistry.get(demoScenario)
@@ -75,13 +77,22 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
         }
         DemoFixtures.activeScenario = scenario
     }
-    val viewModel: WalletViewModel = koinViewModel { parametersOf(demoMode, demoEmpty) }
+    val viewModel: WalletViewModel = koinViewModel { parametersOf(effectiveDemoMode, demoEmpty) }
     val uiState by viewModel.uiState.collectAsState()
     val activityState by viewModel.activityState.collectAsState()
 
+    // Reload demo data when demo mode activates after ViewModel creation
+    // (e.g., BDD tests set DemoFixtures.isDemoActive then recreate the activity)
+    LaunchedEffect(effectiveDemoMode) {
+        if (effectiveDemoMode) viewModel.reloadDemoData()
+    }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var isOnboarded by remember { mutableStateOf(demoMode || demoEmpty) }
+    val prefs = remember { context.getSharedPreferences("cachet_wallet", Context.MODE_PRIVATE) }
+    var isOnboarded by remember {
+        mutableStateOf(effectiveDemoMode || demoEmpty || prefs.getBoolean("onboarding_complete", false))
+    }
     var selectedTab by remember { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<OverlayScreen?>(null) }
     // Track the QR payload separately so it can be updated asynchronously
@@ -89,7 +100,10 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
 
     // -- Onboarding gate --
     if (!isOnboarded) {
-        OnboardingScreen(onComplete = { isOnboarded = true })
+        OnboardingScreen(onComplete = {
+            prefs.edit().putBoolean("onboarding_complete", true).apply()
+            isOnboarded = true
+        })
         return
     }
 
@@ -128,7 +142,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
 
                     if (relayQr == null) {
                         // Relay unavailable -- fall back to demo auto-transition
-                        if (demoMode) {
+                        if (effectiveDemoMode) {
                             qrPayload = packToQrPayload(screen.pack)
                             kotlinx.coroutines.delay(4000)
                             overlay = OverlayScreen.IncomingRequest(
@@ -220,7 +234,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                 }
             )
             is OverlayScreen.QrScanner -> QrScannerScreen(
-                demoMode = demoMode,
+                demoMode = effectiveDemoMode,
                 onCodeScanned = { code ->
                     if (code.startsWith("cachet://")) {
                         // Real relay flow: fetch request from relay
@@ -229,6 +243,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                             val request = viewModel.fetchRequestFromRelay(code)
                             if (request != null) {
                                 overlay = OverlayScreen.IncomingRequest(request)
+                            } else if (effectiveDemoMode) {
+                                // Demo fallback when relay is unavailable
+                                overlay = OverlayScreen.IncomingRequest(
+                                    CachPackMapper.toVerificationRequest(DemoFixtures.cachPacks.first())
+                                )
                             }
                         }
                     } else {
@@ -309,12 +328,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     0 -> HomeScreen(
                         uiState = uiState,
                         onStartVerification = {
-                            if (uiState is WalletUiState.Empty) {
-                                // Empty vault: go straight to Veriff IDV — no pack picker
-                                viewModel.startVeriffVerification()
-                            } else {
-                                overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
-                            }
+                            overlay = OverlayScreen.PackPicker(PackPickerMode.HOLDER)
                         },
                         onRefresh = { viewModel.loadCredentials() },
                         onCardTapped = { card ->

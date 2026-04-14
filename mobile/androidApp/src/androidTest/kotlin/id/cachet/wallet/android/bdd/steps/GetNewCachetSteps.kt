@@ -2,6 +2,7 @@ package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -39,7 +40,7 @@ class GetNewCachetSteps {
 
     @Then("each pack card shows the required verification type")
     fun eachPackCardShowsTheVerificationType() {
-        rule.onNodeWithText("proofs required", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("proofs required", substring = true).onFirst().assertIsDisplayed()
     }
 
     // AC-3: Selecting a pack

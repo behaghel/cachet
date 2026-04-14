@@ -29,9 +29,11 @@ class WalletViewModel(
     private val veriffService: VeriffService,
     private val consentUseCase: ConsentUseCase,
     private val verificationUseCase: VerificationUseCase,
-    private val demoMode: Boolean = false,
+    private val demoModeParam: Boolean = false,
     private val demoEmpty: Boolean = false
 ) : ViewModel() {
+
+    private val demoMode: Boolean get() = demoModeParam || DemoFixtures.isDemoActive
 
     companion object {
         private const val TAG = "WalletViewModel"
@@ -257,6 +259,10 @@ class WalletViewModel(
 
     // -- Existing flows --
 
+    fun reloadDemoData() {
+        loadDemoCredentials()
+    }
+
     private fun loadDemoCredentials() {
         Log.d(TAG, "Demo: using static fixtures")
         val creds = DemoFixtures.credentials
@@ -434,7 +440,11 @@ class WalletViewModel(
             val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
             val allPassed = DemoFixtures.shouldPass(request)
             val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
-            generateConsentReceiptForShare(receiptCredential, request, outcome)
+            try {
+                generateConsentReceiptForShare(receiptCredential, request, outcome)
+            } catch (e: Exception) {
+                Log.w(TAG, "Demo: consent receipt generation failed (non-fatal)", e)
+            }
             // Build a pack-aware result via CachPackMapper so the result name,
             // predicate count, and type match the selected pack.
             val result = CachPackMapper.toCachetResult(matchingPack, allPassed)

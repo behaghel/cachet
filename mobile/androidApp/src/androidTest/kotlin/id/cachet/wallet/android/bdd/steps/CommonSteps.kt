@@ -1,12 +1,20 @@
 package id.cachet.wallet.android.bdd.steps
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.test.platform.app.InstrumentationRegistry
 import id.cachet.wallet.android.MainActivity
 import id.cachet.wallet.android.bdd.BddTestContext
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
@@ -15,6 +23,7 @@ import io.cucumber.java.After
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
+import io.cucumber.junit.WithJunitRule
 import org.junit.Rule
 
 /**
@@ -23,9 +32,11 @@ import org.junit.Rule
  * Owns the single [composeTestRule] and publishes it via [BddTestContext]
  * so all other step classes can access the same Compose tree.
  */
+@WithJunitRule
 class CommonSteps {
 
-    @get:Rule
+    @Rule
+    @JvmField
     val composeTestRule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity> =
         createAndroidComposeRule<MainActivity>()
 
@@ -35,7 +46,11 @@ class CommonSteps {
 
     @After
     fun resetScenario() {
+        DemoFixtures.isDemoActive = false
         DemoFixtures.activeScenario = ScenarioRegistry.get("happy")
+        InstrumentationRegistry.getInstrumentation().targetContext
+            .getSharedPreferences("cachet_wallet", Context.MODE_PRIVATE)
+            .edit().clear().apply()
     }
 
     // ────────────────────────────────────────
@@ -44,24 +59,34 @@ class CommonSteps {
 
     @Given("the app is launched in demo mode")
     fun theAppIsLaunchedInDemoMode() {
+        DemoFixtures.isDemoActive = true
+        DemoFixtures.activeScenario = ScenarioRegistry.get("happy")
+        composeTestRule.activityRule.scenario.recreate()
+        composeTestRule.waitForIdle()
+        Thread.sleep(500)
         composeTestRule.waitForIdle()
     }
 
     @Given("the {string} demo scenario is loaded")
     fun theDemoScenarioIsLoaded(scenario: String) {
-        if (scenario == "happy") return
-        DemoFixtures.activeScenario = ScenarioRegistry.get(scenario)
+        val newScenario = ScenarioRegistry.get(scenario)
+        if (DemoFixtures.isDemoActive && DemoFixtures.activeScenario === newScenario) return
+        DemoFixtures.isDemoActive = true
+        DemoFixtures.activeScenario = newScenario
         composeTestRule.activityRule.scenario.recreate()
         composeTestRule.waitForIdle()
     }
 
     @Given("the app is launched for the first time")
     fun theAppIsLaunchedForTheFirstTime() {
+        DemoFixtures.isDemoActive = false
+        composeTestRule.activityRule.scenario.recreate()
         composeTestRule.waitForIdle()
     }
 
     @Given("no verification events have occurred")
     fun noVerificationEventsHaveOccurred() {
+        DemoFixtures.isDemoActive = true
         DemoFixtures.activeScenario = ScenarioRegistry.get("empty")
         composeTestRule.activityRule.scenario.recreate()
         composeTestRule.waitForIdle()
@@ -73,6 +98,10 @@ class CommonSteps {
 
     @Given("I am on the {string} tab")
     fun iAmOnTheTab(tabName: String) {
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodesWithText(tabName).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText(tabName).performClick()
         composeTestRule.waitForIdle()
     }
@@ -89,7 +118,13 @@ class CommonSteps {
 
     @When("I tap {string}")
     fun iTap(buttonText: String) {
-        composeTestRule.onNodeWithText(buttonText, substring = true).performClick()
+        val node = composeTestRule.onNodeWithText(buttonText, substring = true)
+        try {
+            node.performScrollTo()
+        } catch (_: Throwable) {
+            // Not in a scrollable container — click as-is
+        }
+        node.performClick()
         composeTestRule.waitForIdle()
     }
 
@@ -110,13 +145,20 @@ class CommonSteps {
 
     @Given("I am on the Pack Picker screen in {word} mode")
     fun iAmOnThePackPickerScreen(mode: String) {
+        // If already on pack picker, just verify
+        try {
+            composeTestRule.onNodeWithTag("pack_picker_screen").assertIsDisplayed()
+            return
+        } catch (_: AssertionError) {}
         when (mode) {
             "holder" -> {
+                composeTestRule.waitForIdle()
                 composeTestRule.onNodeWithText("My Cachets").performClick()
                 composeTestRule.waitForIdle()
                 composeTestRule.onNodeWithTag("fab_get_cachet").performClick()
             }
             "verifier" -> {
+                composeTestRule.waitForIdle()
                 composeTestRule.onNodeWithText("Activity").performClick()
                 composeTestRule.waitForIdle()
                 composeTestRule.onNodeWithTag("fab_new_request").performClick()
@@ -143,17 +185,61 @@ class CommonSteps {
 
     @Given("I am on the Incoming Request screen")
     fun iAmOnTheIncomingRequestScreen() {
-        composeTestRule.onNodeWithText("Verification Request").assertIsDisplayed()
+        // If already on the screen, verify and return
+        try {
+            composeTestRule.onNodeWithText("Verification Request").assertIsDisplayed()
+            return
+        } catch (_: AssertionError) {}
+        // Navigate: Activity tab -> scan QR -> demo auto-scan -> incoming request
+        composeTestRule.onNodeWithText("Activity").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("fab_scan_qr").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Given("I am on the Show QR screen")
     fun iAmOnTheShowQRScreen() {
+        // If already on the screen, verify and return
+        try {
+            composeTestRule.onNodeWithTag("qr_share_screen").assertIsDisplayed()
+            return
+        } catch (_: AssertionError) {}
+        // Navigate: Activity tab -> FAB new request -> select pack
+        composeTestRule.onNodeWithText("Activity").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("fab_new_request").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithTag("pack_card").onFirst().performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(2000)
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("qr_share_screen").assertIsDisplayed()
     }
 
     @Given("I am on the Verification Result screen")
     fun iAmOnTheVerificationResultScreen() {
-        composeTestRule.onNodeWithTag("verification_result").assertIsDisplayed()
+        // If already on the screen, verify and return
+        try {
+            composeTestRule.onNodeWithTag("verification_result").assertIsDisplayed()
+            return
+        } catch (_: AssertionError) {}
+        // Navigate: Activity tab -> scan QR -> auto-scan -> consent -> result
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Activity").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("fab_scan_qr").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Verify & Share").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 10000) {
+            composeTestRule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Given("the QR scanner is open")
@@ -166,13 +252,23 @@ class CommonSteps {
 
     @When("I press back")
     fun iPressBack() {
-        composeTestRule.onNodeWithText("Back", useUnmergedTree = true).performClick()
+        // Some screens use "Back" icon, others use "Close"
+        try {
+            composeTestRule.onNodeWithContentDescription("Back").performClick()
+        } catch (_: AssertionError) {
+            composeTestRule.onNodeWithContentDescription("Close").performClick()
+        }
         composeTestRule.waitForIdle()
     }
 
     @When("I dismiss the result")
     fun iDismissTheResult() {
-        composeTestRule.onNodeWithText("Done").performClick()
+        // Try "Done" button first, fall back to Close icon
+        try {
+            composeTestRule.onNodeWithText("Done").performScrollTo().performClick()
+        } catch (_: AssertionError) {
+            composeTestRule.onNodeWithContentDescription("Close").performClick()
+        }
         composeTestRule.waitForIdle()
     }
 

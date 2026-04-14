@@ -30,8 +30,8 @@ private data class OnboardingPage(
 
 private val pages = listOf(
     OnboardingPage(
-        title = "Don't take their\nword for it",
-        description = "Buying from a stranger? Hiring a babysitter?\nDemand real proof — not promises.",
+        title = "Don't take their word for it",
+        description = "Demand proof from others on your terms.\nHiring a babysitter? Buying from a stranger?\nReal proof — not promises.",
         keyIcon = "\uD83D\uDD0D",
         keyTitle = "You set the rules. They prove it.",
         keySubtitle = "No platform middleman needed.",
@@ -39,14 +39,14 @@ private val pages = listOf(
     ),
     OnboardingPage(
         title = "Your trust, portable",
-        description = "Prove what matters about you\nwithout exposing what doesn't.",
+        description = "Prove yourself without over-sharing data.\nShare what matters — nothing more.",
         keyIcon = "\uD83D\uDD12",
         keyTitle = "Your data never leaves your phone.",
         keySubtitle = "Not even Cachet can see it.",
         ctaLabel = "Next"
     ),
     OnboardingPage(
-        title = "Cachets, not\ndata breaches",
+        title = "Your trust, your rules",
         description = "Cachets prove specific things —\n\"I'm 18+\" without revealing\nyour date of birth.",
         keyIcon = "\u267B\uFE0F",
         keyTitle = "Verify once, trusted many times.",
@@ -55,8 +55,8 @@ private val pages = listOf(
         pronunciation = "Kah-SHAY"
     ),
     OnboardingPage(
-        title = "Every share,\non the record",
-        description = "Each time you share a proof, a receipt\nis created and logged publicly.\nYou can audit anytime.",
+        title = "Every share, on the record",
+        description = "Each time you share a proof, a receipt\nis created and logged publicly.\nGet started and audit anytime.",
         keyIcon = "\uD83D\uDCCB",
         keyTitle = "Nobody can deny what happened.",
         keySubtitle = "Tamper-proof transparency log.",
@@ -169,6 +169,15 @@ fun OnboardingScreen(
 
 
             Spacer(modifier = Modifier.weight(0.4f))
+
+            // ── Step indicator ──
+            Text(
+                text = "${currentPage + 1} of ${pages.size}",
+                style = MaterialTheme.typography.labelSmall,
+                color = TrustNeutral
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // ── Pagination dots ──
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
