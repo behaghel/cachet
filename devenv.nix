@@ -409,6 +409,8 @@ in
     cd mobile && ./gradlew :androidApp:installDemoDebug
     echo "3. Launching app (real mode — backend-driven)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
+    # Update active environment for shell prompt (direnv watches .env)
+    sed -i ''' 's/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT="dev"/' .env
     echo "✅ Done! Backend running, app installed and launched."
     echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
     echo "💡 For demo mode with fixtures: android:demo"
@@ -426,6 +428,8 @@ in
     cd mobile && ./gradlew :androidApp:installDemoDebug
     echo "3. Launching app (demo mode — fixtures)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
+    # Update active environment for shell prompt (direnv watches .env)
+    sed -i ''' 's/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT="demo"/' .env
     echo "✅ Done! App launched in demo mode with fixtures (no backend)."
     echo "💡 Switch scenario: android:revoked, android:expired, android:seller-only"
   '';
