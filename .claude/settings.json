@@ -1,10 +1,1 @@
-{
-  "permissions": {
-    "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "Bash(git *)"
-    ]
-  }
-}
+/nix/store/w42c1hgbfy9y5kyxidybrpbv07gyvanb--Users-hubertbehaghel-ws-veriff-cachet-.claude-settings.json
