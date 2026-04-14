@@ -17,7 +17,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -116,7 +116,7 @@ jobs:
         run: devenv shell -- android:build
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: demo-debug-apk
           path: mobile/androidApp/build/outputs/apk/demo/debug/*.apk
@@ -183,7 +183,7 @@ jobs:
           cp .env.ci .env
 
       - name: Download APK from Android job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: demo-debug-apk
           path: mobile/androidApp/build/outputs/apk/demo/debug/
@@ -218,7 +218,7 @@ jobs:
 
       - name: Upload BDD test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bdd-test-results
           path: mobile/androidApp/build/reports/androidTests/
