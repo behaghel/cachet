@@ -171,7 +171,7 @@ jobs:
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
         with:
-          cache-prefix: bdd
+          cache-prefix: android
           disk-threshold-gb: 8
           enable-android-cache: true
           enable-android-sdk: true
@@ -209,7 +209,7 @@ jobs:
           devenv shell -- bash -c '
             unset ANDROID_SDK_ROOT
             echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-            cd mobile && ./gradlew --no-daemon :androidApp:connectedDemoDebugAndroidTest
+            cd mobile && ./gradlew :androidApp:connectedDemoDebugAndroidTest
           ' || {
             echo "::warning::BDD scenarios failed (non-blocking until step definitions are complete)"
             exit 0
