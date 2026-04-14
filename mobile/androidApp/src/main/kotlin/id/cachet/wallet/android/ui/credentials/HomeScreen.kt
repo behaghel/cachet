@@ -248,7 +248,7 @@ private fun EmptyVault(onStartVerification: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         SealButton(
-            text = "Verify My Identity",
+            text = "Get your first cachet",
             onClick = onStartVerification
         )
 

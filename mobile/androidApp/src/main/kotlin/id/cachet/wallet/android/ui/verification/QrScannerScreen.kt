@@ -64,7 +64,7 @@ fun QrScannerScreen(
     ) { granted -> hasCameraPermission = granted }
 
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
+        if (!demoMode && !hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
@@ -75,7 +75,7 @@ fun QrScannerScreen(
             kotlinx.coroutines.delay(2000)
             if (!scanned) {
                 scanned = true
-                onCodeScanned("cachet://verify?request_uri=demo&pack=childcare")
+                onCodeScanned("demo://childcare")
             }
         }
     }

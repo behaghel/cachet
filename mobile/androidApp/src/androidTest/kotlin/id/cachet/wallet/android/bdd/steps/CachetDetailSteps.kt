@@ -2,6 +2,8 @@ package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -47,8 +49,7 @@ class CachetDetailSteps {
 
     @Then("each predicate shows its evaluation status")
     fun eachPredicateShowsItsEvaluationStatus() {
-        // Each predicate row has a ✓ indicator
-        rule.onNodeWithText("\u2713", substring = true).assertIsDisplayed()
+        rule.onAllNodesWithText("\u2713", substring = true).onFirst().assertIsDisplayed()
     }
 
     // AC-3: Credential metadata
@@ -68,28 +69,22 @@ class CachetDetailSteps {
     }
 
     // AC-4: Hardware-backed indicator
-    @Given("the credential {word} a hardware-backed signing key")
-    fun theCredentialHasAHardwareBackedSigningKey(hasHardware: String) {
-        // Navigation to the right detail is handled per scenario.
-        // "has" -> identity detail (has keyAlias)
-        // "does not have" -> childcare detail (no keyAlias)
-        when (hasHardware) {
-            "has" -> {
-                // Open identity detail which has keyAlias
-                rule.onNodeWithText("My Cachets").performClick()
-                rule.waitForIdle()
-                // Identity is the first card in happy scenario
-                rule.onNodeWithTag("cachet_card_0").performClick()
-                rule.waitForIdle()
-            }
-            "does" -> {
-                // "does not have" - open childcare detail (no keyAlias)
-                rule.onNodeWithText("My Cachets").performClick()
-                rule.waitForIdle()
-                rule.onNodeWithTag("cachet_card_1").performClick()
-                rule.waitForIdle()
-            }
-        }
+    @Given("the credential has a hardware-backed signing key")
+    fun theCredentialHasAHardwareBackedSigningKey() {
+        // Open identity detail which has keyAlias
+        rule.onNodeWithText("My Cachets").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithTag("cachet_card_0").performClick()
+        rule.waitForIdle()
+    }
+
+    @Given("the credential does not have a hardware-backed signing key")
+    fun theCredentialDoesNotHaveAHardwareBackedSigningKey() {
+        // Open childcare detail (no keyAlias)
+        rule.onNodeWithText("My Cachets").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithTag("cachet_card_1").performClick()
+        rule.waitForIdle()
     }
 
     @When("I view its cachet detail")
@@ -97,12 +92,14 @@ class CachetDetailSteps {
         rule.onNodeWithTag("cachet_detail_screen").assertIsDisplayed()
     }
 
-    @Then("I {word} the hardware-backed security indicator")
-    fun iSeeTheHardwareBackedSecurityIndicator(seeOrNot: String) {
-        when (seeOrNot) {
-            "see" -> rule.onNodeWithTag("hardware_indicator").assertIsDisplayed()
-            "do" -> rule.onNodeWithTag("hardware_indicator").assertDoesNotExist()
-        }
+    @Then("I see the hardware-backed security indicator")
+    fun iSeeTheHardwareBackedSecurityIndicator() {
+        rule.onNodeWithTag("hardware_indicator").assertIsDisplayed()
+    }
+
+    @Then("I do not see the hardware-backed security indicator")
+    fun iDoNotSeeTheHardwareBackedSecurityIndicator() {
+        rule.onNodeWithTag("hardware_indicator").assertDoesNotExist()
     }
 
     // AC-5: Freshness status

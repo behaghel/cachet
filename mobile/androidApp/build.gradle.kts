@@ -18,6 +18,7 @@ android {
         // CucumberTestRunner extends CucumberAndroidJUnitRunner extends AndroidJUnitRunner
         // — runs both Cucumber .feature scenarios and regular JUnit4 instrumented tests
         testInstrumentationRunner = "id.cachet.wallet.android.bdd.CucumberTestRunner"
+        testInstrumentationRunnerArguments["optionsAnnotationPackage"] = "id.cachet.wallet.android.bdd"
         vectorDrawables {
             useSupportLibrary = true
         }

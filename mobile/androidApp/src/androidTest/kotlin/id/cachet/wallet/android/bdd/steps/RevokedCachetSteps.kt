@@ -3,6 +3,9 @@ package id.cachet.wallet.android.bdd.steps
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import id.cachet.wallet.android.bdd.BddTestContext
@@ -57,8 +60,7 @@ class RevokedCachetSteps {
 
     @Then("the banner shows the revocation reason when available")
     fun theBannerShowsTheRevocationReason() {
-        // The revoked detail shows "Revoked" date in metadata
-        rule.onNodeWithText("Revoked").assertIsDisplayed()
+        rule.onAllNodesWithText("Revoked").onFirst().assertIsDisplayed()
     }
 
     // AC-3: Predicates no longer valid
@@ -70,8 +72,7 @@ class RevokedCachetSteps {
 
     @Then("each predicate is marked as no longer valid")
     fun eachPredicateIsMarkedAsNoLongerValid() {
-        // The predicates are still shown with ✓ but the overall status is REVOKED
-        rule.onNodeWithText("Revoked").assertIsDisplayed()
+        rule.onAllNodesWithText("Revoked").onFirst().assertIsDisplayed()
     }
 
     // AC-4: Re-acquisition CTA
@@ -79,7 +80,7 @@ class RevokedCachetSteps {
     fun iTapTheReAcquireAction() {
         // In the current UI, revoked detail doesn't have a specific re-acquire button
         // but we can navigate to pack picker via back + FAB
-        rule.onNodeWithText("Back", useUnmergedTree = true).performClick()
+        rule.onNodeWithContentDescription("Back").performClick()
         rule.waitForIdle()
         rule.onNodeWithTag("fab_get_cachet").performClick()
         rule.waitForIdle()
@@ -94,6 +95,7 @@ class RevokedCachetSteps {
     @Given("a credential with a StatusList2021 entry")
     fun aCredentialWithAStatusList2021Entry() {
         // The revoked scenario simulates StatusList2021 revocation
+        DemoFixtures.isDemoActive = true
         DemoFixtures.activeScenario = ScenarioRegistry.get("revoked")
         rule.activityRule.scenario.recreate()
         rule.waitForIdle()
