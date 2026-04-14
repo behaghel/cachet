@@ -74,8 +74,18 @@ api/openapi.*.yaml
 
 # Claude Code (local overrides, agent worktrees, plans)
 .claude/settings.local.json
+.claude/settings.json
 .claude/worktrees/
 .claude/plans/
+# Nix-generated symlinks (devenv manages these via claude.code.*)
+.claude/agents/
+.claude/commands/
+.claude/skills/devenv-project
+.claude/skills/domain-navigator
+.claude/skills/spec-collector
+.claude/skills/spec-verifier
+.claude/skills/story-writer
+.claude/skills/tdd-planner
 
 # DevEnv
 .devenv/

@@ -10,7 +10,7 @@ let
 
   # Agent marketplace — declarative plugin management for Claude Code
   mp = import (inputs.agent-marketplace + "/marketplace/lib.nix") { inherit lib; };
-  devenvWorkflow = mp.select [ "devenv-workflow" ];
+  allPlugins = mp.select [ "devenv-workflow" "spec-driven" "spec-tdd" "domain-tree" "ux-stories" ];
 in
 {
     
@@ -24,7 +24,11 @@ in
   claude.code.hooks = mp.hooks // {
     git-hooks-run.enable = false; # pre-commit runs at commit time via git hooks, not on every edit
   };
-  claude.code.commands = devenvWorkflow.commands;
+  claude.code.commands = allPlugins.commands;
+  claude.code.agents = lib.mapAttrs (name: prompt: {
+    description = "${name} agent";
+    inherit prompt;
+  }) allPlugins.agents;
   claude.code.mcpServers.devenv = mp.mcpServers.devenv;
 
   # Enable Veriff plugins for Claude Code (project-level settings.json is a Nix store symlink,
@@ -51,21 +55,15 @@ in
         }
       ];
     };
-    enabledPlugins = {
-      "spec-driven@veriff-plugins" = true;
-      "spec-tdd@veriff-plugins" = true;
-      "domain-tree@veriff-plugins" = true;
-      "ux-stories@veriff-plugins" = true;
-    };
-    extraKnownMarketplaces = {
-      veriff-plugins = {
-        source = {
-          source = "git";
-          url = "git@github.com:Veriff/claude-plugins.git";
-        };
-      };
-    };
   };
+
+  # Symlink all marketplace plugin skills into .claude/skills/
+  files."${config.devenv.root}/.claude/skills/devenv-project".source = allPlugins.skills.devenv-project;
+  files."${config.devenv.root}/.claude/skills/domain-navigator".source = allPlugins.skills.domain-navigator;
+  files."${config.devenv.root}/.claude/skills/spec-collector".source = allPlugins.skills.spec-collector;
+  files."${config.devenv.root}/.claude/skills/spec-verifier".source = allPlugins.skills.spec-verifier;
+  files."${config.devenv.root}/.claude/skills/story-writer".source = allPlugins.skills.story-writer;
+  files."${config.devenv.root}/.claude/skills/tdd-planner".source = allPlugins.skills.tdd-planner;
 
   # Android SDK + emulator (optional, heavy — ~2GB)
   # Enable with: export DEVENV_ENABLE_ANDROID=1
