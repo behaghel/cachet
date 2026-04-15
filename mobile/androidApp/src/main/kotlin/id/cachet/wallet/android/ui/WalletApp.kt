@@ -25,6 +25,7 @@ import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.android.ui.onboarding.OnboardingScreen
 import id.cachet.wallet.android.ui.theme.*
 import id.cachet.wallet.android.ui.verification.CachetResultScreen
+import id.cachet.wallet.android.ui.verification.DeepLinkExpiredScreen
 import id.cachet.wallet.android.ui.verification.IncomingRequestScreen
 import id.cachet.wallet.android.ui.verification.PackPickerMode
 import id.cachet.wallet.android.ui.verification.PackPickerScreen
@@ -62,6 +63,7 @@ sealed class OverlayScreen {
     data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
     data class CachetDetail(val detail: CachetDetailUi) : OverlayScreen()
     data object QrScanner : OverlayScreen()
+    data object DeepLinkExpired : OverlayScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,6 +120,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
             val request = viewModel.resolveDeepLink(deepLinkUri)
             if (request != null) {
                 overlay = OverlayScreen.IncomingRequest(request)
+            } else {
+                overlay = OverlayScreen.DeepLinkExpired
             }
         }
     }
@@ -298,6 +302,10 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     overlay = null
                     selectedTab = 1 // Activity tab
                 }
+            )
+            is OverlayScreen.DeepLinkExpired -> DeepLinkExpiredScreen(
+                onBackToVault = { overlay = null; qrPayload = "" },
+                onScanQr = { overlay = OverlayScreen.QrScanner }
             )
         }
         return
