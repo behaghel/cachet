@@ -110,6 +110,10 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
     // -- Deep link handling --
     LaunchedEffect(deepLinkUri) {
         if (deepLinkUri != null && deepLinkUri.startsWith("cachet://")) {
+            if (uiState is WalletUiState.Empty) {
+                // No identity cachet — stay on empty vault with identity prompt
+                return@LaunchedEffect
+            }
             qrPayload = deepLinkUri
             val request = viewModel.resolveDeepLink(deepLinkUri)
             if (request != null) {
