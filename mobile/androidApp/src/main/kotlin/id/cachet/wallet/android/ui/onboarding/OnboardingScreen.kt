@@ -88,7 +88,8 @@ fun OnboardingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, start = 24.dp, end = 24.dp)
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, start = 24.dp, end = 24.dp)
             ) {
                 // Pronunciation — discrete, docked top-left on cachets page
                 if (page.pronunciation != null) {
@@ -222,7 +223,9 @@ fun OnboardingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier
+                .navigationBarsPadding()
+                .height(8.dp))
         }
     }
 }
