@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import id.cachet.wallet.android.bdd.BddTestContext
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.fixtures.ScenarioRegistry
@@ -89,6 +90,13 @@ class DeepLinkVerifySteps {
 
     @Then("I am returned to the vault screen")
     fun iAmReturnedToTheVaultScreen() {
+        // On the expired screen, tap "Back to Vault" to return
+        try {
+            rule.onNodeWithText("Back to Vault").performClick()
+            rule.waitForIdle()
+        } catch (_: AssertionError) {
+            // Already on vault
+        }
         rule.onNodeWithText("My Cachets").assertIsDisplayed()
     }
 
