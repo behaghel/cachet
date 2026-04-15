@@ -211,6 +211,22 @@ class WalletViewModel(
         return if (end < 0) qrPayload.substring(start) else qrPayload.substring(start, end)
     }
 
+    /**
+     * Resolve a cachet:// deep link to a VerificationRequest.
+     * In demo mode, maps the `pack` param to the fixture request.
+     * In prod mode, fetches from the relay via `request_uri`.
+     */
+    suspend fun resolveDeepLink(uri: String): VerificationRequest? {
+        if (demoMode) {
+            val packParam = parseQrParam(uri, "pack") ?: return null
+            val pack = DemoFixtures.cachPacks.firstOrNull { it.id.contains(packParam, ignoreCase = true) }
+                ?: DemoFixtures.cachPacks.firstOrNull { it.cachetType.name.equals(packParam, ignoreCase = true) }
+                ?: return null
+            return CachPackMapper.toVerificationRequest(pack)
+        }
+        return fetchRequestFromRelay(uri)
+    }
+
     private fun parseRequestUri(qrPayload: String): String? = parseQrParam(qrPayload, "request_uri")
     private fun parseVerifierPubKey(qrPayload: String): String? = parseQrParam(qrPayload, "vk")
 
@@ -378,13 +394,23 @@ class WalletViewModel(
      */
     fun startIdentityVerification() {
         if (demoMode) {
+            // Use identity from active scenario, or synthesize one for empty vault
             val identity = DemoFixtures.credentials.firstOrNull { it.cachetType == CachetType.IDENTITY }
-            if (identity != null) {
-                _uiState.value = WalletUiState.HasCredentials(
-                    credentials = listOf(identity),
-                    vaultSummary = VaultSummaryUi(totalCount = 1, verifiedCount = 1, pendingCount = 0)
+                ?: CredentialCardUi(
+                    localId = "demo-identity",
+                    displayName = "Identity",
+                    issuerLine = "Issued by Veriff",
+                    freshnessLabel = "now",
+                    isRevoked = false,
+                    cachetType = CachetType.IDENTITY,
+                    trustStatus = TrustStatus.VERIFIED,
+                    predicates = listOf("Age 18+", "ID Verified", "Liveness", "Nationality"),
+                    sharesSummary = ""
                 )
-            }
+            _uiState.value = WalletUiState.HasCredentials(
+                credentials = listOf(identity),
+                vaultSummary = VaultSummaryUi(totalCount = 1, verifiedCount = 1, pendingCount = 0)
+            )
             return
         }
         startVeriffVerification()
