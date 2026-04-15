@@ -57,6 +57,17 @@ class CommonSteps {
     // Demo mode & scenario loading
     // ────────────────────────────────────────
 
+    @Given("the app is launched")
+    fun theAppIsLaunched() {
+        // Default: demo mode with happy scenario (BDD tests always use demo)
+        DemoFixtures.isDemoActive = true
+        DemoFixtures.activeScenario = ScenarioRegistry.get("happy")
+        composeTestRule.activityRule.scenario.recreate()
+        composeTestRule.waitForIdle()
+        Thread.sleep(500)
+        composeTestRule.waitForIdle()
+    }
+
     @Given("the app is launched in demo mode")
     fun theAppIsLaunchedInDemoMode() {
         DemoFixtures.isDemoActive = true

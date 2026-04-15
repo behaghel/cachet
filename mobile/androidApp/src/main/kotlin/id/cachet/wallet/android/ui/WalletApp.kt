@@ -111,7 +111,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
     LaunchedEffect(deepLinkUri) {
         if (deepLinkUri != null && deepLinkUri.startsWith("cachet://")) {
             qrPayload = deepLinkUri
-            val request = viewModel.fetchRequestFromRelay(deepLinkUri)
+            val request = viewModel.resolveDeepLink(deepLinkUri)
             if (request != null) {
                 overlay = OverlayScreen.IncomingRequest(request)
             }
