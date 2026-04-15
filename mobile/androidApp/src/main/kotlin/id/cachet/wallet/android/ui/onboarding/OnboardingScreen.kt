@@ -81,16 +81,14 @@ fun OnboardingScreen(
         color = BrandPrimary
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // ── Top bar: pronunciation (left) + Skip (right) ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp, start = 24.dp, end = 24.dp)
             ) {
                 // Pronunciation — discrete, docked top-left on cachets page
                 if (page.pronunciation != null) {
@@ -136,19 +134,30 @@ fun OnboardingScreen(
             // ── Swipeable page content ──
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) { pageIndex ->
                 val p = pages[pageIndex]
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Illustration
-                    when (pageIndex) {
-                        0 -> DemandTrustIllustration()
-                        1 -> BrandShieldMark(size = 160.dp)
-                        2 -> CachetCardsIllustration()
-                        3 -> ReceiptListIllustration()
+                    // Illustration — consistent 200dp height for smooth transitions
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (pageIndex) {
+                            0 -> DemandTrustIllustration()
+                            1 -> BrandShieldMark(size = 160.dp)
+                            2 -> CachetCardsIllustration()
+                            3 -> ReceiptListIllustration()
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(0.3f))
@@ -200,16 +209,18 @@ fun OnboardingScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // ── CTA ──
-            SealButton(
-                text = page.ctaLabel,
-                onClick = {
-                    if (currentPage < pages.lastIndex) {
-                        scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
-                    } else {
-                        onComplete()
+            Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                SealButton(
+                    text = page.ctaLabel,
+                    onClick = {
+                        if (currentPage < pages.lastIndex) {
+                            scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                        } else {
+                            onComplete()
+                        }
                     }
-                }
-            )
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -294,8 +305,10 @@ private fun CachetCardsIllustration() {
 @Composable
 private fun ReceiptListIllustration() {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
     ) {
         ReceiptMockRow(CachetType.CHILDCARE, "Childcare check — Mar 15", "Parents Association", "Logged", BrandAccent)
         ReceiptMockRow(CachetType.AGE, "Age verification — Mar 12", "Concert venue", "Logged", BrandAccent)
