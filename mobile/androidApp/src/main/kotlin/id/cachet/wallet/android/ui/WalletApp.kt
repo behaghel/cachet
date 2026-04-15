@@ -222,7 +222,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                 request = screen.request,
                 onShare = {
                     scope.launch {
-                        if (qrPayload.startsWith("cachet://")) {
+                        if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
                             viewModel.holderRespondViaRelay(qrPayload)
                             val result = viewModel.awaitVerifierResult()
                             overlay = OverlayScreen.CachetResultOverlay(result)
@@ -230,6 +230,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         } else {
                             val result = viewModel.shareCredential(screen.request)
                             overlay = OverlayScreen.CachetResultOverlay(result)
+                            qrPayload = ""
                         }
                     }
                 },

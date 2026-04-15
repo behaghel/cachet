@@ -89,7 +89,12 @@ class DeepLinkVerifySteps {
 
     @Then("I am returned to the vault screen")
     fun iAmReturnedToTheVaultScreen() {
-        // After dismissing the error, user should be on the vault
+        rule.onNodeWithText("My Cachets").assertIsDisplayed()
+    }
+
+    @Then("I return to the vault screen and no credentials are shared")
+    fun iReturnToTheVaultScreenAndNoCredentialsAreShared() {
+        rule.waitForIdle()
         rule.onNodeWithText("My Cachets").assertIsDisplayed()
     }
 
