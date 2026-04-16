@@ -30,6 +30,16 @@ in
     inherit prompt;
   }) allPlugins.agents;
   claude.code.mcpServers.devenv = mp.mcpServers.devenv;
+  claude.code.mcpServers.android = {
+    command = "${pkgs.uv}/bin/uv";
+    args = [
+      "run"
+      "--directory"
+      "/Users/hubertbehaghel/.local/share/android-mcp-server"
+      "server.py"
+    ];
+    type = "stdio";
+  };
 
   # Enable Veriff plugins for Claude Code (project-level settings.json is a Nix store symlink,
   # so /plugin install can't write to it — declare plugins here instead)
@@ -103,6 +113,7 @@ in
     jq
     openssl
     secretspec
+    uv  # Python package manager — needed for Android MCP server
   ];
 
   # Fixed port env vars — must match the PORT= values in process exec commands above
