@@ -130,7 +130,7 @@ class VerificationActivityIntegrationTest {
             veriffService = NoOpVeriffService(),
             consentUseCase = consentUseCase,
             verificationUseCase = verificationUseCase,
-            demoMode = true,
+            demoModeParam = true,
             demoEmpty = false
         )
         return Triple(vm, verifierClient, receiptRepo)
@@ -230,7 +230,7 @@ class VerificationActivityIntegrationTest {
                 verificationUseCase = VerificationUseCase(
                     credRepo, ConfigurableVerifierClient(), ConfigurableRelayClient(), consentUseCase
                 ),
-                demoMode = true,
+                demoModeParam = true,
                 demoEmpty = false
             )
 

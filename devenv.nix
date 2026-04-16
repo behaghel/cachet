@@ -35,7 +35,8 @@ in
         "Read"
         "Glob"
         "Grep"
-        "Bash(git *)"
+        "Bash(git:*)"
+        "Bash(gh:*)"
       ];
     };
     hooks = {
