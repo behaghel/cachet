@@ -85,11 +85,15 @@ fun OnboardingScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // ── Top bar: pronunciation (left) + Skip (right) ──
+            // Fixed height so pronunciation appearing/disappearing
+            // doesn't resize the pager and cause a layout shift.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(top = 8.dp, start = 24.dp, end = 24.dp)
+                    .height(40.dp)
+                    .padding(start = 24.dp, end = 24.dp),
+                contentAlignment = Alignment.Center
             ) {
                 // Pronunciation — discrete, docked top-left on cachets page
                 if (page.pronunciation != null) {
@@ -130,8 +134,6 @@ fun OnboardingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.2f))
-
             // ── Swipeable page content ──
             HorizontalPager(
                 state = pagerState,
@@ -140,13 +142,17 @@ fun OnboardingScreen(
                     .weight(1f)
             ) { pageIndex ->
                 val p = pages[pageIndex]
+                // Fixed-height sections so all pages have identical geometry.
+                // Weighted spacers are avoided — they cause layout shifts
+                // when text content has different intrinsic heights.
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    // Illustration — consistent 200dp height for smooth transitions
+                    // Illustration
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -161,27 +167,39 @@ fun OnboardingScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(0.3f))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     // Title
-                    Text(
-                        text = p.title,
-                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 28.sp),
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = p.title,
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 28.sp),
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Description
-                    Text(
-                        text = p.description,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
-                        color = Color(0xFF94A3B8),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = p.description,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+                            color = Color(0xFF94A3B8),
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -191,8 +209,6 @@ fun OnboardingScreen(
                         title = p.keyTitle,
                         subtitle = p.keySubtitle
                     )
-
-                    Spacer(modifier = Modifier.weight(0.4f))
                 }
             }
 
