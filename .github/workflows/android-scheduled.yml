@@ -78,7 +78,7 @@ jobs:
             exit 0
           }
           echo "started=true" >> "$GITHUB_OUTPUT"
-        timeout-minutes: 10
+        timeout-minutes: 12
 
       - name: Run BDD scenarios
         if: steps.emulator.outputs.started == 'true'
