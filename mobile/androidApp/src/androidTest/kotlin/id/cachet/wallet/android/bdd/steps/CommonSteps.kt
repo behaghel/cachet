@@ -48,6 +48,8 @@ class CommonSteps {
     fun resetScenario() {
         DemoFixtures.isDemoActive = false
         DemoFixtures.activeScenario = ScenarioRegistry.get("happy")
+        DemoFixtures.overrideScanPack = null
+        DemoFixtures.livenessResult = DemoFixtures.LivenessResult.NONE
         InstrumentationRegistry.getInstrumentation().targetContext
             .getSharedPreferences("cachet_wallet", Context.MODE_PRIVATE)
             .edit().clear().apply()
