@@ -323,8 +323,18 @@ in
       adb devices -l
       exit 1
     fi
-    # Wait for full boot
-    adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done' 2>/dev/null
+    # Wait for full boot (timeout after 360s — successful boots take ~5-6min)
+    echo "Waiting for boot_completed..."
+    BOOT_TIMEOUT=360
+    BOOT_WAITED=0
+    while [ -z "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" ]; do
+      if [ "$BOOT_WAITED" -ge "$BOOT_TIMEOUT" ]; then
+        echo "❌ Emulator boot timed out after ''${BOOT_TIMEOUT}s"
+        exit 1
+      fi
+      sleep 2
+      BOOT_WAITED=$((BOOT_WAITED + 2))
+    done
     echo "✅ Android emulator ready"
   '';
   scripts."android:build".exec = ''
