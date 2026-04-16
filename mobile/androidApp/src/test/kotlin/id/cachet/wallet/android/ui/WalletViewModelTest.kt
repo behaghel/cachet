@@ -65,7 +65,7 @@ class WalletViewModelTest {
             veriffService = veriffService,
             consentUseCase = consentUseCase,
             verificationUseCase = verificationUseCase,
-            demoMode = false,
+            demoModeParam = false,
             demoEmpty = demoEmpty
         )
     }
@@ -117,7 +117,7 @@ class WalletViewModelTest {
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
             consentUseCase = ConsentUseCase(credRepo, InMemoryConsentReceiptRepository(), MockTransparencyLogRepository()),
             verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), ConsentUseCase(credRepo, InMemoryConsentReceiptRepository(), MockTransparencyLogRepository())),
-            demoMode = true,
+            demoModeParam = true,
             demoEmpty = false
         )
 
@@ -187,7 +187,7 @@ class WalletViewModelTest {
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
             consentUseCase = consentUseCase,
             verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
-            demoMode = true,
+            demoModeParam = true,
             demoEmpty = false
         )
 
@@ -225,7 +225,7 @@ class WalletViewModelTest {
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
             consentUseCase = consentUseCase,
             verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
-            demoMode = true,
+            demoModeParam = true,
             demoEmpty = false
         )
 

@@ -134,7 +134,7 @@ class VerificationUseCase(
         val payloadJson = decodeBase64Url(payloadPart).decodeToString()
         val unverified = Json.parseToJsonElement(payloadJson).jsonObject
         val clientId = unverified["client_id"]?.jsonPrimitive?.content
-            ?: throw SecurityException("Missing client_id in request object")
+            ?: throw IllegalStateException("Missing client_id in request object")
 
         // Extract kid from JWS header
         val headerPart = jwsCompact.split(".")[0]
@@ -143,7 +143,7 @@ class VerificationUseCase(
         val kid = header["kid"]?.jsonPrimitive?.content
 
         // Resolve verifier DID to public key
-        val resolver = didResolver ?: throw SecurityException("DID resolver not configured")
+        val resolver = didResolver ?: throw IllegalStateException("DID resolver not configured")
         val publicKeyJWK = resolver.resolvePublicKeyJWK(clientId, kid)
 
         // Verify JWS signature
