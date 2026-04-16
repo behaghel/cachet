@@ -10,7 +10,6 @@ import id.cachet.wallet.domain.model.VerifiableCredential
  * it means demo code leaked into a non-demo code path.
  */
 object DemoFixtures {
-    @Volatile
     var isDemoActive: Boolean
         get() = false
         set(_) = error("Demo not available in production")
@@ -31,7 +30,19 @@ object DemoFixtures {
     val ageRequest: VerificationRequest get() = error("Demo not available in production")
     val qrShareState: QrShareState get() = error("Demo not available in production")
 
+    var overrideScanPack: CachPackUi?
+        get() = null
+        set(_) = error("Demo not available in production")
+
+    enum class LivenessResult { PASS, FAIL, NONE }
+    var livenessResult: LivenessResult
+        get() = LivenessResult.NONE
+        set(_) = error("Demo not available in production")
+
+    val effectiveScanPack: CachPackUi get() = error("Demo not available in production")
+
     fun detailFor(localId: String): CachetDetailUi? = error("Demo not available in production")
     fun packForType(type: CachetType): CachPackUi = error("Demo not available in production")
     fun shouldPass(request: VerificationRequest): Boolean = error("Demo not available in production")
+    fun requiresLiveness(type: CachetType): Boolean = false
 }

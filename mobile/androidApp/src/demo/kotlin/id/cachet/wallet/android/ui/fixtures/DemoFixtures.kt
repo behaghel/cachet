@@ -23,6 +23,15 @@ object DemoFixtures {
     /** The active scenario. Set once during app init before any composable reads it. */
     var activeScenario: DemoScenario = HappyPathScenario
 
+    /** Override which pack the QR scanner demo uses. null = use scenario default. */
+    @Volatile
+    var overrideScanPack: CachPackUi? = null
+
+    /** Liveness result for demo mode. Set by BDD tests before triggering liveness. */
+    enum class LivenessResult { PASS, FAIL, NONE }
+    @Volatile
+    var livenessResult: LivenessResult = LivenessResult.NONE
+
     /** Synthetic credential for consent receipt generation when no real credential is in the repo. */
     val syntheticCredential = VerifiableCredential(
         id = "urn:demo:synthetic",
@@ -57,6 +66,18 @@ object DemoFixtures {
     /** Delegate pass/fail decision to the active scenario. */
     fun shouldPass(request: VerificationRequest): Boolean =
         activeScenario.shouldPass(request)
+
+    /** The pack to use for the next QR demo scan (override or scenario default). */
+    val effectiveScanPack: CachPackUi
+        get() = overrideScanPack ?: activeScenario.defaultScanPack
+
+    /** Per-CachPack liveness policy: high-value packs require liveness, low-value skip. */
+    fun requiresLiveness(type: CachetType): Boolean = when (type) {
+        CachetType.CHILDCARE -> true
+        CachetType.SELLER -> true
+        CachetType.IDENTITY -> true
+        CachetType.AGE -> false
+    }
 
     // -- Static overlay fixtures (not scenario-dependent) --
 

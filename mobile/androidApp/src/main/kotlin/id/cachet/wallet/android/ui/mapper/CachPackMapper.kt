@@ -105,4 +105,12 @@ object CachPackMapper {
         CachetType.AGE -> "Age Verified"
         CachetType.IDENTITY -> "Identity Verified"
     }
+
+    /** User-facing pack name for the liveness explanation screen. */
+    fun cachetDisplayName(type: CachetType): String = when (type) {
+        CachetType.CHILDCARE -> "Childcare Readiness"
+        CachetType.SELLER -> "Safe Seller"
+        CachetType.AGE -> "Age Verification"
+        CachetType.IDENTITY -> "Identity Verification"
+    }
 }

@@ -27,6 +27,8 @@ import id.cachet.wallet.android.ui.theme.*
 import id.cachet.wallet.android.ui.verification.CachetResultScreen
 import id.cachet.wallet.android.ui.verification.DeepLinkExpiredScreen
 import id.cachet.wallet.android.ui.verification.IncomingRequestScreen
+import id.cachet.wallet.android.ui.verification.LivenessCheckScreen
+import id.cachet.wallet.android.ui.verification.LivenessFailedScreen
 import id.cachet.wallet.android.ui.verification.PackPickerMode
 import id.cachet.wallet.android.ui.verification.PackPickerScreen
 import id.cachet.wallet.android.ui.verification.QrScannerScreen
@@ -60,6 +62,8 @@ sealed class OverlayScreen {
         val pack: CachPackUi
     ) : OverlayScreen()
     data class IncomingRequest(val request: VerificationRequest) : OverlayScreen()
+    data class LivenessCheck(val request: VerificationRequest) : OverlayScreen()
+    data class LivenessFailed(val request: VerificationRequest) : OverlayScreen()
     data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
     data class CachetDetail(val detail: CachetDetailUi) : OverlayScreen()
     data object QrScanner : OverlayScreen()
@@ -162,10 +166,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     if (relayQr == null) {
                         // Relay unavailable -- fall back to demo auto-transition
                         if (effectiveDemoMode) {
-                            qrPayload = packToQrPayload(screen.pack)
+                            val effectivePack = DemoFixtures.overrideScanPack ?: screen.pack
+                            qrPayload = packToQrPayload(effectivePack)
                             kotlinx.coroutines.delay(4000)
                             overlay = OverlayScreen.IncomingRequest(
-                                CachPackMapper.toVerificationRequest(screen.pack)
+                                CachPackMapper.toVerificationRequest(effectivePack)
                             )
                             return@LaunchedEffect
                         }
@@ -229,21 +234,56 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
             is OverlayScreen.IncomingRequest -> IncomingRequestScreen(
                 request = screen.request,
                 onShare = {
-                    scope.launch {
-                        if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
-                            viewModel.holderRespondViaRelay(qrPayload)
-                            val result = viewModel.awaitVerifierResult()
-                            overlay = OverlayScreen.CachetResultOverlay(result)
-                            qrPayload = ""
-                        } else {
-                            val result = viewModel.shareCredential(screen.request)
-                            overlay = OverlayScreen.CachetResultOverlay(result)
-                            qrPayload = ""
+                    // Liveness gate: high-value packs require identity confirmation
+                    val needsLiveness = effectiveDemoMode &&
+                        DemoFixtures.requiresLiveness(screen.request.cachetType)
+                    if (needsLiveness) {
+                        overlay = OverlayScreen.LivenessCheck(screen.request)
+                    } else {
+                        scope.launch {
+                            if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
+                                viewModel.holderRespondViaRelay(qrPayload)
+                                val result = viewModel.awaitVerifierResult()
+                                overlay = OverlayScreen.CachetResultOverlay(result)
+                                qrPayload = ""
+                            } else {
+                                val result = viewModel.shareCredential(screen.request)
+                                overlay = OverlayScreen.CachetResultOverlay(result)
+                                qrPayload = ""
+                            }
                         }
                     }
                 },
                 onDecline = { overlay = null; qrPayload = "" },
                 onClose = { overlay = null; qrPayload = "" }
+            )
+            is OverlayScreen.LivenessCheck -> {
+                val packName = CachPackMapper.cachetDisplayName(screen.request.cachetType)
+                LivenessCheckScreen(
+                    packName = packName,
+                    onSimulatePass = {
+                        scope.launch {
+                            val result = viewModel.shareCredential(screen.request)
+                            overlay = OverlayScreen.CachetResultOverlay(result)
+                            qrPayload = ""
+                        }
+                    },
+                    onSimulateFail = {
+                        overlay = OverlayScreen.LivenessFailed(screen.request)
+                    },
+                    onCancel = {
+                        overlay = OverlayScreen.IncomingRequest(screen.request)
+                    }
+                )
+            }
+            is OverlayScreen.LivenessFailed -> LivenessFailedScreen(
+                onRetry = {
+                    overlay = OverlayScreen.LivenessCheck(screen.request)
+                },
+                onCancel = {
+                    overlay = null
+                    qrPayload = ""
+                }
             )
             is OverlayScreen.CachetResultOverlay -> CachetResultScreen(
                 result = screen.result,
@@ -271,9 +311,9 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                             }
                         }
                     } else {
-                        // Demo fallback
+                        // Demo fallback — use override pack if set, else first
                         overlay = OverlayScreen.IncomingRequest(
-                            CachPackMapper.toVerificationRequest(DemoFixtures.cachPacks.first())
+                            CachPackMapper.toVerificationRequest(DemoFixtures.effectiveScanPack)
                         )
                     }
                 },
