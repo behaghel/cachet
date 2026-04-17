@@ -3,9 +3,20 @@
     SCREEN 3b (failure): Liveness Failed
     On the HOLDER's phone — the Veriff liveness check did not pass.
     Holder can retry or cancel. No KB-JWT was signed; nothing was shared.
+
+    Design tokens (from Color.kt):
+      BrandPrimaryDark    #0F172A   background
+      BrandPrimary        #1E293B   card bg, failure icon bg
+      BrandAccent         #10B981   completed step
+      BrandWarm           #F97068   failure step, failure icon X, cancel text
+      TrustRevokedBorder  #FCA5A5   failure step glow
+      TrustRevokedText    #B91C1C   failure icon border (dark coral)
+      SurfaceBorderDark   #334155   connectors, card border, pending step
+      TextSecondaryDark   #A8A29E   body text, tips
+      TextOnBrand         #FFFFFF   headings, step icons, button text
   -->
 
-  <!-- Phone background — dark -->
+  <!-- Phone background — BrandPrimaryDark -->
   <rect width="375" height="812" rx="40" fill="#0F172A"/>
 
   <!-- Status bar -->
@@ -13,43 +24,45 @@
   <circle cx="320" cy="48" r="4" fill="#10B981"/>
   <rect x="332" y="44" width="20" height="8" rx="2" fill="#FFFFFF"/>
 
-  <!-- Back arrow -->
-  <text x="30" y="95" font-family="Inter, sans-serif" font-size="20" fill="#94A3B8">&#x2190;</text>
+  <!-- Top bar: Back arrow (left) + Close X (right) -->
+  <text x="30" y="95" font-family="Inter, sans-serif" font-size="20" fill="#A8A29E">&#x2190;</text>
+  <text x="340" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="500" fill="#A8A29E">&#x2715;</text>
 
   <!-- Step indicator: Consent [done] > Liveness [failed] > Result [pending] -->
   <circle cx="148" cy="90" r="8" fill="#10B981"/>
   <text x="148" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF">&#x2713;</text>
   <line x1="156" y1="90" x2="181" y2="90" stroke="#334155" stroke-width="2"/>
-  <circle cx="188" cy="90" r="8" fill="#EF4444" stroke="#F87171" stroke-width="2"/>
+  <!-- Failed step: BrandWarm fill + TrustRevokedBorder glow -->
+  <circle cx="188" cy="90" r="8" fill="#F97068" stroke="#FCA5A5" stroke-width="2"/>
   <text x="188" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF">!</text>
   <line x1="196" y1="90" x2="221" y2="90" stroke="#334155" stroke-width="2"/>
   <circle cx="228" cy="90" r="8" fill="#334155"/>
 
-  <!-- Failure icon — large circle with X -->
-  <circle cx="188" cy="280" r="80" fill="#1E293B" stroke="#7F1D1D" stroke-width="2"/>
-  <circle cx="188" cy="280" r="60" fill="#450A0A" opacity="0.5"/>
-  <path d="M 168 260 L 208 300" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
-  <path d="M 208 260 L 168 300" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
+  <!-- Failure icon — large circle with X (BrandWarm palette) -->
+  <circle cx="188" cy="280" r="80" fill="#1E293B" stroke="#B91C1C" stroke-width="2"/>
+  <circle cx="188" cy="280" r="60" fill="#450A0A" opacity="0.3"/>
+  <path d="M 168 260 L 208 300" stroke="#F97068" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 208 260 L 168 300" stroke="#F97068" stroke-width="5" stroke-linecap="round"/>
 
   <!-- Failure text -->
-  <text x="188" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">We couldn't confirm it's you</text>
-  <text x="188" y="432" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#94A3B8">The identity check didn't pass.</text>
-  <text x="188" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#94A3B8">No credentials were shared.</text>
+  <text x="188" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">We couldn&#x2019;t confirm it&#x2019;s you</text>
+  <text x="188" y="432" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#A8A29E">The identity check didn&#x2019;t pass.</text>
+  <text x="188" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#A8A29E">No credentials were shared.</text>
 
-  <!-- What to try -->
+  <!-- Tips card (BrandPrimary bg, SurfaceBorderDark stroke) -->
   <rect x="32" y="484" width="311" height="130" rx="16" fill="#1E293B" stroke="#334155" stroke-width="1"/>
   <text x="52" y="514" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Tips for next time</text>
 
-  <text x="52" y="540" font-family="Inter, sans-serif" font-size="12" fill="#94A3B8">&#x2022;  Make sure your face is well-lit</text>
-  <text x="52" y="560" font-family="Inter, sans-serif" font-size="12" fill="#94A3B8">&#x2022;  Remove sunglasses or face coverings</text>
-  <text x="52" y="580" font-family="Inter, sans-serif" font-size="12" fill="#94A3B8">&#x2022;  Look straight at the camera, at eye level</text>
-  <text x="52" y="600" font-family="Inter, sans-serif" font-size="12" fill="#94A3B8">&#x2022;  Look as you did when you set up your ID</text>
+  <text x="52" y="540" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">&#x2022;  Make sure your face is well-lit</text>
+  <text x="52" y="560" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">&#x2022;  Remove sunglasses or face coverings</text>
+  <text x="52" y="580" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">&#x2022;  Look straight at the camera, at eye level</text>
+  <text x="52" y="600" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">&#x2022;  Look as you did when you set up your ID</text>
 
-  <!-- Retry button (primary) -->
+  <!-- Retry button — SealButton style (BrandAccent, 56dp height, 28dp radius) -->
   <rect x="32" y="648" width="311" height="56" rx="28" fill="#10B981"/>
   <text x="188" y="682" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Try Again</text>
 
-  <!-- Cancel button -->
+  <!-- Cancel button (BrandWarm text, no border) -->
   <rect x="32" y="716" width="311" height="44" rx="22" fill="none"/>
   <text x="188" y="743" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Cancel verification</text>
 </svg>
