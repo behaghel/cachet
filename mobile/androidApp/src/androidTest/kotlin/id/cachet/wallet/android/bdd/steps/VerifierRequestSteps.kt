@@ -1,12 +1,15 @@
 package id.cachet.wallet.android.bdd.steps
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import id.cachet.wallet.android.bdd.BddTestContext
+import id.cachet.wallet.android.bdd.BddTestContext.Companion.passLivenessIfNeeded
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
@@ -73,9 +76,15 @@ class VerifierRequestSteps {
 
     @When("a holder scans and completes the verification")
     fun aHolderScansAndCompletesTheVerification() {
-        // In demo mode, the flow auto-transitions after a delay
-        Thread.sleep(5000) // Wait for demo auto-transition
-        rule.waitForIdle()
+        // In demo mode, the QR share screen auto-transitions to IncomingRequest after ~4s
+        rule.waitUntil(timeoutMillis = 10000) {
+            rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
+        // Simulate the holder accepting and completing the flow
+        val verifyBtn = rule.onNodeWithText("Verify & Share")
+        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
+        verifyBtn.performClick()
+        passLivenessIfNeeded(rule)
     }
 
     @Then("the session status updates")

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import id.cachet.wallet.android.bdd.BddTestContext
+import id.cachet.wallet.android.bdd.BddTestContext.Companion.passLivenessIfNeeded
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
@@ -101,9 +102,7 @@ class ScanToVerifySteps {
     // AC-5: Consent decision
     @Then("the verification is performed and I see the Verification Result screen")
     fun theVerificationIsPerformedAndISeeTheResult() {
-        rule.waitUntil(timeoutMillis = 10000) {
-            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
-        }
+        BddTestContext.passLivenessIfNeeded(rule)
         rule.onNodeWithTag("verification_result").assertIsDisplayed()
     }
 

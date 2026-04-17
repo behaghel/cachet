@@ -3,6 +3,7 @@ package id.cachet.wallet.android.bdd.steps
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import id.cachet.wallet.android.bdd.BddTestContext
@@ -88,6 +89,6 @@ class FirstLaunchSteps {
 
     @Then("the step indicator shows {string}")
     fun theStepIndicatorShows(progress: String) {
-        rule.onNodeWithText(progress, substring = true).assertIsDisplayed()
+        rule.onNodeWithContentDescription(progress, substring = true).assertIsDisplayed()
     }
 }

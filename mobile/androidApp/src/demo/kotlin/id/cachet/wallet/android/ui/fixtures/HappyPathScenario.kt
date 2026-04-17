@@ -53,7 +53,8 @@ object HappyPathScenario : DemoScenario {
     override val cachPacks = listOf(
         CachPackUi(id = PackIds.CHILDCARE_ES, question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
         CachPackUi(id = PackIds.SAFE_SELLER, question = "Trusted seller?", description = "Identity, platform history, fulfilment rate", proofCount = 4, cachetType = CachetType.SELLER),
-        CachPackUi(id = PackIds.CHILDCARE_BASE, question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE)
+        CachPackUi(id = PackIds.CHILDCARE_BASE, question = "Old enough?", description = "Age verification (18+ or 21+)", proofCount = 1, cachetType = CachetType.AGE),
+        CachPackUi(id = PackIds.IDENTITY_BASIC, question = "Who are you?", description = "Identity verification, liveness", proofCount = 2, cachetType = CachetType.IDENTITY)
     )
 
     override val historyGroups = listOf(
