@@ -231,32 +231,34 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     }
                 )
             }
-            is OverlayScreen.IncomingRequest -> IncomingRequestScreen(
-                request = screen.request,
-                onShare = {
-                    // Liveness gate: high-value packs require identity confirmation
-                    val needsLiveness = effectiveDemoMode &&
-                        DemoFixtures.requiresLiveness(screen.request.cachetType)
-                    if (needsLiveness) {
-                        overlay = OverlayScreen.LivenessCheck(screen.request)
-                    } else {
-                        scope.launch {
-                            if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
-                                viewModel.holderRespondViaRelay(qrPayload)
-                                val result = viewModel.awaitVerifierResult()
-                                overlay = OverlayScreen.CachetResultOverlay(result)
-                                qrPayload = ""
-                            } else {
-                                val result = viewModel.shareCredential(screen.request)
-                                overlay = OverlayScreen.CachetResultOverlay(result)
-                                qrPayload = ""
+            is OverlayScreen.IncomingRequest -> {
+                val needsLiveness = effectiveDemoMode &&
+                    DemoFixtures.requiresLiveness(screen.request.cachetType)
+                IncomingRequestScreen(
+                    request = screen.request,
+                    requiresLiveness = needsLiveness,
+                    onShare = {
+                        if (needsLiveness) {
+                            overlay = OverlayScreen.LivenessCheck(screen.request)
+                        } else {
+                            scope.launch {
+                                if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
+                                    viewModel.holderRespondViaRelay(qrPayload)
+                                    val result = viewModel.awaitVerifierResult()
+                                    overlay = OverlayScreen.CachetResultOverlay(result)
+                                    qrPayload = ""
+                                } else {
+                                    val result = viewModel.shareCredential(screen.request)
+                                    overlay = OverlayScreen.CachetResultOverlay(result)
+                                    qrPayload = ""
+                                }
                             }
                         }
-                    }
-                },
-                onDecline = { overlay = null; qrPayload = "" },
-                onClose = { overlay = null; qrPayload = "" }
-            )
+                    },
+                    onDecline = { overlay = null; qrPayload = "" },
+                    onClose = { overlay = null; qrPayload = "" }
+                )
+            }
             is OverlayScreen.LivenessCheck -> {
                 val packName = CachPackMapper.cachetDisplayName(screen.request.cachetType)
                 LivenessCheckScreen(

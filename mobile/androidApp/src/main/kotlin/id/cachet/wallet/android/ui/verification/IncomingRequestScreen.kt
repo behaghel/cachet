@@ -30,7 +30,8 @@ fun IncomingRequestScreen(
     request: VerificationRequest,
     onShare: () -> Unit,
     onDecline: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    requiresLiveness: Boolean = false
 ) {
     Surface(
         modifier = Modifier.fillMaxSize().testTag("incoming_request_screen"),
@@ -199,55 +200,70 @@ fun IncomingRequestScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // -- Consent metadata --
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = SurfaceElevated
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            // -- Biometric notice (only when liveness required) --
+            if (requiresLiveness) {
+                item {
+                    Text(
+                        text = "Also required:",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("biometric_notice"),
+                        shape = RoundedCornerShape(12.dp),
+                        color = TrustPendingBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, TrustPendingBorder)
+                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "Result kept by requester for",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                            Text(
-                                "${request.retentionDays} days",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "Logged in transparency log",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                            Text(
-                                if (request.loggedInTransparencyLog) "Yes" else "No",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (request.loggedInTransparencyLog) BrandAccent else BrandWarm
-                            )
+                            // Face scan icon placeholder
+                            Surface(
+                                modifier = Modifier.size(32.dp),
+                                shape = CircleShape,
+                                color = Color.Transparent
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("\uD83D\uDC64", fontSize = 20.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "A face scan to confirm you are the holder",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TrustPendingText
+                                )
+                                Text(
+                                    text = "Processed by Veriff \u00B7 facial data is not stored after verification",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TrustPendingText
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // -- Consent metadata (above CTA when no liveness, below CTA when liveness) --
+            if (!requiresLiveness) {
+                item {
+                    ConsentMetadata(request)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
 
             // -- Action buttons --
             item {
                 SealButton(
-                    text = "Verify & Share",
+                    text = if (requiresLiveness) "Verify with Face Scan" else "Verify & Share",
                     onClick = onShare
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -264,7 +280,79 @@ fun IncomingRequestScreen(
                         color = BrandWarm
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            // -- Transparency log (compact, below CTA when liveness required) --
+            if (requiresLiveness) {
+                item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        color = SurfaceElevated
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(SpanStyle(color = BrandAccent)) { append("\u2713 ") }
+                                append("Transparency log: results kept for ")
+                                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = TextPrimary)) {
+                                    append("${request.retentionDays} days")
+                                }
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConsentMetadata(request: VerificationRequest) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = SurfaceElevated
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Result kept by requester for",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+                Text(
+                    "${request.retentionDays} days",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Logged in transparency log",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+                Text(
+                    if (request.loggedInTransparencyLog) "Yes" else "No",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (request.loggedInTransparencyLog) BrandAccent else BrandWarm
+                )
             }
         }
     }

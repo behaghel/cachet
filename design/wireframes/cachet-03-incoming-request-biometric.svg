@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <!--
+    SCREEN 3 (biometric variant): Incoming Request — high-value pack
+    Same as cachet-03-incoming-request.svg but with biometric consent section.
+    Only shown when the CachPack requires liveness (Childcare, Seller, Identity).
+
+    BIPA compliance: explicit biometric consent BEFORE the user commits.
+    The "How this works" section and CTA text change make the face scan
+    consent part of the single decision, not a separate interstitial.
+
+    Design tokens:
+      SurfaceBackground   #FAFAF9
+      BrandPrimary         #1E293B
+      BrandAccent          #10B981
+      BrandWarm            #F97068
+      TextPrimary          #1C1917
+      TextSecondary        #57534E
+      TextTertiary         #A8A29E
+      SurfaceCard          #FFFFFF
+      SurfaceElevated      #F5F5F4
+      SurfaceBorder        #E7E5E4
+      TrustPendingBg       #FEF3C7
+      TrustPendingText     #92400E
+  -->
+
+  <defs>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <!-- Phone background -->
+  <rect width="375" height="812" rx="40" fill="#FAFAF9"/>
+
+  <!-- Status bar -->
+  <text x="30" y="52" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1C1917">9:41</text>
+  <circle cx="320" cy="48" r="4" fill="#10B981"/>
+  <rect x="332" y="44" width="20" height="8" rx="2" fill="#1C1917"/>
+
+  <!-- Close button -->
+  <text x="350" y="95" font-family="Inter, sans-serif" font-size="16" fill="#A8A29E">&#x2715;</text>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 1: WHO + WHAT (unchanged)       -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <!-- Shield + ? badge -->
+  <use href="#childcare-shield" x="158" y="88" width="60" height="78"/>
+  <circle cx="212" cy="152" r="22" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="2"/>
+  <text x="212" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1E293B">?</text>
+
+  <text x="188" y="191" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1C1917">Verification Request</text>
+  <text x="188" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#57534E">Someone wants to know:</text>
+
+  <!-- Question pill -->
+  <rect x="32" y="230" width="311" height="48" rx="16" fill="#1E293B"/>
+  <text x="188" y="260" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#FFFFFF">Are you safe for childcare?</text>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 2: WHAT THEY'LL LEARN           -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <text x="24" y="310" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">They will learn:</text>
+  <text x="24" y="326" font-family="Inter, sans-serif" font-size="12" fill="#57534E">Only these facts — nothing more</text>
+
+  <!-- Predicate list (compact: 4 items) -->
+  <rect x="16" y="340" width="343" height="182" rx="16" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="1"/>
+
+  <!-- Predicate 1 -->
+  <circle cx="40" cy="367" r="10" fill="#ECFDF5"/>
+  <text x="40" y="371" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#10B981">&#x2713;</text>
+  <text x="58" y="364" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">You are 18 or older</text>
+  <text x="58" y="378" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Your exact age will NOT be shared</text>
+  <line x1="36" y1="393" x2="340" y2="393" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 2 -->
+  <circle cx="40" cy="411" r="10" fill="#ECFDF5"/>
+  <text x="40" y="415" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#10B981">&#x2713;</text>
+  <text x="58" y="408" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">Your identity is verified</text>
+  <text x="58" y="422" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Your name will NOT be shared</text>
+  <line x1="36" y1="437" x2="340" y2="437" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 3 -->
+  <circle cx="40" cy="455" r="10" fill="#ECFDF5"/>
+  <text x="40" y="459" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#10B981">&#x2713;</text>
+  <text x="58" y="452" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">No criminal record</text>
+  <text x="58" y="466" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Only a clear/not-clear result</text>
+  <line x1="36" y1="481" x2="340" y2="481" stroke="#F5F5F4" stroke-width="1"/>
+
+  <!-- Predicate 4 -->
+  <circle cx="40" cy="499" r="10" fill="#ECFDF5"/>
+  <text x="40" y="503" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#10B981">&#x2713;</text>
+  <text x="58" y="496" font-family="Inter, sans-serif" font-size="13" font-weight="500" fill="#1C1917">2+ verified references</text>
+  <text x="58" y="510" font-family="Inter, sans-serif" font-size="10" fill="#A8A29E">Referee names will NOT be shared</text>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 3: BIOMETRIC REQUIREMENT        -->
+  <!-- Only shown when CachPack requires       -->
+  <!-- liveness. This IS the BIPA consent.     -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <text x="24" y="554" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1C1917">Also required:</text>
+
+  <rect x="16" y="564" width="343" height="64" rx="12" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+
+  <!-- Face scan icon (simple face outline) -->
+  <circle cx="44" cy="596" r="14" fill="none" stroke="#92400E" stroke-width="1.5"/>
+  <circle cx="39" cy="592" r="2" fill="#92400E"/>
+  <circle cx="49" cy="592" r="2" fill="#92400E"/>
+  <path d="M 39,601 Q 44,606 49,601" fill="none" stroke="#92400E" stroke-width="1.5" stroke-linecap="round"/>
+
+  <text x="66" y="586" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#92400E">A face scan to confirm you are the holder</text>
+  <text x="66" y="601" font-family="Inter, sans-serif" font-size="11" fill="#92400E">Processed by Veriff · facial data is not stored</text>
+  <text x="66" y="616" font-family="Inter, sans-serif" font-size="11" fill="#92400E">after verification</text>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 4: ACTION                       -->
+  <!-- CTA text makes face scan consent        -->
+  <!-- explicit in the act itself              -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <rect x="16" y="644" width="343" height="56" rx="28" fill="#10B981"/>
+  <text x="188" y="678" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Verify with Face Scan</text>
+
+  <rect x="16" y="708" width="343" height="36" rx="18" fill="none"/>
+  <text x="188" y="732" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#F97068">Decline</text>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 5: TERMS (below CTA)            -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <rect x="16" y="748" width="343" height="40" rx="10" fill="#F5F5F4"/>
+  <text x="188" y="773" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#57534E"><tspan fill="#10B981">&#x2713;</tspan> Transparency log: results kept for <tspan font-weight="600" fill="#1C1917">90 days</tspan></text>
+</svg>

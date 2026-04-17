@@ -49,6 +49,17 @@ class LivenessSteps {
         rule.onNodeWithText(expectedQuestion).assertIsDisplayed()
     }
 
+    @Then("I see a face scan notice")
+    fun iSeeAFaceScanNotice() {
+        rule.onNodeWithTag("biometric_notice").assertIsDisplayed()
+        rule.onNodeWithText("face scan", substring = true).assertIsDisplayed()
+    }
+
+    @Then("the action button reads {string}")
+    fun theActionButtonReads(expectedText: String) {
+        rule.onNodeWithText(expectedText).assertIsDisplayed()
+    }
+
     @Given("I hold a valid credential")
     fun iHoldAValidCredential() {
         // In demo mode with happy scenario, we already have credentials — no-op
@@ -61,9 +72,7 @@ class LivenessSteps {
     @Then("the verification is performed without a liveness check")
     fun theVerificationIsPerformedWithoutALivenessCheck() {
         // Tap "Verify & Share" and expect result screen directly (no liveness screen in between)
-        val verifyBtn = rule.onNodeWithText("Verify & Share")
-        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
-        verifyBtn.performClick()
+        BddTestContext.tapConsentCta(rule)
         rule.waitForIdle()
 
         // Should NOT see liveness screen
@@ -112,10 +121,7 @@ class LivenessSteps {
     fun iAmOnTheLivenessCheckScreen() {
         // Navigate to incoming request for a high-value pack, then tap Verify & Share
         iAmOnTheIncomingRequestScreenForPack("Childcare Readiness")
-        val verifyBtn = rule.onNodeWithText("Verify & Share")
-        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
-        verifyBtn.performClick()
-        rule.waitForIdle()
+        BddTestContext.tapConsentCta(rule)
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodesWithTag("liveness_check_screen").fetchSemanticsNodes().isNotEmpty()
         }

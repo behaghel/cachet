@@ -81,9 +81,7 @@ class VerifierRequestSteps {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
         // Simulate the holder accepting and completing the flow
-        val verifyBtn = rule.onNodeWithText("Verify & Share")
-        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
-        verifyBtn.performClick()
+        BddTestContext.tapConsentCta(rule)
         passLivenessIfNeeded(rule)
     }
 
