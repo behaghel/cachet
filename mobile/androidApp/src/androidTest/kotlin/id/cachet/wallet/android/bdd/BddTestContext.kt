@@ -1,8 +1,11 @@
 package id.cachet.wallet.android.bdd
 
 import android.content.Intent
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -28,6 +31,33 @@ class BddTestContext {
     companion object {
         @Volatile
         var sharedRule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>? = null
+
+        /**
+         * After tapping "Verify & Share", handles the liveness gate if it appears,
+         * then waits for the verification result screen.
+         *
+         * High-value packs (Childcare, Seller, Identity) show a liveness screen;
+         * low-value packs (Age) skip straight to the result.
+         */
+        fun passLivenessIfNeeded(
+            rule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>
+        ) {
+            rule.waitForIdle()
+            // Wait for either liveness or result screen to appear
+            rule.waitUntil(timeoutMillis = 10000) {
+                rule.onAllNodes(hasTestTag("liveness_check_screen")).fetchSemanticsNodes().isNotEmpty() ||
+                    rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+            }
+            // If liveness appeared, simulate pass
+            if (rule.onAllNodes(hasTestTag("liveness_check_screen")).fetchSemanticsNodes().isNotEmpty()) {
+                rule.onNodeWithText("Simulate Pass", substring = true).performClick()
+                rule.waitForIdle()
+            }
+            // Now wait for result screen
+            rule.waitUntil(timeoutMillis = 10000) {
+                rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
+            }
+        }
     }
 
     /** The scenario name for the current BDD scenario. */

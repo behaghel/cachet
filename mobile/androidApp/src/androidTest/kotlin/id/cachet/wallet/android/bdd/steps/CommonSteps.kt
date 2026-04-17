@@ -249,10 +249,7 @@ class CommonSteps {
             composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Verify & Share").performClick()
-        composeTestRule.waitForIdle()
-        composeTestRule.waitUntil(timeoutMillis = 10000) {
-            composeTestRule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
-        }
+        BddTestContext.passLivenessIfNeeded(composeTestRule)
     }
 
     @Given("the QR scanner is open")

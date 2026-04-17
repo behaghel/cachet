@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import id.cachet.wallet.android.bdd.BddTestContext
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.mapper.CachPackMapper
@@ -26,7 +27,7 @@ class LivenessSteps {
     // Given: Navigate to Incoming Request for a specific pack
     // ────────────────────────────────────────
 
-    @Given("I am on the Incoming Request screen for a {string} pack")
+    @Given("I am on the Incoming Request screen for a/an {string} pack")
     fun iAmOnTheIncomingRequestScreenForPack(packName: String) {
         val pack = DemoFixtures.cachPacks.firstOrNull { packDisplayName(it) == packName }
             ?: error("Unknown pack: $packName. Available: ${DemoFixtures.cachPacks.map { packDisplayName(it) }}")
@@ -60,7 +61,9 @@ class LivenessSteps {
     @Then("the verification is performed without a liveness check")
     fun theVerificationIsPerformedWithoutALivenessCheck() {
         // Tap "Verify & Share" and expect result screen directly (no liveness screen in between)
-        rule.onNodeWithText("Verify & Share").performClick()
+        val verifyBtn = rule.onNodeWithText("Verify & Share")
+        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
+        verifyBtn.performClick()
         rule.waitForIdle()
 
         // Should NOT see liveness screen
@@ -92,7 +95,7 @@ class LivenessSteps {
 
     @Then("the screen explains why liveness is needed")
     fun theScreenExplainsWhyLivenessIsNeeded() {
-        rule.onNodeWithText("Prove it's you", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("Prove it\u2019s you", substring = true).assertIsDisplayed()
     }
 
     @Then("the front camera activates for the Veriff liveness session")
@@ -109,7 +112,9 @@ class LivenessSteps {
     fun iAmOnTheLivenessCheckScreen() {
         // Navigate to incoming request for a high-value pack, then tap Verify & Share
         iAmOnTheIncomingRequestScreenForPack("Childcare Readiness")
-        rule.onNodeWithText("Verify & Share").performClick()
+        val verifyBtn = rule.onNodeWithText("Verify & Share")
+        try { verifyBtn.performScrollTo() } catch (_: Throwable) {}
+        verifyBtn.performClick()
         rule.waitForIdle()
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodesWithTag("liveness_check_screen").fetchSemanticsNodes().isNotEmpty()
@@ -153,13 +158,15 @@ class LivenessSteps {
 
     @Then("I see a liveness failure message")
     fun iSeeALivenessFailureMessage() {
-        rule.onNodeWithText("couldn't confirm", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("couldn\u2019t confirm", substring = true).assertIsDisplayed()
     }
 
     @Then("I can retry the liveness check or cancel")
     fun iCanRetryOrCancel() {
         rule.onNodeWithText("Try Again").assertIsDisplayed()
-        rule.onNodeWithText("Cancel", substring = true).assertIsDisplayed()
+        val cancelNode = rule.onNodeWithText("Cancel", substring = true)
+        try { cancelNode.performScrollTo() } catch (_: Throwable) {}
+        cancelNode.assertIsDisplayed()
     }
 
     @Then("I return to the Incoming Request screen")

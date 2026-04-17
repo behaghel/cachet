@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -213,7 +215,12 @@ fun OnboardingScreen(
             }
 
             // ── Pagination dots ──
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.semantics {
+                    contentDescription = "${currentPage + 1} of ${pages.size}"
+                }
+            ) {
                 repeat(pages.size) { index ->
                     Surface(
                         modifier = Modifier.size(8.dp),

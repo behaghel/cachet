@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import id.cachet.wallet.android.bdd.BddTestContext
+import id.cachet.wallet.android.bdd.BddTestContext.Companion.passLivenessIfNeeded
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.fixtures.ScenarioRegistry
 import io.cucumber.java.en.Given
@@ -44,10 +45,7 @@ class VerificationResultSteps {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithText("Verify & Share").performClick()
-        rule.waitForIdle()
-        rule.waitUntil(timeoutMillis = 10000) {
-            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
-        }
+        BddTestContext.passLivenessIfNeeded(rule)
     }
 
     @Given("a verification has completed")
@@ -122,10 +120,7 @@ class VerificationResultSteps {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithText("Verify & Share").performClick()
-        rule.waitForIdle()
-        rule.waitUntil(timeoutMillis = 10000) {
-            rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
-        }
+        BddTestContext.passLivenessIfNeeded(rule)
     }
 
     @Then("I see a {word} result for {string}")
