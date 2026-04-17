@@ -472,16 +472,16 @@ in
     echo "2. Checking emulator connection..."
     adb devices | grep device || (echo "❌ No Android emulator detected. Run 'android:emulator' first." && exit 1)
     echo "3. Running BDD tests..."
-    cd mobile && gradle :androidApp:connectedDemoDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=id.cachet.wallet.android.bdd.CucumberTestRunner
+    cd mobile && ./gradlew :androidApp:connectedDemoDebugAndroidTest
     echo "✅ BDD scenarios completed!"
     echo "📊 Results: mobile/androidApp/build/reports/androidTests/"
   '';
   scripts."android:test-unit".exec = ''
     echo "🧪 Running unit tests..."
     echo "1. Running shared module tests..."
-    cd mobile && gradle :shared:testDebugUnitTest
+    cd mobile && ./gradlew :shared:testDebugUnitTest
     echo "2. Running Android unit tests..."
-    gradle :androidApp:testDemoDebugUnitTest
+    ./gradlew :androidApp:testDemoDebugUnitTest
     echo "✅ Unit tests completed!"
     echo "📊 Test results available in mobile/*/build/reports/tests/"
   '';
