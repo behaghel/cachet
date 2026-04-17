@@ -261,6 +261,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                 val packName = CachPackMapper.cachetDisplayName(screen.request.cachetType)
                 LivenessCheckScreen(
                     packName = packName,
+                    cachetType = screen.request.cachetType,
                     onSimulatePass = {
                         scope.launch {
                             val result = viewModel.shareCredential(screen.request)
