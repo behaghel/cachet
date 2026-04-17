@@ -2,7 +2,9 @@ package id.cachet.wallet.android.bdd
 
 import android.content.Intent
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -39,6 +41,25 @@ class BddTestContext {
          * High-value packs (Childcare, Seller, Identity) show a liveness screen;
          * low-value packs (Age) skip straight to the result.
          */
+        /**
+         * Taps the consent CTA — either "Verify with Face Scan" or "Verify & Share"
+         * depending on whether liveness is required.
+         */
+        fun tapConsentCta(
+            rule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>
+        ) {
+            val faceScanNodes = rule.onAllNodesWithText("Verify with Face Scan").fetchSemanticsNodes()
+            val verifyShareNodes = rule.onAllNodesWithText("Verify & Share").fetchSemanticsNodes()
+            val btn = if (faceScanNodes.isNotEmpty()) {
+                rule.onNodeWithText("Verify with Face Scan")
+            } else {
+                rule.onNodeWithText("Verify & Share")
+            }
+            try { btn.performScrollTo() } catch (_: Throwable) {}
+            btn.performClick()
+            rule.waitForIdle()
+        }
+
         fun passLivenessIfNeeded(
             rule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>
         ) {

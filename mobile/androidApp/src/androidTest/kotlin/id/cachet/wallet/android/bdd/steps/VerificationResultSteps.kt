@@ -44,7 +44,7 @@ class VerificationResultSteps {
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Verify & Share").performClick()
+        BddTestContext.tapConsentCta(rule)
         BddTestContext.passLivenessIfNeeded(rule)
     }
 
@@ -119,7 +119,7 @@ class VerificationResultSteps {
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Verify & Share").performClick()
+        BddTestContext.tapConsentCta(rule)
         BddTestContext.passLivenessIfNeeded(rule)
     }
 

@@ -248,7 +248,7 @@ class CommonSteps {
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithText("Verify & Share").performClick()
+        BddTestContext.tapConsentCta(composeTestRule)
         BddTestContext.passLivenessIfNeeded(composeTestRule)
     }
 

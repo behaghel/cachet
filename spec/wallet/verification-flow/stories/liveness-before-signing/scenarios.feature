@@ -30,11 +30,18 @@ Feature: Holder identity confirmation before signing high-value verifications
     Given the app is launched in demo mode
     And I hold a valid credential
 
-  # AC-1: Liveness required for high-value cachets
+  # AC-1: Biometric consent shown on consent screen for high-value cachets
+  @wireframe:cachet-03-incoming-request-biometric.svg
+  Scenario: Consent screen shows biometric notice for high-value cachet
+    Given I am on the Incoming Request screen for a "Childcare Readiness" pack
+    Then I see a face scan notice
+    And the action button reads "Verify with Face Scan"
+
+  # AC-1b: Tapping the biometric CTA triggers liveness check
   @wireframe:cachet-03b-liveness-check.svg
   Scenario: High-value cachet triggers liveness check after consent
     Given I am on the Incoming Request screen for a "Childcare Readiness" pack
-    When I tap "Verify & Share"
+    When I tap "Verify with Face Scan"
     Then I see the Liveness Check screen
     And the screen explains why liveness is needed
     And the front camera activates for the Veriff liveness session
@@ -43,6 +50,7 @@ Feature: Holder identity confirmation before signing high-value verifications
   @wireframe:cachet-03-incoming-request.svg @wireframe:cachet-04-result-pass.svg
   Scenario: Low-value cachet skips liveness check
     Given I am on the Incoming Request screen for an "Age Verification" pack
+    Then the action button reads "Verify & Share"
     When I tap "Verify & Share"
     Then the verification is performed without a liveness check
     And I see the Verification Result screen
@@ -76,12 +84,12 @@ Feature: Holder identity confirmation before signing high-value verifications
   # AC-6: Liveness requirement is per-CachPack
   Scenario Outline: Liveness requirement varies by CachPack — <pack>
     Given I am on the Incoming Request screen for a "<pack>" pack
-    When I tap "Verify & Share"
+    When I tap "<cta>"
     Then <outcome>
 
     Examples:
-      | pack                  | outcome                                  |
-      | Childcare Readiness   | I see the Liveness Check screen          |
-      | Safe Seller           | I see the Liveness Check screen          |
-      | Identity Verification | I see the Liveness Check screen          |
-      | Age Verification      | the verification completes without liveness |
+      | pack                  | cta                    | outcome                                    |
+      | Childcare Readiness   | Verify with Face Scan  | I see the Liveness Check screen             |
+      | Safe Seller           | Verify with Face Scan  | I see the Liveness Check screen             |
+      | Identity Verification | Verify with Face Scan  | I see the Liveness Check screen             |
+      | Age Verification      | Verify & Share         | the verification completes without liveness |
