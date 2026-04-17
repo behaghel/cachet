@@ -83,8 +83,4 @@ class VerifierRequestSteps {
         rule.waitForIdle()
     }
 
-    @Then("I see the Verification Result screen")
-    fun iSeeTheVerificationResultScreen() {
-        rule.waitForIdle()
-    }
 }
