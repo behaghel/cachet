@@ -347,6 +347,10 @@ in
     done
     echo "✅ Android emulator ready"
   '';
+  # Detect whether any connected device is a physical device (not an emulator).
+  # If so, resolve the host LAN IP so the app can reach the backend.
+  # Usage in tasks:  GRADLE_HOST_ARGS=$(cachet_host_args)
+  #   then:  ./gradlew :androidApp:installDemoDebug $GRADLE_HOST_ARGS
   scripts."android:build".exec = ''
     echo "Building Android app..."
     # Avoid Gradle "conflicting SDK paths" error: only ANDROID_HOME should be set
@@ -358,13 +362,14 @@ in
   scripts."android:install".exec = ''
     set -euo pipefail
     ADB="$ANDROID_HOME/platform-tools/adb"
+    HOST_ARGS=$(cachet_host_args)
 
-    echo "Installing app on emulator..."
+    echo "Installing app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
     # Uninstall previous version if signatures differ (common after re-signing)
     $ADB uninstall id.cachet.wallet.android.demo 2>/dev/null || $ADB uninstall id.cachet.wallet.android 2>/dev/null || true
-    cd mobile && ./gradlew :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug $HOST_ARGS
 
     echo "Launching Cachet Wallet..."
     if $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity 2>&1 | grep -q "Error\|Exception"; then
@@ -418,6 +423,7 @@ in
   scripts."android:run".exec = ''
     set -euo pipefail
     ADB="$ANDROID_HOME/platform-tools/adb"
+    HOST_ARGS=$(cachet_host_args)
 
     echo "🚀 Starting full development environment..."
     echo "1. Starting backend services..."
@@ -426,18 +432,18 @@ in
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug $HOST_ARGS
     echo "3. Launching app (real mode — backend-driven)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
     # Update active environment for shell prompt (direnv watches .env)
     sed -i ''' 's/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT="dev"/' .env
     echo "✅ Done! Backend running, app installed and launched."
-    echo "🔗 Backend: http://localhost:8090 (from emulator: http://10.0.2.2:8090)"
     echo "💡 For demo mode with fixtures: android:demo"
   '';
   scripts."android:demo".exec = ''
     set -euo pipefail
     ADB="$ANDROID_HOME/platform-tools/adb"
+    HOST_ARGS=$(cachet_host_args)
 
     echo "🚀 Starting demo environment (fixtures only, no backend)..."
     echo "1. Stopping backend services if running..."
@@ -445,7 +451,7 @@ in
     echo "2. Building and installing Android app..."
     unset ANDROID_SDK_ROOT
     echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
-    cd mobile && ./gradlew :androidApp:installDemoDebug
+    cd mobile && ./gradlew :androidApp:installDemoDebug $HOST_ARGS
     echo "3. Launching app (demo mode — fixtures)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
     # Update active environment for shell prompt (direnv watches .env)
@@ -964,6 +970,23 @@ EOF
     # Other tools (e.g. previous pre-commit installs) sometimes set this, which
     # causes devenv:git-hooks:install to fail with "Cowardly refusing…".
     git config --local --unset-all core.hooksPath 2>/dev/null || true
+
+    # Helper: returns -PcachetHost=<LAN IP> when a physical device is connected,
+    # empty string when only an emulator is present.  Used by android:* tasks so
+    # the app reaches the backend regardless of the target device.
+    cachet_host_args() {
+      local ADB="''${ANDROID_HOME:-}/platform-tools/adb"
+      [ -x "$ADB" ] || return 0
+      # Any non-emulator device? (emulators show as "emulator-NNNN")
+      if $ADB devices 2>/dev/null | grep -v '^emulator-' | grep -q 'device$'; then
+        local LAN_IP
+        LAN_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "")
+        if [ -n "$LAN_IP" ]; then
+          echo "-PcachetHost=$LAN_IP"
+        fi
+      fi
+    }
+    export -f cachet_host_args
 
     if [ -n "''${DIRENV_IN_ENVRC:-}" ] || [ -n "''${DIRENV_DIR:-}" ]; then
       # `use devenv` imports shell code via direnv; stdout here corrupts that stream.

@@ -29,8 +29,11 @@ android {
             useSupportLibrary = true
         }
 
-        // Base URL for the issuance gateway — override per build type or via gradle property
-        buildConfigField("String", "CACHET_BASE_URL", "\"http://10.0.2.2:8090\"")
+        // Base URL for the issuance gateway.
+        // Emulator uses 10.0.2.2 (host loopback alias); physical devices need the
+        // host's LAN IP.  Pass -PcachetHost=<ip> to override.
+        val cachetHost = project.findProperty("cachetHost")?.toString() ?: "10.0.2.2"
+        buildConfigField("String", "CACHET_BASE_URL", "\"http://$cachetHost:8090\"")
     }
 
     flavorDimensions += "mode"
