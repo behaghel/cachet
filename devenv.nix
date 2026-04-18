@@ -960,6 +960,11 @@ EOF
   };
 
   enterShell = ''
+    # Remove core.hooksPath so devenv git-hooks can install without conflict.
+    # Other tools (e.g. previous pre-commit installs) sometimes set this, which
+    # causes devenv:git-hooks:install to fail with "Cowardly refusing…".
+    git config --local --unset-all core.hooksPath 2>/dev/null || true
+
     if [ -n "''${DIRENV_IN_ENVRC:-}" ] || [ -n "''${DIRENV_DIR:-}" ]; then
       # `use devenv` imports shell code via direnv; stdout here corrupts that stream.
       :
