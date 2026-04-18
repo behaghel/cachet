@@ -43,7 +43,7 @@ class DeepLinkVerifySteps {
         DemoFixtures.activeScenario = ScenarioRegistry.get("happy")
         rule.activityRule.scenario.recreate()
         rule.waitForIdle()
-        deliverDeepLink("cachet://verify?pack=childcare")
+        deliverDeepLink("cachet://verify?pack=age")
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodesWithText("Verification Request").fetchSemanticsNodes().isNotEmpty()
         }

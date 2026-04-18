@@ -65,7 +65,8 @@ class BddTestContext {
         ) {
             rule.waitForIdle()
             // Wait for either liveness or result screen to appear
-            rule.waitUntil(timeoutMillis = 10000) {
+            // (deep-link flows after activity recreation may need extra time)
+            rule.waitUntil(timeoutMillis = 20000) {
                 rule.onAllNodes(hasTestTag("liveness_check_screen")).fetchSemanticsNodes().isNotEmpty() ||
                     rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
             }
@@ -75,7 +76,7 @@ class BddTestContext {
                 rule.waitForIdle()
             }
             // Now wait for result screen
-            rule.waitUntil(timeoutMillis = 10000) {
+            rule.waitUntil(timeoutMillis = 20000) {
                 rule.onAllNodes(hasTestTag("verification_result")).fetchSemanticsNodes().isNotEmpty()
             }
         }

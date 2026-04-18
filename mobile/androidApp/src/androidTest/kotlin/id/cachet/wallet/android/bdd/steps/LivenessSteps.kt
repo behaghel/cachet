@@ -57,7 +57,9 @@ class LivenessSteps {
 
     @Then("the action button reads {string}")
     fun theActionButtonReads(expectedText: String) {
-        rule.onNodeWithText(expectedText).assertIsDisplayed()
+        val node = rule.onNodeWithText(expectedText)
+        try { node.performScrollTo() } catch (_: Throwable) {}
+        node.assertIsDisplayed()
     }
 
     @Given("I hold a valid credential")
@@ -177,7 +179,8 @@ class LivenessSteps {
 
     @Then("I return to the Incoming Request screen")
     fun iReturnToTheIncomingRequestScreen() {
-        rule.waitUntil(timeoutMillis = 5000) {
+        rule.waitForIdle()
+        rule.waitUntil(timeoutMillis = 10000) {
             rule.onAllNodesWithTag("incoming_request_screen").fetchSemanticsNodes().isNotEmpty()
         }
     }

@@ -471,13 +471,10 @@ in
     ' _ {} \;
     echo "2. Checking emulator connection..."
     adb devices | grep device || (echo "❌ No Android emulator detected. Run 'android:emulator' first." && exit 1)
-    echo "3. Building and installing APKs..."
-    cd mobile && ./gradlew :androidApp:installDemoDebug :androidApp:installDemoDebugAndroidTest
-    echo "4. Running BDD tests via adb instrument..."
-    adb shell am instrument -w \
-      -e optionsAnnotationPackage id.cachet.wallet.android.bdd \
-      id.cachet.wallet.android.demo.test/id.cachet.wallet.android.bdd.CucumberTestRunner
+    echo "3. Running BDD tests..."
+    cd mobile && ./gradlew :androidApp:connectedDemoDebugAndroidTest
     echo "✅ BDD scenarios completed!"
+    echo "📊 Results: mobile/androidApp/build/reports/androidTests/"
   '';
   scripts."android:test-unit".exec = ''
     echo "🧪 Running unit tests..."

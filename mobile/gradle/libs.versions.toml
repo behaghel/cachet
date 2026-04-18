@@ -46,7 +46,7 @@ zxing = "3.5.4"
 junit = "4.13.2"
 test-ext-junit = "1.3.0"
 espresso = "3.7.0"
-cucumber = "7.34.3"
+cucumber = "7.18.1"
 cucumber-android = "7.18.1"
 
 [libraries]
