@@ -57,7 +57,8 @@ mobile/*/build/
 # Generated at build time by generateNetworkSecurityConfig task
 mobile/androidApp/src/main/res/xml/network_security_config.xml
 # Generated at build time by copyBddFeatureFiles task (source of truth: spec/)
-mobile/androidApp/src/androidTest/assets/features/*.feature
+mobile/androidApp/src/androidTest/assets/features/
+mobile/androidApp/src/demo/assets/features/
 mobile/.gradle/
 mobile/*/.gradle/
 mobile/*/local.properties
@@ -72,7 +73,7 @@ mobile/*/.externalNativeBuild/
 # Per-service API specs (generated from schemas/openapi.yaml via schema:split)
 api/openapi.*.yaml
 
-# Claude Code (local overrides, agent worktrees, plans)
+# Claude Code (local overrides, agent worktrees, plans, devenv-managed plugins)
 .claude/settings.local.json
 .claude/settings.json
 .claude/worktrees/
@@ -92,6 +93,7 @@ api/openapi.*.yaml
 .devenv*
 devenv.local.nix
 .direnv
+.mcp.json
 
 # Android SDK and build artifacts
 .android/
