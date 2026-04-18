@@ -33,6 +33,7 @@ class VerificationResultSteps {
         val scenario = if (outcome == "pass") "happy" else "seller-only"
         DemoFixtures.isDemoActive = true
         DemoFixtures.activeScenario = ScenarioRegistry.get(scenario)
+        rule.waitForIdle()
         rule.activityRule.scenario.recreate()
         rule.waitForIdle()
 
@@ -65,7 +66,8 @@ class VerificationResultSteps {
 
     @Then("I see a clear reason for the failure")
     fun iSeeAClearReasonForTheFailure() {
-        rule.onAllNodesWithText("Credential not available", substring = true).onFirst().assertExists()
+        // Seller-only scenario shows seller-specific fail reasons
+        rule.onAllNodesWithText("below threshold", substring = true).onFirst().assertExists()
     }
 
     // AC-3: Individual predicate results
@@ -135,6 +137,6 @@ class VerificationResultSteps {
 
     @Then("I see which seller predicates failed")
     fun iSeeWhichSellerPredicatesFailed() {
-        rule.onAllNodesWithText("Credential not available", substring = true).onFirst().assertExists()
+        rule.onAllNodesWithText("below threshold", substring = true).onFirst().assertExists()
     }
 }

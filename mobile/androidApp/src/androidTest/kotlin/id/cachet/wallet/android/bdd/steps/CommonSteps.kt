@@ -17,6 +17,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
 import id.cachet.wallet.android.MainActivity
 import id.cachet.wallet.android.bdd.BddTestContext
+import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
 import id.cachet.wallet.android.ui.fixtures.ScenarioRegistry
 import io.cucumber.java.After
@@ -203,6 +204,10 @@ class CommonSteps {
             composeTestRule.onNodeWithText("Verification Request").assertIsDisplayed()
             return
         } catch (_: AssertionError) {}
+        // Use a low-value pack (no liveness) so "Verify & Share" appears for consent tests
+        if (DemoFixtures.overrideScanPack == null) {
+            DemoFixtures.overrideScanPack = DemoFixtures.cachPacks.first { it.cachetType == CachetType.AGE }
+        }
         // Navigate: Activity tab -> scan QR -> demo auto-scan -> incoming request
         composeTestRule.onNodeWithText("Activity").performClick()
         composeTestRule.waitForIdle()

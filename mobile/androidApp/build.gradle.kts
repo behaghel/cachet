@@ -19,6 +19,12 @@ android {
         // — runs both Cucumber .feature scenarios and regular JUnit4 instrumented tests
         testInstrumentationRunner = "id.cachet.wallet.android.bdd.CucumberTestRunner"
         testInstrumentationRunnerArguments["optionsAnnotationPackage"] = "id.cachet.wallet.android.bdd"
+
+        // Cucumber-Android reads .feature files via AssetManager.list() which
+        // fails if assets are compressed. Keep them uncompressed.
+        androidResources {
+            noCompress.add("feature")
+        }
         vectorDrawables {
             useSupportLibrary = true
         }

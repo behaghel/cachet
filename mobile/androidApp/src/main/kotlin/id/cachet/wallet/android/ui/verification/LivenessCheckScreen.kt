@@ -134,6 +134,7 @@ fun LivenessCheckScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .statusBarsPadding()
                 .padding(horizontal = 24.dp)
         ) {
@@ -229,7 +230,7 @@ fun LivenessCheckScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // ── Demo controls: Simulate Pass / Simulate Fail ──
             Row(
