@@ -143,8 +143,11 @@ class WalletViewModel(
             val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
 
             // Generate a consent receipt so the Activity tab reflects this verification
-            val predicateIds = result.predicateResults.map { it.predicateId }
-            if (predicateIds.isNotEmpty()) {
+            val allPredicateIds = result.predicateResults.map { it.predicateId }
+            val provenPredicateIds = result.predicateResults
+                .filter { it.status == "satisfied" }
+                .map { it.predicateId }
+            if (allPredicateIds.isNotEmpty()) {
                 val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: emptyList()
                 val cred = credentials.firstOrNull { !it.isRevoked }?.credential
                     ?: DemoFixtures.syntheticCredential
@@ -154,14 +157,15 @@ class WalletViewModel(
                         rpIdentifier = "did:web:cachet.id:verifier",
                         rpDisplayName = "Cachet Verifier",
                         purpose = "Trust Pack verification: ${humanizePackId(session.packId)}",
-                        requestedPredicates = predicateIds
+                        requestedPredicates = provenPredicateIds
                     ),
                     userConsent = ConsentDetails(
                         explicitConsent = true,
                         dataMinimizationAcknowledged = true,
                         retentionPeriodUnderstood = true
                     ),
-                    outcome = outcome
+                    outcome = outcome,
+                    totalPredicatesCount = allPredicateIds.size
                 )
             }
 
@@ -484,14 +488,16 @@ class WalletViewModel(
             val matchingPack = DemoFixtures.packForType(request.cachetType ?: CachetType.IDENTITY)
             val allPassed = DemoFixtures.shouldPass(request)
             val outcome = if (allPassed) ConsentReceipt.OUTCOME_PASSED else ConsentReceipt.OUTCOME_INCOMPLETE
+            val result = CachPackMapper.toCachetResult(matchingPack, allPassed)
             try {
-                generateConsentReceiptForShare(receiptCredential, request, outcome)
+                generateConsentReceiptForShare(
+                    receiptCredential, request, outcome,
+                    provenCount = result.passedCount,
+                    totalCount = result.totalCount
+                )
             } catch (e: Exception) {
                 Log.w(TAG, "Demo: consent receipt generation failed (non-fatal)", e)
             }
-            // Build a pack-aware result via CachPackMapper so the result name,
-            // predicate count, and type match the selected pack.
-            val result = CachPackMapper.toCachetResult(matchingPack, allPassed)
             appendVerificationToActivity(result)
             return result
         }
@@ -566,14 +572,21 @@ class WalletViewModel(
     private suspend fun generateConsentReceiptForShare(
         credential: VerifiableCredential,
         request: VerificationRequest,
-        outcome: String = ConsentReceipt.OUTCOME_PASSED
+        outcome: String = ConsentReceipt.OUTCOME_PASSED,
+        provenCount: Int = 0,
+        totalCount: Int = 0
     ) {
         val domainPredicates = request.predicates.map { mapPredicateToDomain(it.claim) }
+        val provenPredicates = if (provenCount in 1 until domainPredicates.size) {
+            domainPredicates.take(provenCount)
+        } else {
+            domainPredicates
+        }
         val presentationRequest = PresentationRequest(
             rpIdentifier = "cachet.verifier.local",
             rpDisplayName = "Cachet Verifier",
             purpose = request.question,
-            requestedPredicates = domainPredicates,
+            requestedPredicates = provenPredicates,
             retentionPeriod = "P${request.retentionDays}D"
         )
         val consent = ConsentDetails(
@@ -582,7 +595,10 @@ class WalletViewModel(
             retentionPeriodUnderstood = true,
             retentionPeriodDays = request.retentionDays
         )
-        consentUseCase.generateConsentReceipt(credential, presentationRequest, consent, outcome)
+        consentUseCase.generateConsentReceipt(
+            credential, presentationRequest, consent, outcome,
+            totalPredicatesCount = if (totalCount > 0) totalCount else domainPredicates.size
+        )
         if (!demoMode) loadActivity()
     }
 

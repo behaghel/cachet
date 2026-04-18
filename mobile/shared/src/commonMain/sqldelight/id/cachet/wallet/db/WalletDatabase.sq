@@ -43,6 +43,7 @@ CREATE TABLE consent_receipts (
     consent_json TEXT NOT NULL,
     credential_id TEXT NOT NULL,
     outcome TEXT NOT NULL DEFAULT 'passed',
+    total_predicates_count INTEGER NOT NULL DEFAULT 0,
     receipt_hash TEXT,
     signature TEXT,
     salt TEXT,
@@ -54,8 +55,8 @@ CREATE INDEX idx_receipts_credential ON consent_receipts(credential_id);
 CREATE INDEX idx_receipts_timestamp ON consent_receipts(timestamp);
 
 insertReceipt:
-INSERT INTO consent_receipts (id, timestamp, purpose, predicates_json, rp_identifier, rp_display_name, consent_json, credential_id, outcome, receipt_hash, signature, salt, transparency_log_json)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO consent_receipts (id, timestamp, purpose, predicates_json, rp_identifier, rp_display_name, consent_json, credential_id, outcome, total_predicates_count, receipt_hash, signature, salt, transparency_log_json)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getReceiptById:
 SELECT * FROM consent_receipts WHERE id = ?;

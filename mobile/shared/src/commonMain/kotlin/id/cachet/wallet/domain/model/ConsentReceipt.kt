@@ -21,6 +21,7 @@ data class ConsentReceipt(
     val userConsent: ConsentDetails,
     val credentialId: String,
     val outcome: String = OUTCOME_PASSED,
+    val totalPredicatesCount: Int = 0,
     val receiptHash: String? = null,
     val signature: String? = null,
     val salt: String? = null,
