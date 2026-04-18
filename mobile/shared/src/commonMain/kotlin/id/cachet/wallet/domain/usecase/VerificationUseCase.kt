@@ -335,11 +335,24 @@ class VerificationUseCase(
             ConsentReceipt.OUTCOME_INCOMPLETE
         }
 
+        // Only include predicates that were actually satisfied
+        val satisfiedIds = response.predicateResults
+            .filter { it.status == "satisfied" }
+            .map { it.predicateId }
+            .toSet()
+        val provenPredicates = if (satisfiedIds.isNotEmpty()) {
+            predicates.filter { it in satisfiedIds }
+        } else if (outcome == ConsentReceipt.OUTCOME_PASSED) {
+            predicates // backward compat: no predicate results means all passed
+        } else {
+            emptyList()
+        }
+
         val request = PresentationRequest(
             rpIdentifier = "did:web:cachet.id:verifier",
             rpDisplayName = "Cachet Verifier",
             purpose = "Trust Pack verification: $packId",
-            requestedPredicates = predicates
+            requestedPredicates = provenPredicates
         )
         val consent = ConsentDetails(
             explicitConsent = true,
@@ -347,7 +360,10 @@ class VerificationUseCase(
             retentionPeriodUnderstood = true
         )
 
-        return consentUseCase.generateConsentReceipt(credential, request, consent, outcome).getOrNull()
+        return consentUseCase.generateConsentReceipt(
+            credential, request, consent, outcome,
+            totalPredicatesCount = predicates.size
+        ).getOrNull()
     }
 
     private fun toCredentialDTO(vc: VerifiableCredential): VerifiableCredentialDTO {

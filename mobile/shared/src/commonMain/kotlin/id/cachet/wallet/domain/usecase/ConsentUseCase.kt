@@ -22,7 +22,8 @@ class ConsentUseCase(
         credential: VerifiableCredential,
         presentationRequest: PresentationRequest,
         userConsent: ConsentDetails,
-        outcome: String = ConsentReceipt.OUTCOME_PASSED
+        outcome: String = ConsentReceipt.OUTCOME_PASSED,
+        totalPredicatesCount: Int = 0
     ): Result<ConsentReceipt> {
         try {
             val receipt = ConsentReceipt(
@@ -34,7 +35,8 @@ class ConsentUseCase(
                 rpDisplayName = presentationRequest.rpDisplayName,
                 userConsent = userConsent,
                 credentialId = credential.id,
-                outcome = outcome
+                outcome = outcome,
+                totalPredicatesCount = if (totalPredicatesCount > 0) totalPredicatesCount else presentationRequest.requestedPredicates.size
             )
             
             // Generate cryptographically secure hash and signature

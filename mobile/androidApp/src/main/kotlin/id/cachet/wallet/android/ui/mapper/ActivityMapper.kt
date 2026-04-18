@@ -37,12 +37,19 @@ object ActivityMapper {
             ConsentReceipt.OUTCOME_INCOMPLETE -> TrustStatus.INCOMPLETE
             else -> TrustStatus.PENDING
         }
+        val provenCount = receipt.predicatesProven.size
+        val totalCount = receipt.totalPredicatesCount
+        val proofSummary = if (status == TrustStatus.INCOMPLETE && totalCount > 0) {
+            "$provenCount of $totalCount proofs passed"
+        } else {
+            "$provenCount ${if (provenCount == 1) "proof" else "proofs"} shared"
+        }
         return HistoryEntry(
             id = receipt.id,
             title = receipt.purpose,
             subtitle = "${receipt.rpDisplayName} verified you",
             time = formatTime(receipt.timestamp),
-            proofSummary = "${receipt.predicatesProven.size} ${if (receipt.predicatesProven.size == 1) "proof" else "proofs"} shared",
+            proofSummary = proofSummary,
             direction = VerificationDirection.RECEIVED,
             status = status
         )

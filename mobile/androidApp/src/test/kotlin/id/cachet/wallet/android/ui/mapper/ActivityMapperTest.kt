@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui.mapper
 
+import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.model.ReceiptLogStatus
 import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.ConsentReceipt
@@ -17,7 +18,9 @@ class ActivityMapperTest {
         purpose: String = "Age verification for online purchase",
         rpDisplayName: String = "Example Shop",
         predicateCount: Int = 2,
-        verifiedLog: Boolean = false
+        verifiedLog: Boolean = false,
+        outcome: String = ConsentReceipt.OUTCOME_PASSED,
+        totalPredicatesCount: Int = 0
     ): ConsentReceipt {
         val logEntry = if (verifiedLog) TransparencyLogEntry(
             logId = "log-1",
@@ -44,6 +47,8 @@ class ActivityMapperTest {
                 retentionPeriodDays = 90
             ),
             credentialId = "cred-1",
+            outcome = outcome,
+            totalPredicatesCount = totalPredicatesCount,
             transparencyLogEntry = logEntry
         )
     }
@@ -92,5 +97,52 @@ class ActivityMapperTest {
         val receipt = makeReceipt(predicateCount = 3)
         val entry = ActivityMapper.toHistoryEntry(receipt)
         assertEquals("3 proofs shared", entry.proofSummary)
+    }
+
+    // ── Status mapping from outcome ──
+
+    @Test
+    fun `toHistoryEntry maps PASSED outcome to PASSED status`() {
+        val receipt = makeReceipt(outcome = ConsentReceipt.OUTCOME_PASSED)
+        val entry = ActivityMapper.toHistoryEntry(receipt)
+        assertEquals(TrustStatus.PASSED, entry.status)
+    }
+
+    @Test
+    fun `toHistoryEntry maps INCOMPLETE outcome to INCOMPLETE status`() {
+        val receipt = makeReceipt(outcome = ConsentReceipt.OUTCOME_INCOMPLETE)
+        val entry = ActivityMapper.toHistoryEntry(receipt)
+        assertEquals(TrustStatus.INCOMPLETE, entry.status)
+    }
+
+    @Test
+    fun `toHistoryEntry maps unknown outcome to PENDING status`() {
+        val receipt = makeReceipt(outcome = "unknown")
+        val entry = ActivityMapper.toHistoryEntry(receipt)
+        assertEquals(TrustStatus.PENDING, entry.status)
+    }
+
+    // ── Proof summary for INCOMPLETE ──
+
+    @Test
+    fun `toHistoryEntry shows X of Y proofs passed for INCOMPLETE with totalPredicatesCount`() {
+        val receipt = makeReceipt(
+            predicateCount = 2,
+            outcome = ConsentReceipt.OUTCOME_INCOMPLETE,
+            totalPredicatesCount = 4
+        )
+        val entry = ActivityMapper.toHistoryEntry(receipt)
+        assertEquals("2 of 4 proofs passed", entry.proofSummary)
+    }
+
+    @Test
+    fun `toHistoryEntry shows N proofs shared for PASSED even with totalPredicatesCount`() {
+        val receipt = makeReceipt(
+            predicateCount = 4,
+            outcome = ConsentReceipt.OUTCOME_PASSED,
+            totalPredicatesCount = 4
+        )
+        val entry = ActivityMapper.toHistoryEntry(receipt)
+        assertEquals("4 proofs shared", entry.proofSummary)
     }
 }
