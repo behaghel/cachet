@@ -21,6 +21,9 @@ import id.cachet.wallet.domain.verification.LocalVerifier
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
+import id.cachet.wallet.domain.crypto.EphemeralKeyGenerator
+import id.cachet.wallet.domain.transport.LocalSessionManager
+import id.cachet.wallet.domain.transport.QrDirectTransport
 import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.network.KtorOpenID4VCIClient
@@ -149,6 +152,11 @@ val sharedModule = module {
         )
     }
 
+    // Proximity transport (offline, QR-direct)
+    // EphemeralKeyGenerator is provided by platform-specific module (e.g., AndroidEphemeralKeyGenerator)
+    single { LocalSessionManager(keyGenerator = get()) }
+    single { QrDirectTransport(sessionManager = get()) }
+
     single {
         VerificationUseCase(
             credentialRepository = get(),
@@ -158,7 +166,8 @@ val sharedModule = module {
             keyManager = get(),
             didResolver = get(),
             localVerifier = get(),
-            packDefinitionCache = get()
+            packDefinitionCache = get(),
+            proximityTransport = get()
         )
     }
 }

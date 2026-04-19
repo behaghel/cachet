@@ -21,6 +21,10 @@ import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.domain.usecase.VerifierSessionInfo
+import id.cachet.wallet.domain.transport.TransportRequest
+import id.cachet.wallet.domain.transport.TransportSession
+import id.cachet.wallet.domain.transport.isProximityUri
+import id.cachet.wallet.domain.transport.parseProximityUri
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -47,6 +51,9 @@ class WalletViewModel(
 
     /** Active verifier session -- set when QR overlay is shown, consumed when verification completes. */
     private var activeVerifierSession: VerifierSessionInfo? = null
+
+    /** Active proximity session -- set when proximity QR is shown, consumed when response is scanned. */
+    private var activeProximitySession: TransportSession? = null
 
     init {
         if (demoEmpty) {
@@ -199,6 +206,116 @@ class WalletViewModel(
                 cachetType = packType,
                 isError = true,
                 errorMessage = e.message ?: "Verification could not be completed"
+            )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
+        }
+    }
+
+    // -- Proximity flow --
+
+    /**
+     * Verifier side: create a local proximity session (no backend).
+     * Returns the QR payload to display.
+     */
+    suspend fun createProximitySession(packId: String, question: String, predicates: List<String>): String {
+        val session = verificationUseCase.createProximitySession(packId, question, predicates)
+        activeProximitySession = session
+        Log.d(TAG, "Proximity session created, QR: ${session.qrPayload}")
+        return session.qrPayload
+    }
+
+    /**
+     * Holder side: parse a proximity QR code into a VerificationRequest for the consent screen.
+     */
+    fun parseProximityRequest(qrContent: String): VerificationRequest? {
+        return try {
+            val request = parseProximityUri(qrContent)
+            VerificationRequest(
+                question = request.question,
+                predicates = request.predicates.map { id ->
+                    RequestPredicate(
+                        claim = humanizePredicateId(id),
+                        privacyNote = privacyNoteForPredicate(id)
+                    )
+                },
+                retentionDays = 0, // proximity: no retention
+                loggedInTransparencyLog = false,
+                verifierName = null,
+                isVerifierVerified = request.isVerified,
+                cachetType = cachetTypeForPackId(request.packId),
+                proximityRequest = request // stash for buildProximityResponse
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse proximity QR", e)
+            null
+        }
+    }
+
+    /**
+     * Holder side: build encrypted VP and return QR-encodable string.
+     */
+    suspend fun buildProximityResponse(request: VerificationRequest): String? {
+        val transportRequest = request.proximityRequest ?: return null
+        return try {
+            val credentials = issuanceUseCase.getStoredCredentials().getOrNull() ?: return null
+            val credential = credentials.firstOrNull { !it.isRevoked && it.rawSdJwt != null } ?: return null
+            verificationUseCase.buildProximityResponse(credential.localId, transportRequest)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to build proximity response", e)
+            null
+        }
+    }
+
+    /**
+     * Verifier side: decrypt and verify the holder's VP QR response.
+     */
+    suspend fun verifyProximityResponse(vpQrContent: String): CachetResult {
+        val session = activeProximitySession
+            ?: return CachetResult(
+                cachetName = "Error",
+                allPassed = false, passedCount = 0, totalCount = 0,
+                predicates = emptyList(),
+                isError = true,
+                errorMessage = "No active proximity session"
+            )
+
+        val packType = cachetTypeForPackId(session.packId)
+
+        return try {
+            val result = verificationUseCase.verifyProximityResponse(vpQrContent, session)
+            activeProximitySession = null
+
+            val allPassed = result.summary?.cachetGranted ?: result.badge.isNotEmpty()
+            val cachetResult = CachetResult(
+                cachetName = result.badge.ifEmpty { humanizePackId(session.packId) },
+                allPassed = allPassed,
+                passedCount = result.summary?.requiredSatisfied ?: result.predicateResults.count { it.status == "satisfied" },
+                totalCount = result.summary?.requiredTotal ?: result.predicateResults.size,
+                predicates = result.predicateResults.map { p ->
+                    PredicateResult(
+                        label = humanizePredicateId(p.predicateId),
+                        passed = p.status == "satisfied",
+                        failReason = p.reason,
+                        privacyNote = privacyNoteForPredicate(p.predicateId)
+                    )
+                },
+                cachetType = packType
+            )
+            appendVerificationToActivity(cachetResult)
+            cachetResult
+        } catch (e: Exception) {
+            Log.e(TAG, "Proximity verification failed", e)
+            activeProximitySession = null
+            val cachetResult = CachetResult(
+                cachetName = humanizePackId(session.packId),
+                allPassed = false,
+                passedCount = 0,
+                totalCount = 0,
+                predicates = emptyList(),
+                cachetType = packType,
+                isError = true,
+                errorMessage = e.message ?: "Proximity verification failed"
             )
             appendVerificationToActivity(cachetResult)
             cachetResult

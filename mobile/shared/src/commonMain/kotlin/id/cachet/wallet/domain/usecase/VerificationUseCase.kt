@@ -4,6 +4,7 @@ import id.cachet.wallet.config.AppConfig
 import id.cachet.wallet.domain.cache.PackDefinitionCache
 import id.cachet.wallet.domain.crypto.Base64Url
 import id.cachet.wallet.domain.crypto.DIDResolver
+import id.cachet.wallet.domain.crypto.JWEDecryptor
 import id.cachet.wallet.domain.crypto.JWEEncryptor
 import id.cachet.wallet.domain.crypto.JWSVerifier
 import id.cachet.wallet.domain.crypto.KBJWTBuilder
@@ -11,6 +12,11 @@ import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.crypto.SDJWTParser
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.transport.QrDirectTransport
+import id.cachet.wallet.domain.transport.TransportRequest
+import id.cachet.wallet.domain.transport.TransportSession
+import id.cachet.wallet.domain.transport.decodeVpQrPayload
+import id.cachet.wallet.domain.transport.isVpQrPayload
 import id.cachet.wallet.domain.verification.LocalVerificationResult
 import id.cachet.wallet.domain.verification.LocalVerifier
 import id.cachet.wallet.network.*
@@ -24,10 +30,12 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * Use case for verifying stored credentials against Trust Packs.
  *
- * Supports two flows:
+ * Supports three flows:
  * - **Direct**: holder sends presentation straight to verifier backend (legacy/test)
  * - **Relay**: verifier creates relay session → holder fetches request, builds
  *   presentation, posts response → verifier polls relay and verifies (cross-device MVP)
+ * - **Proximity**: verifier shows QR → holder scans, consents, shows VP QR →
+ *   verifier scans and verifies locally (offline, no relay)
  */
 class VerificationUseCase(
     private val credentialRepository: CredentialRepository,
@@ -37,7 +45,8 @@ class VerificationUseCase(
     private val keyManager: KeyManager? = null,
     private val didResolver: DIDResolver? = null,
     private val localVerifier: LocalVerifier? = null,
-    private val packDefinitionCache: PackDefinitionCache? = null
+    private val packDefinitionCache: PackDefinitionCache? = null,
+    private val proximityTransport: QrDirectTransport? = null
 ) {
 
     companion object {
@@ -242,6 +251,120 @@ class VerificationUseCase(
         // Derive response URI from request URI: /sessions/{id}/request → /sessions/{id}/response
         val responseUri = requestUri.replace("/request", "/response")
         relayClient.postResponse(responseUri, payload)
+    }
+
+    // ── Proximity flow ──
+
+    /**
+     * Verifier creates a local proximity session (no backend).
+     * Returns a [TransportSession] with the QR payload and the ephemeral keys
+     * needed to decrypt the holder's response later.
+     */
+    suspend fun createProximitySession(
+        packId: String,
+        question: String,
+        predicates: List<String>
+    ): TransportSession {
+        val transport = proximityTransport
+            ?: throw IllegalStateException("Proximity transport not configured")
+        return transport.createSession(
+            id.cachet.wallet.domain.transport.SessionParams(packId, question, predicates)
+        )
+    }
+
+    /**
+     * Holder builds an SD-JWT VP + KB-JWT, encrypts to verifier's ephemeral key,
+     * and returns a QR-encodable string (prefixed with "cachet-vp:").
+     *
+     * @param credentialId The stored credential to present
+     * @param request Parsed proximity request (from QR scan)
+     * @return QR-encodable string containing the encrypted VP
+     */
+    suspend fun buildProximityResponse(
+        credentialId: String,
+        request: TransportRequest
+    ): String {
+        val transport = proximityTransport
+            ?: throw IllegalStateException("Proximity transport not configured")
+        val stored = credentialRepository.getCredentialById(credentialId)
+            ?: throw Exception("Credential not found: $credentialId")
+
+        val presentation = buildSDJWTPresentation(
+            stored,
+            request.nonce,
+            request.verifierDid
+        )
+
+        // Encrypt to verifier's ephemeral key
+        val payload: ByteArray = if (request.verifierPubKey != null) {
+            val encryptor = JWEEncryptor()
+            encryptor.encrypt(presentation.encodeToByteArray(), request.verifierPubKey).encodeToByteArray()
+        } else {
+            presentation.encodeToByteArray()
+        }
+
+        return transport.sendResponse(request.nonce, payload)
+            ?: throw IllegalStateException("Proximity transport must return a QR payload")
+    }
+
+    /**
+     * Verifier decrypts and verifies a VP received from the holder's QR code.
+     *
+     * @param vpQrContent The raw QR content scanned from the holder (starts with "cachet-vp:")
+     * @param session The proximity session that was created with [createProximitySession]
+     * @return Verification result
+     */
+    suspend fun verifyProximityResponse(
+        vpQrContent: String,
+        session: TransportSession
+    ): VerificationResult {
+        require(isVpQrPayload(vpQrContent)) { "Not a VP QR payload: expected cachet-vp: prefix" }
+
+        val encryptedBytes = decodeVpQrPayload(vpQrContent)
+        val encryptedStr = encryptedBytes.decodeToString()
+
+        // Decrypt if we have the ephemeral private key
+        val presentation: String = if (session.ephemeralPrivKey != null && session.ephemeralPubKey != null) {
+            val decryptor = JWEDecryptor()
+            decryptor.decrypt(encryptedStr, session.ephemeralPrivKey, session.ephemeralPubKey)
+                .decodeToString()
+        } else {
+            encryptedStr
+        }
+
+        // Verify locally
+        val verifier = localVerifier
+            ?: throw IllegalStateException("LocalVerifier required for proximity verification")
+        val cache = packDefinitionCache
+            ?: throw IllegalStateException("PackDefinitionCache required for proximity verification")
+
+        val packDef = cache.getPackById(session.packId)
+            ?: throw IllegalStateException("Pack definition not cached: ${session.packId}. " +
+                "Connect to internet to update trust packs.")
+
+        val localResult = verifier.verify(
+            sdJwtPresentation = presentation,
+            packDefinition = packDef,
+            sessionNonce = session.sessionNonce,
+            verifierDid = session.verifierDid
+        )
+
+        return when (localResult) {
+            is LocalVerificationResult.Success ->
+                localResult.toVerificationResult(session.packId)
+            is LocalVerificationResult.Degraded ->
+                localResult.result.toVerificationResult(session.packId)
+            is LocalVerificationResult.VerificationFailed ->
+                VerificationResult(
+                    packId = session.packId,
+                    badge = "",
+                    freshness = "ok",
+                    predicateResults = emptyList(),
+                    summary = null,
+                    consentReceiptId = null,
+                    holderBound = false
+                )
+        }
     }
 
     // ── Direct flow (existing) ──

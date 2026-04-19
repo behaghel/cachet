@@ -1,6 +1,7 @@
 package id.cachet.wallet.android.ui.model
 
 import id.cachet.wallet.android.ui.components.CachetType
+import id.cachet.wallet.domain.transport.TransportRequest
 
 data class QrShareState(
     val question: String,
@@ -27,7 +28,9 @@ data class VerificationRequest(
     val loggedInTransparencyLog: Boolean = true,
     val verifierName: String? = null,
     val isVerifierVerified: Boolean = false,
-    val cachetType: CachetType = CachetType.IDENTITY
+    val cachetType: CachetType = CachetType.IDENTITY,
+    /** Proximity-only: stashed transport request for building the VP response. */
+    val proximityRequest: TransportRequest? = null
 )
 
 data class PredicateResult(

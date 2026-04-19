@@ -53,10 +53,12 @@ domains:
       verification-flow:
         description: >
           Verification interaction — QR scanning, incoming requests, consent,
-          presentation, result display.
+          presentation, result display. Includes relay-based (online) and
+          proximity-based (offline, QR-direct) transport modes.
         code-paths:
           - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/ui/verification/
           - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/usecase/
+          - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/domain/transport/
           - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/
           - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/verification/
         spec-path: spec/wallet/verification-flow/

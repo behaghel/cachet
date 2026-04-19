@@ -32,7 +32,11 @@ import id.cachet.wallet.android.ui.verification.LivenessFailedScreen
 import id.cachet.wallet.android.ui.verification.PackPickerMode
 import id.cachet.wallet.android.ui.verification.PackPickerScreen
 import id.cachet.wallet.android.ui.verification.QrScannerScreen
+import id.cachet.wallet.android.ui.verification.ProximityQrScreen
+import id.cachet.wallet.android.ui.verification.ProximityResponseScreen
 import id.cachet.wallet.android.ui.verification.QrShareScreen
+import id.cachet.wallet.domain.transport.isProximityUri
+import id.cachet.wallet.domain.transport.isVpQrPayload
 import kotlinx.serialization.json.*
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -67,6 +71,14 @@ sealed class OverlayScreen {
     data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
     data class CachetDetail(val detail: CachetDetailUi) : OverlayScreen()
     data object QrScanner : OverlayScreen()
+    data class ProximityQr(
+        val question: String,
+        val predicates: List<String>,
+        val pack: CachPackUi
+    ) : OverlayScreen()
+    data class ProximityResponse(val vpQrPayload: String) : OverlayScreen()
+    /** Verifier scanning the holder's VP QR after showing the proximity session QR. */
+    data object ProximityScanResponse : OverlayScreen()
     data object DeepLinkExpired : OverlayScreen()
 }
 
@@ -145,6 +157,13 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         }
                         PackPickerMode.VERIFIER -> {
                             overlay = OverlayScreen.QrShare(
+                                question = pack.question,
+                                predicates = pack.description.split(", "),
+                                pack = pack
+                            )
+                        }
+                        PackPickerMode.PROXIMITY -> {
+                            overlay = OverlayScreen.ProximityQr(
                                 question = pack.question,
                                 predicates = pack.description.split(", "),
                                 pack = pack
@@ -240,6 +259,23 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     onShare = {
                         if (needsLiveness) {
                             overlay = OverlayScreen.LivenessCheck(screen.request)
+                        } else if (screen.request.proximityRequest != null) {
+                            // Proximity: build VP + show as QR
+                            scope.launch {
+                                val vpQr = viewModel.buildProximityResponse(screen.request)
+                                if (vpQr != null) {
+                                    overlay = OverlayScreen.ProximityResponse(vpQr)
+                                } else {
+                                    overlay = OverlayScreen.CachetResultOverlay(CachetResult(
+                                        cachetName = "Error",
+                                        allPassed = false, passedCount = 0, totalCount = 0,
+                                        predicates = emptyList(),
+                                        isError = true,
+                                        errorMessage = "Could not build proximity response. Ensure you have a valid credential."
+                                    ))
+                                }
+                                qrPayload = ""
+                            }
                         } else {
                             scope.launch {
                                 if (qrPayload.startsWith("cachet://") && !effectiveDemoMode) {
@@ -299,15 +335,21 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
             is OverlayScreen.QrScanner -> QrScannerScreen(
                 demoMode = effectiveDemoMode,
                 onCodeScanned = { code ->
-                    if (code.startsWith("cachet://")) {
-                        // Real relay flow: fetch request from relay
+                    if (isProximityUri(code)) {
+                        // Proximity flow: parse session params from QR
+                        val request = viewModel.parseProximityRequest(code)
+                        if (request != null) {
+                            qrPayload = code
+                            overlay = OverlayScreen.IncomingRequest(request)
+                        }
+                    } else if (code.startsWith("cachet://")) {
+                        // Relay flow: fetch request from relay
                         scope.launch {
                             qrPayload = code
                             val request = viewModel.fetchRequestFromRelay(code)
                             if (request != null) {
                                 overlay = OverlayScreen.IncomingRequest(request)
                             } else if (effectiveDemoMode) {
-                                // Demo fallback when relay is unavailable
                                 overlay = OverlayScreen.IncomingRequest(
                                     CachPackMapper.toVerificationRequest(DemoFixtures.cachPacks.first())
                                 )
@@ -322,6 +364,50 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                 },
                 onClose = { overlay = null }
             )
+            is OverlayScreen.ProximityQr -> {
+                // Verifier: create local proximity session, show QR
+                var proximityQr by remember { mutableStateOf("") }
+                LaunchedEffect(screen) {
+                    proximityQr = viewModel.createProximitySession(
+                        packId = screen.pack.id,
+                        question = screen.question,
+                        predicates = screen.predicates
+                    )
+                }
+                if (proximityQr.isNotBlank()) {
+                    ProximityQrScreen(
+                        qrPayload = proximityQr,
+                        question = screen.question,
+                        onScanResponse = {
+                            overlay = OverlayScreen.ProximityScanResponse
+                        },
+                        onClose = { overlay = null }
+                    )
+                }
+            }
+            is OverlayScreen.ProximityScanResponse -> {
+                // Verifier: scan the holder's VP QR response
+                QrScannerScreen(
+                    demoMode = effectiveDemoMode,
+                    onCodeScanned = { code ->
+                        if (isVpQrPayload(code)) {
+                            scope.launch {
+                                val result = viewModel.verifyProximityResponse(code)
+                                overlay = OverlayScreen.CachetResultOverlay(result)
+                            }
+                        }
+                        // Ignore non-VP QR codes — scanner stays open
+                    },
+                    onClose = { overlay = null }
+                )
+            }
+            is OverlayScreen.ProximityResponse -> {
+                // Holder: display encrypted VP as QR
+                ProximityResponseScreen(
+                    vpQrPayload = screen.vpQrPayload,
+                    onClose = { overlay = null }
+                )
+            }
             is OverlayScreen.CachetDetail -> CachetDetailScreen(
                 detail = screen.detail,
                 onBack = { overlay = null },
@@ -423,7 +509,8 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         auditResult = activityState.auditResult,
                         onRunAudit = { viewModel.runAudit() },
                         onStartVerification = { overlay = OverlayScreen.PackPicker(PackPickerMode.VERIFIER) },
-                        onScanQr = { overlay = OverlayScreen.QrScanner }
+                        onScanQr = { overlay = OverlayScreen.QrScanner },
+                        onInPersonVerify = { overlay = OverlayScreen.PackPicker(PackPickerMode.PROXIMITY) }
                     )
                 }
             }
