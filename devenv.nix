@@ -847,10 +847,20 @@ in
     echo "🔑 Setting up GCP Cloud KMS for issuer key management..."
     set -euo pipefail
 
-    PROJECT_ID=$(gcloud config get-value project)
+    PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
     if [ -z "$PROJECT_ID" ]; then
-      echo "❌ No GCP project set. Run 'gcp:setup' first."
+      echo "❌ No GCP project set. Run 'env:staging <project>' or 'env:prod <project>' first."
       exit 1
+    fi
+    CACHET_ENV="''${CACHET_ENV:-unknown}"
+
+    echo "  Project:     $PROJECT_ID"
+    echo "  Environment: $CACHET_ENV"
+    echo ""
+    read -r -p "Proceed with KMS setup in $CACHET_ENV ($PROJECT_ID)? [y/N]: " confirm
+    if [[ ! "$confirm" =~ ^[yY] ]]; then
+      echo "Aborted."
+      exit 0
     fi
 
     REGION="''${CACHET_KMS_REGION:-europe-west1}"
