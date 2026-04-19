@@ -41,6 +41,7 @@ fun IncomingRequestScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -292,6 +293,10 @@ fun IncomingRequestScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Spacer(modifier = Modifier
+                .navigationBarsPadding()
+                .height(8.dp))
         }
     }
 }

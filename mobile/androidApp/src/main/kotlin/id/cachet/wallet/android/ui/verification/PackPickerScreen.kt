@@ -49,6 +49,7 @@ fun PackPickerScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -160,6 +161,13 @@ fun PackPickerScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            // ── Bottom safe area ──
+            item {
+                Spacer(modifier = Modifier
+                    .navigationBarsPadding()
+                    .height(8.dp))
             }
         }
     }

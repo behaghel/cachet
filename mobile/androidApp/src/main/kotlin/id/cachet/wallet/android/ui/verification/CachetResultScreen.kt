@@ -41,6 +41,7 @@ fun CachetResultScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -88,7 +89,9 @@ fun CachetResultScreen(
                     containerColor = Color.White,
                     contentColor = BrandPrimary
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier
+                    .navigationBarsPadding()
+                    .height(8.dp))
             }
         }
         return
@@ -103,6 +106,7 @@ fun CachetResultScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -292,7 +296,9 @@ fun CachetResultScreen(
                     containerColor = Color.White,
                     contentColor = BrandPrimary
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier
+                    .navigationBarsPadding()
+                    .height(8.dp))
             }
         }
     }

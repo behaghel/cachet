@@ -85,9 +85,8 @@ fun QrScannerScreen(
         color = Color(0xFF0F0F0F)
     ) {
         Box(modifier = Modifier.fillMaxSize().testTag("qr_scanner_screen")) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                 // ── Header ──
-                Spacer(modifier = Modifier.height(48.dp))
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                     Text(
                         text = "Scan to verify",
@@ -221,7 +220,9 @@ fun QrScannerScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier
+                    .navigationBarsPadding()
+                    .height(8.dp))
             }
         }
     }
