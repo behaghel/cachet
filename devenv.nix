@@ -5,7 +5,7 @@ let
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
 
   # Service list — single source of truth for all per-service scripts
-  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" ];
+  goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" "admin" ];
   forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
 
   # Agent marketplace — declarative plugin management for Claude Code
@@ -122,6 +122,7 @@ in
   env.CACHET_RECEIPTS_PORT = "8083";
   env.CACHET_ISSUANCE_PORT = "8090";
   env.CACHET_RELAY_PORT = "8084";
+  env.CACHET_ADMIN_PORT = "8091";
 
   # Environment variables via dotenv for local development
   dotenv.enable = true;
@@ -272,6 +273,7 @@ in
     (cd services/registry && go test -race -coverprofile=../../coverage/registry.out -covermode=atomic ./...)
     (cd services/receipts-log && go test -race -coverprofile=../../coverage/receipts.out -covermode=atomic ./...)
     (cd services/issuance-gateway && go test -race -coverprofile=../../coverage/issuance.out -covermode=atomic ./...)
+    (cd services/admin && go test -race -coverprofile=../../coverage/admin.out -covermode=atomic ./...)
     echo "Coverage reports generated in coverage/"
   '';
   scripts."test:integration".exec = ''
@@ -889,10 +891,10 @@ EOF
   # `go run` forks a child binary that survives `devenv processes down`.
   tasks."devenv:processes:cleanup-orphans" = {
     exec = ''
-      pkill -f 'go-build.*(verifier|registry|receipts|issuance|relay)' 2>/dev/null || true
+      pkill -f 'go-build.*(verifier|registry|receipts|issuance|relay|admin)' 2>/dev/null || true
       sleep 0.5
     '';
-    before = [ "devenv:processes:verifier" "devenv:processes:registry" "devenv:processes:receipts" "devenv:processes:issuance-gateway" "devenv:processes:relay" ];
+    before = [ "devenv:processes:verifier" "devenv:processes:registry" "devenv:processes:receipts" "devenv:processes:issuance-gateway" "devenv:processes:relay" "devenv:processes:admin" ];
   };
 
   # Fixed ports — mobile app hardcodes these (10.0.2.2:<port> from emulator).
@@ -903,6 +905,7 @@ EOF
   processes.receipts.exec = "cd services/receipts-log && PORT=8083 go run .";
   processes.issuance-gateway.exec = "cd services/issuance-gateway && VERIFF_WEBHOOK_SECRET=dev-secret-do-not-use-in-production PORT=8090 go run .";
   processes.relay.exec = "cd services/relay && PORT=8084 go run .";
+  processes.admin.exec = "cd services/admin && ADMIN_API_KEY=dev-admin-key PORT=8091 go run .";
 
   # Pre-commit hooks for consistent build cycle
   git-hooks = {

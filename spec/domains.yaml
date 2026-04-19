@@ -91,6 +91,16 @@ domains:
       - services/relay/
     spec-path: spec/relay/
 
+  admin:
+    description: >
+      Operator backoffice — admin API for pack lifecycle, credential revocation,
+      session inspection, and runtime configuration. Internal-only service.
+    type: supporting
+    language: go
+    code-paths:
+      - services/admin/
+    spec-path: spec/admin/
+
   common:
     description: >
       Shared kernel — HTTP server infrastructure (chi router, middleware, health,
@@ -228,3 +238,20 @@ context-map:
     downstream: issuance
     pattern: shared-kernel
     notes: Issuance gateway uses SD-JWT signing, credential building
+
+  - upstream: registry
+    downstream: admin
+    pattern: customer-supplier
+    protocol: HTTP REST
+    notes: Admin reads/writes packs via registry API
+
+  - upstream: issuance
+    downstream: admin
+    pattern: customer-supplier
+    protocol: HTTP REST
+    notes: Admin triggers revocation via issuance gateway API
+
+  - upstream: common
+    downstream: admin
+    pattern: shared-kernel
+    notes: Shared server infra
