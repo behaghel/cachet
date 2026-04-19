@@ -30,6 +30,18 @@ object SDJWTParser {
     )
 
     /**
+     * A parsed SD-JWT presentation including the KB-JWT (used for verification).
+     */
+    data class ParsedPresentation(
+        val issuerJWT: String,
+        val disclosures: List<Disclosure>,
+        val claims: Map<String, JsonElement>,
+        val kbJwt: String?,
+        /** The SD-JWT content without KB-JWT (issuerJWT~disc1~disc2~...~) for sd_hash computation. */
+        val sdJwtForHash: String
+    )
+
+    /**
      * Parse an SD-JWT string into its components.
      * Extracts the issuer JWT and decodes all disclosures to extract claim names and values.
      */
@@ -60,6 +72,48 @@ object SDJWTParser {
     }
 
     /**
+     * Parse an SD-JWT presentation, extracting the KB-JWT if present.
+     * Used by the local verifier to access all components for verification.
+     */
+    fun parsePresentation(rawPresentation: String): ParsedPresentation {
+        val parts = rawPresentation.split("~")
+        require(parts.size >= 2) { "Invalid SD-JWT: expected at least issuer JWT and delimiter" }
+
+        val issuerJWT = parts[0]
+        val disclosures = mutableListOf<Disclosure>()
+        val claims = mutableMapOf<String, JsonElement>()
+        var kbJwt: String? = null
+        val sdJwtParts = mutableListOf(issuerJWT)
+
+        for (i in 1 until parts.size) {
+            val part = parts[i]
+            if (part.isEmpty()) continue
+
+            if (part.count { it == '.' } == 2) {
+                // This is a KB-JWT
+                kbJwt = part
+                continue
+            }
+
+            val disclosure = decodeDisclosure(part) ?: continue
+            disclosures.add(disclosure)
+            claims[disclosure.claimName] = disclosure.value
+            sdJwtParts.add(part)
+        }
+
+        // sdJwtForHash = issuerJWT~disc1~disc2~...~ (trailing ~, no KB-JWT)
+        val sdJwtForHash = sdJwtParts.joinToString("~") + "~"
+
+        return ParsedPresentation(
+            issuerJWT = issuerJWT,
+            disclosures = disclosures,
+            claims = claims,
+            kbJwt = kbJwt,
+            sdJwtForHash = sdJwtForHash
+        )
+    }
+
+    /**
      * Select only the disclosures needed for the requested claims.
      * Returns the SD-JWT string with only those disclosures included.
      */
@@ -75,7 +129,7 @@ object SDJWTParser {
 
     private fun decodeDisclosure(encoded: String): Disclosure? {
         return try {
-            val jsonStr = base64UrlDecode(encoded).decodeToString()
+            val jsonStr = Base64Url.decode(encoded).decodeToString()
             val arr = Json.parseToJsonElement(jsonStr).jsonArray
             if (arr.size != 3) return null
             Disclosure(
@@ -88,37 +142,4 @@ object SDJWTParser {
             null
         }
     }
-
-    private fun base64UrlDecode(input: String): ByteArray {
-        val base64 = input
-            .replace('-', '+')
-            .replace('_', '/')
-            .let { s ->
-                when (s.length % 4) {
-                    2 -> "$s=="
-                    3 -> "$s="
-                    else -> s
-                }
-            }
-        return base64Decode(base64)
-    }
-}
-
-// Simple multiplatform base64 decoder
-internal fun base64Decode(input: String): ByteArray {
-    val table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    val result = mutableListOf<Byte>()
-    var i = 0
-    while (i < input.length) {
-        val c0 = table.indexOf(input[i])
-        val c1 = if (i + 1 < input.length) table.indexOf(input[i + 1]) else 0
-        val c2 = if (i + 2 < input.length && input[i + 2] != '=') table.indexOf(input[i + 2]) else -1
-        val c3 = if (i + 3 < input.length && input[i + 3] != '=') table.indexOf(input[i + 3]) else -1
-
-        result.add(((c0 shl 2) or (c1 shr 4)).toByte())
-        if (c2 >= 0) result.add((((c1 and 0x0F) shl 4) or (c2 shr 2)).toByte())
-        if (c3 >= 0) result.add((((c2 and 0x03) shl 6) or c3).toByte())
-        i += 4
-    }
-    return result.toByteArray()
 }

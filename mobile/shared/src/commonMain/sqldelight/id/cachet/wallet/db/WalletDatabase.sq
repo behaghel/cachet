@@ -72,3 +72,76 @@ SELECT * FROM consent_receipts WHERE credential_id = ? ORDER BY timestamp DESC;
 
 deleteReceipt:
 DELETE FROM consent_receipts WHERE id = ?;
+
+-- Offline cache: pack definitions
+CREATE TABLE cached_packs (
+    pack_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    name TEXT NOT NULL,
+    pack_json TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    PRIMARY KEY (pack_id, version)
+);
+
+CREATE INDEX idx_cached_packs_fetched ON cached_packs(fetched_at);
+
+getPackById:
+SELECT * FROM cached_packs WHERE pack_id = ?
+ORDER BY fetched_at DESC LIMIT 1;
+
+getAllPacks:
+SELECT * FROM cached_packs
+ORDER BY name;
+
+upsertPack:
+INSERT OR REPLACE INTO cached_packs (pack_id, version, name, pack_json, fetched_at)
+VALUES (?, ?, ?, ?, ?);
+
+deletePackById:
+DELETE FROM cached_packs WHERE pack_id = ?;
+
+deleteAllPacks:
+DELETE FROM cached_packs;
+
+getLatestPackFetchedAt:
+SELECT MAX(fetched_at) FROM cached_packs;
+
+-- Offline cache: DID documents
+CREATE TABLE cached_did_documents (
+    did TEXT PRIMARY KEY NOT NULL,
+    document_json TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL
+);
+
+getDidDocument:
+SELECT * FROM cached_did_documents WHERE did = ?;
+
+upsertDidDocument:
+INSERT OR REPLACE INTO cached_did_documents (did, document_json, fetched_at)
+VALUES (?, ?, ?);
+
+deleteDidDocument:
+DELETE FROM cached_did_documents WHERE did = ?;
+
+deleteExpiredDidDocuments:
+DELETE FROM cached_did_documents WHERE fetched_at < ?;
+
+-- Offline cache: StatusList2021 bitstrings
+CREATE TABLE cached_status_lists (
+    status_list_url TEXT PRIMARY KEY NOT NULL,
+    encoded_list TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL
+);
+
+getStatusList:
+SELECT * FROM cached_status_lists WHERE status_list_url = ?;
+
+upsertStatusList:
+INSERT OR REPLACE INTO cached_status_lists (status_list_url, encoded_list, fetched_at)
+VALUES (?, ?, ?);
+
+deleteStatusList:
+DELETE FROM cached_status_lists WHERE status_list_url = ?;
+
+deleteExpiredStatusLists:
+DELETE FROM cached_status_lists WHERE fetched_at < ?;

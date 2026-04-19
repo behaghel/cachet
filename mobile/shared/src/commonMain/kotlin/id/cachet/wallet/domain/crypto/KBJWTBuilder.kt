@@ -37,12 +37,12 @@ object KBJWTBuilder {
         val iat = Clock.System.now().epochSeconds
         val payload = """{"nonce":"$nonce","aud":"$audience","iat":$iat,"sd_hash":"$sdHash"}"""
 
-        val headerEncoded = base64UrlEncode(header.encodeToByteArray())
-        val payloadEncoded = base64UrlEncode(payload.encodeToByteArray())
+        val headerEncoded = Base64Url.encode(header.encodeToByteArray())
+        val payloadEncoded = Base64Url.encode(payload.encodeToByteArray())
         val signingInput = "$headerEncoded.$payloadEncoded"
 
         val signatureBytes = keyManager.sign(keyAlias, signingInput.encodeToByteArray())
-        val signatureEncoded = base64UrlEncode(signatureBytes)
+        val signatureEncoded = Base64Url.encode(signatureBytes)
 
         return "$signingInput.$signatureEncoded"
     }
@@ -54,34 +54,6 @@ object KBJWTBuilder {
         // sha256Hash returns hex string, we need the raw bytes for base64url
         val hexHash = sha256Hash(sdJwtContent)
         val hashBytes = hexHash.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-        return base64UrlEncode(hashBytes)
+        return Base64Url.encode(hashBytes)
     }
-
-    private fun base64UrlEncode(bytes: ByteArray): String {
-        val base64 = bytes.toBase64()
-        return base64
-            .replace('+', '-')
-            .replace('/', '_')
-            .trimEnd('=')
-    }
-}
-
-// Multiplatform base64 encoding (simple implementation)
-internal fun ByteArray.toBase64(): String {
-    val table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    val sb = StringBuilder()
-    var i = 0
-    while (i < size) {
-        val b0 = this[i].toInt() and 0xFF
-        val b1 = if (i + 1 < size) this[i + 1].toInt() and 0xFF else 0
-        val b2 = if (i + 2 < size) this[i + 2].toInt() and 0xFF else 0
-        val remaining = size - i
-
-        sb.append(table[b0 shr 2])
-        sb.append(table[((b0 and 0x03) shl 4) or (b1 shr 4)])
-        if (remaining > 1) sb.append(table[((b1 and 0x0F) shl 2) or (b2 shr 6)]) else sb.append('=')
-        if (remaining > 2) sb.append(table[b2 and 0x3F]) else sb.append('=')
-        i += 3
-    }
-    return sb.toString()
 }

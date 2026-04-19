@@ -1,0 +1,24 @@
+-- Migration from version 3 to 4: add offline cache tables
+
+CREATE TABLE cached_packs (
+    pack_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    name TEXT NOT NULL,
+    pack_json TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    PRIMARY KEY (pack_id, version)
+);
+
+CREATE INDEX idx_cached_packs_fetched ON cached_packs(fetched_at);
+
+CREATE TABLE cached_did_documents (
+    did TEXT PRIMARY KEY NOT NULL,
+    document_json TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL
+);
+
+CREATE TABLE cached_status_lists (
+    status_list_url TEXT PRIMARY KEY NOT NULL,
+    encoded_list TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL
+);

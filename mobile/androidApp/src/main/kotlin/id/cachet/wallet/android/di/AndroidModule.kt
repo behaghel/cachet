@@ -8,6 +8,7 @@ import id.cachet.wallet.android.ui.WalletViewModel
 import id.cachet.wallet.android.BuildConfig
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.db.WalletDatabase
+import id.cachet.wallet.domain.cache.BundledPackLoader
 import id.cachet.wallet.domain.crypto.AndroidKeyStoreKeyManager
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.repository.CredentialRepository
@@ -40,6 +41,9 @@ val androidModule = module {
     
     // Key management (hardware-backed Android KeyStore)
     single<KeyManager> { AndroidKeyStoreKeyManager() }
+
+    // Bundled pack definitions from assets
+    single { BundledPackLoader(androidContext()) }
 
     // Verification — demo uses MockVeriffService, prod uses NoOpVeriffService (until real SDK)
     single<VeriffService> {

@@ -1,6 +1,8 @@
 package id.cachet.wallet.domain.usecase
 
 import id.cachet.wallet.config.AppConfig
+import id.cachet.wallet.domain.cache.PackDefinitionCache
+import id.cachet.wallet.domain.crypto.Base64Url
 import id.cachet.wallet.domain.crypto.DIDResolver
 import id.cachet.wallet.domain.crypto.JWEEncryptor
 import id.cachet.wallet.domain.crypto.JWSVerifier
@@ -9,6 +11,8 @@ import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.crypto.SDJWTParser
 import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.verification.LocalVerificationResult
+import id.cachet.wallet.domain.verification.LocalVerifier
 import id.cachet.wallet.network.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
@@ -31,7 +35,9 @@ class VerificationUseCase(
     private val relayClient: RelayClient,
     private val consentUseCase: ConsentUseCase,
     private val keyManager: KeyManager? = null,
-    private val didResolver: DIDResolver? = null
+    private val didResolver: DIDResolver? = null,
+    private val localVerifier: LocalVerifier? = null,
+    private val packDefinitionCache: PackDefinitionCache? = null
 ) {
 
     companion object {
@@ -79,17 +85,50 @@ class VerificationUseCase(
             qrPayload = qr,
             relayResponseUri = relaySession.responseUri,
             verificationSessionId = session.sessionId,
-            packId = packId
+            packId = packId,
+            sessionNonce = session.nonce,
+            verifierDid = session.verifierDid
         )
     }
 
     /**
      * Verifier polls the relay for the holder's response, then verifies it.
+     * Attempts local verification first; falls back to backend on failure.
      */
     suspend fun awaitAndVerifyRelayResponse(sessionInfo: VerifierSessionInfo): VerificationResult {
         val responseBytes = pollUntilResponse(sessionInfo.relayResponseUri)
         val presentation = responseBytes.decodeToString()
 
+        // Attempt local verification first
+        if (localVerifier != null && packDefinitionCache != null) {
+            val packDef = packDefinitionCache.getPackById(sessionInfo.packId)
+            if (packDef != null) {
+                val localResult = localVerifier.verify(
+                    sdJwtPresentation = presentation,
+                    packDefinition = packDef,
+                    sessionNonce = sessionInfo.sessionNonce,
+                    verifierDid = sessionInfo.verifierDid
+                )
+                when (localResult) {
+                    is LocalVerificationResult.Success -> return localResult.toVerificationResult(sessionInfo.packId)
+                    is LocalVerificationResult.Degraded -> return localResult.result.toVerificationResult(sessionInfo.packId)
+                    is LocalVerificationResult.VerificationFailed -> {
+                        // Crypto failures are definitive — don't fall back to backend
+                        return VerificationResult(
+                            packId = sessionInfo.packId,
+                            badge = "",
+                            freshness = "ok",
+                            predicateResults = emptyList(),
+                            summary = null,
+                            consentReceiptId = null,
+                            holderBound = false
+                        )
+                    }
+                }
+            }
+        }
+
+        // Backend fallback (existing path)
         val response = verifierClient.verifySDJWTPresentation(
             policyId = sessionInfo.packId,
             sdJwtCredentials = listOf(presentation),
@@ -106,6 +145,16 @@ class VerificationUseCase(
             holderBound = true
         )
     }
+
+    private fun LocalVerificationResult.Success.toVerificationResult(packId: String) = VerificationResult(
+        packId = packId,
+        badge = badge,
+        freshness = freshness,
+        predicateResults = predicateResults,
+        summary = summary,
+        consentReceiptId = null,
+        holderBound = holderBound
+    )
 
     // ── Relay flow: holder side ──
 
@@ -131,14 +180,14 @@ class VerificationUseCase(
     private suspend fun verifyAndParseRequestObject(jwsCompact: String): VerifiedRequest {
         // Extract client_id from unverified payload to know which DID to resolve
         val payloadPart = jwsCompact.split(".")[1]
-        val payloadJson = decodeBase64Url(payloadPart).decodeToString()
+        val payloadJson = Base64Url.decode(payloadPart).decodeToString()
         val unverified = Json.parseToJsonElement(payloadJson).jsonObject
         val clientId = unverified["client_id"]?.jsonPrimitive?.content
             ?: throw IllegalStateException("Missing client_id in request object")
 
         // Extract kid from JWS header
         val headerPart = jwsCompact.split(".")[0]
-        val headerJson = decodeBase64Url(headerPart).decodeToString()
+        val headerJson = Base64Url.decode(headerPart).decodeToString()
         val header = Json.parseToJsonElement(headerJson).jsonObject
         val kid = header["kid"]?.jsonPrimitive?.content
 
@@ -169,30 +218,6 @@ class VerificationUseCase(
             verifierName = clientMetadata?.get("client_name")?.jsonPrimitive?.content,
             isVerified = true
         )
-    }
-
-    private fun decodeBase64Url(s: String): ByteArray {
-        val padded = s + "=".repeat((4 - s.length % 4) % 4)
-        val standard = padded.replace('-', '+').replace('_', '/')
-        // Use the same base64 decode as KBJWTBuilder (custom multiplatform impl)
-        return decodeBase64(standard)
-    }
-
-    private fun decodeBase64(s: String): ByteArray {
-        val table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        val result = mutableListOf<Byte>()
-        var i = 0
-        while (i < s.length) {
-            val a = if (s[i] != '=') table.indexOf(s[i]) else 0
-            val b = if (i + 1 < s.length && s[i + 1] != '=') table.indexOf(s[i + 1]) else 0
-            val c = if (i + 2 < s.length && s[i + 2] != '=') table.indexOf(s[i + 2]) else 0
-            val d = if (i + 3 < s.length && s[i + 3] != '=') table.indexOf(s[i + 3]) else 0
-            result.add(((a shl 2) or (b shr 4)).toByte())
-            if (i + 2 < s.length && s[i + 2] != '=') result.add((((b and 0xF) shl 4) or (c shr 2)).toByte())
-            if (i + 3 < s.length && s[i + 3] != '=') result.add((((c and 0x3) shl 6) or d).toByte())
-            i += 4
-        }
-        return result.toByteArray()
     }
 
     /**
@@ -405,7 +430,9 @@ data class VerifierSessionInfo(
     val qrPayload: String,
     val relayResponseUri: String,
     val verificationSessionId: String,
-    val packId: String
+    val packId: String,
+    val sessionNonce: String = "",
+    val verifierDid: String = ""
 )
 
 /** Holder-side result of fetching and verifying the Request Object from the relay. */

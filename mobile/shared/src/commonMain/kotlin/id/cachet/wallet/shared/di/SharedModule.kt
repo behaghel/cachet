@@ -5,7 +5,19 @@ import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.SqlDelightConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
 import id.cachet.wallet.domain.repository.HttpTransparencyLogRepository
+import id.cachet.wallet.domain.repository.PackDefinitionRepository
+import id.cachet.wallet.domain.repository.SqlDelightPackDefinitionRepository
+import id.cachet.wallet.domain.repository.DIDDocumentRepository
+import id.cachet.wallet.domain.repository.SqlDelightDIDDocumentRepository
+import id.cachet.wallet.domain.repository.StatusListRepository
+import id.cachet.wallet.domain.repository.SqlDelightStatusListRepository
 import id.cachet.wallet.domain.crypto.DIDResolver
+import id.cachet.wallet.domain.cache.BundledPackLoader
+import id.cachet.wallet.domain.cache.CachedDIDResolver
+import id.cachet.wallet.domain.cache.PackDefinitionCache
+import id.cachet.wallet.domain.cache.StatusListCache
+import id.cachet.wallet.domain.verification.KBJWTVerifier
+import id.cachet.wallet.domain.verification.LocalVerifier
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
@@ -81,11 +93,36 @@ val sharedModule = module {
             httpClient = get()
         )
     }
+    single<PackDefinitionRepository> {
+        SqlDelightPackDefinitionRepository(database = get<WalletDatabase>())
+    }
+    single<DIDDocumentRepository> {
+        SqlDelightDIDDocumentRepository(database = get<WalletDatabase>())
+    }
+    single<StatusListRepository> {
+        SqlDelightStatusListRepository(database = get<WalletDatabase>())
+    }
 
     // KeyManager is provided by the platform-specific module (e.g. androidModule)
 
-    // DID resolution for verifier identity verification
+    // DID resolution — cached decorator with 24h TTL over HTTP resolver
     single { DIDResolver(httpClient = get()) }
+    single { CachedDIDResolver(delegate = get(), repository = get()) }
+
+    // Offline caches
+    // BundledPackLoader is provided by the platform-specific module
+    single {
+        PackDefinitionCache(
+            repository = get(),
+            loadBundled = { get<BundledPackLoader>().loadBundledPacks() }
+        )
+    }
+    single {
+        StatusListCache(
+            repository = get(),
+            httpClient = get()
+        )
+    }
 
     // Use cases
     single {
@@ -104,6 +141,14 @@ val sharedModule = module {
         )
     }
 
+    // Local SD-JWT verifier for offline verification
+    single {
+        LocalVerifier(
+            cachedDIDResolver = get(),
+            statusListCache = get()
+        )
+    }
+
     single {
         VerificationUseCase(
             credentialRepository = get(),
@@ -111,7 +156,9 @@ val sharedModule = module {
             relayClient = get(),
             consentUseCase = get(),
             keyManager = get(),
-            didResolver = get()
+            didResolver = get(),
+            localVerifier = get(),
+            packDefinitionCache = get()
         )
     }
 }

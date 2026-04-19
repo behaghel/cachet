@@ -8,12 +8,18 @@ import com.nimbusds.jose.jwk.ECKey
 actual class JWSVerifier actual constructor() {
 
     actual fun verify(jwsCompact: String, publicKeyJWK: String): String {
+        return verifyJWS(jwsCompact, publicKeyJWK, "oauth-authz-req+jwt")
+    }
+
+    actual fun verifyJWS(jwsCompact: String, publicKeyJWK: String, expectedTyp: String?): String {
         val jwsObject = JWSObject.parse(jwsCompact)
 
-        // Verify typ header
-        val typ = jwsObject.header.type?.type
-        if (typ != null && typ != "oauth-authz-req+jwt") {
-            throw SecurityException("Invalid JWS typ: expected oauth-authz-req+jwt, got $typ")
+        // Verify typ header if expected
+        if (expectedTyp != null) {
+            val typ = jwsObject.header.type?.type
+            if (typ != null && typ != expectedTyp) {
+                throw SecurityException("Invalid JWS typ: expected $expectedTyp, got $typ")
+            }
         }
 
         // Verify algorithm
@@ -28,11 +34,11 @@ actual class JWSVerifier actual constructor() {
             throw SecurityException("JWS signature verification failed")
         }
 
-        // Verify expiration
+        // Verify expiration (only for tokens that have exp)
         val payload = jwsObject.payload.toJSONObject()
         val exp = (payload["exp"] as? Number)?.toLong()
         if (exp != null && exp < System.currentTimeMillis() / 1000) {
-            throw SecurityException("Request Object has expired")
+            throw SecurityException("Token has expired")
         }
 
         return jwsObject.payload.toString()

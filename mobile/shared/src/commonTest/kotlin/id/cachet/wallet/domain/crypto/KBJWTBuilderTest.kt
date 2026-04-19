@@ -67,9 +67,7 @@ class KBJWTBuilderTest {
     }
 
     private fun decodeJwtPart(base64url: String): String {
-        val padded = base64url + "=".repeat((4 - base64url.length % 4) % 4)
-        val standard = padded.replace('-', '+').replace('_', '/')
-        return base64Decode(standard).decodeToString()
+        return Base64Url.decode(base64url).decodeToString()
     }
 
     // ── computeSDHash ──
