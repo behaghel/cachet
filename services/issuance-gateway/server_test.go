@@ -18,6 +18,7 @@ import (
 
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -269,8 +270,7 @@ func testServerWithSDJWT(t *testing.T, secret string) *Server {
 	return NewServerWithConfig(ServerConfig{
 		Common:        common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"},
 		SigningKey:    rsaKey,
-		IssuerKey:     ecKey,
-		IssuerKeyID:   "did:veriff:production#key-1",
+		IssuerSigner:  credential.NewFileSigner(ecKey, "did:veriff:production#key-1"),
 		Sessions:      veriff.NewInMemoryStore(),
 		WebhookSecret: secret,
 	})

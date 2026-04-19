@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/cachet-id/cachet/services/common"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,11 +132,10 @@ func testConfigWithIssuerKey(t *testing.T, ecKey *ecdsa.PrivateKey) ServerConfig
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 	return ServerConfig{
-		Common:      common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"},
-		SigningKey:  rsaKey,
-		IssuerKey:   ecKey,
-		IssuerKeyID: "did:veriff:production#key-1",
-		Sessions:    veriff.NewInMemoryStore(),
+		Common:       common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"},
+		SigningKey:   rsaKey,
+		IssuerSigner: credential.NewFileSigner(ecKey, "did:veriff:production#key-1"),
+		Sessions:     veriff.NewInMemoryStore(),
 	}
 }
 
