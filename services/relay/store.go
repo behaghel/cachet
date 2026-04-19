@@ -94,6 +94,18 @@ func (s *SessionStore) GetResponse(id string) ([]byte, error) {
 	return sess.Response, nil // nil if not yet posted
 }
 
+// ResponseLatency returns the session and the duration from creation to now.
+// Returns false if the session is not found or expired.
+func (s *SessionStore) ResponseLatency(id string) (*RelaySession, time.Duration, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	sess, ok := s.sessions[id]
+	if !ok || time.Since(sess.CreatedAt) > s.ttl {
+		return nil, 0, false
+	}
+	return sess, time.Since(sess.CreatedAt), true
+}
+
 func (s *SessionStore) evictExpired() {
 	for id, sess := range s.sessions {
 		if time.Since(sess.CreatedAt) > s.ttl {
