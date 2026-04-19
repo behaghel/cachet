@@ -24,7 +24,7 @@ import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.model.CachPackUi
 import id.cachet.wallet.android.ui.theme.*
 
-enum class PackPickerMode { HOLDER, VERIFIER }
+enum class PackPickerMode { HOLDER, VERIFIER, PROXIMITY }
 
 @Composable
 fun PackPickerScreen(
@@ -34,6 +34,7 @@ fun PackPickerScreen(
     onClose: () -> Unit
 ) {
     val isHolder = mode == PackPickerMode.HOLDER
+    val isProximity = mode == PackPickerMode.PROXIMITY
     val bgColor = if (isHolder) SurfaceBackground else BrandPrimary
     val cardColor = if (isHolder) Color.White else Color(0xFF334155)
     val cardBorder = if (isHolder) BorderStroke(1.dp, SurfaceBorder) else null

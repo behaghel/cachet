@@ -31,6 +31,10 @@ class ScanToVerifySteps {
                 rule.onNodeWithTag("fab_scan_qr").performClick()
                 rule.waitForIdle()
             }
+            "Verify" -> {
+                rule.onNodeWithTag("fab_in_person").performClick()
+                rule.waitForIdle()
+            }
             "New request" -> {
                 rule.onNodeWithTag("fab_new_request").performClick()
                 rule.waitForIdle()

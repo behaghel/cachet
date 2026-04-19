@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,7 +40,8 @@ fun ActivityScreen(
     auditResult: String? = null,
     onRunAudit: () -> Unit = {},
     onStartVerification: () -> Unit = {},
-    onScanQr: () -> Unit = {}
+    onScanQr: () -> Unit = {},
+    onInPersonVerify: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf(ActivityFilter.ALL) }
 
@@ -152,6 +154,16 @@ fun ActivityScreen(
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR")
+            }
+            // In-person verify (proximity)
+            SmallFloatingActionButton(
+                onClick = onInPersonVerify,
+                modifier = Modifier.testTag("fab_in_person"),
+                containerColor = Color(0xFF10B981),
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.NearMe, contentDescription = "In-person verification")
             }
             // New request (verifier flow)
             FloatingActionButton(

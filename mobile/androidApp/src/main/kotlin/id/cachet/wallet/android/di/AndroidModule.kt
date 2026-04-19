@@ -9,7 +9,9 @@ import id.cachet.wallet.android.BuildConfig
 import id.cachet.wallet.android.verification.VeriffService
 import id.cachet.wallet.db.WalletDatabase
 import id.cachet.wallet.domain.cache.BundledPackLoader
+import id.cachet.wallet.domain.crypto.AndroidEphemeralKeyGenerator
 import id.cachet.wallet.domain.crypto.AndroidKeyStoreKeyManager
+import id.cachet.wallet.domain.crypto.EphemeralKeyGenerator
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.repository.CredentialRepository
 import org.koin.android.ext.koin.androidContext
@@ -41,6 +43,9 @@ val androidModule = module {
     
     // Key management (hardware-backed Android KeyStore)
     single<KeyManager> { AndroidKeyStoreKeyManager() }
+
+    // Ephemeral key generation for proximity verification
+    single<EphemeralKeyGenerator> { AndroidEphemeralKeyGenerator() }
 
     // Bundled pack definitions from assets
     single { BundledPackLoader(androidContext()) }
