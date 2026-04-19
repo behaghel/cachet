@@ -190,8 +190,8 @@ in
   '';
   scripts."ci:deps".exec = ''
     echo "📦 Downloading dependencies..."
-    (cd services/common && go mod download)
-    ${forEachService (svc: "(cd services/${svc} && go mod download)")}
+    (cd services/common && go mod tidy && go mod download)
+    ${forEachService (svc: "(cd services/${svc} && go mod tidy && go mod download)")}
     echo "✅ Dependencies downloaded"
   '';
   scripts."ci:test".exec = ''
