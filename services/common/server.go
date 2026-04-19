@@ -15,9 +15,10 @@ import (
 
 // ServerConfig holds configuration for creating a service.
 type ServerConfig struct {
-	Name    string
-	Version string
-	Port    string // default port if PORT env var is not set
+	Name            string
+	Version         string
+	Port            string           // default port if PORT env var is not set
+	ReadinessChecks []ReadinessCheck // checks run on GET /ready
 }
 
 // NewRouter creates a chi router with the standard middleware stack.
@@ -28,7 +29,7 @@ func NewRouter(cfg ServerConfig) *chi.Mux {
 	r.Use(RequestLoggerMiddleware)
 	r.Use(chi.Middlewares{recoverMiddleware}...)
 	r.Get("/health", HealthHandler(cfg.Name, cfg.Version))
-	r.Get("/ready", ReadyHandler(cfg.Name, cfg.Version)) // add ReadinessChecks via ReadyHandler(name, ver, check1, check2...)
+	r.Get("/ready", ReadyHandler(cfg.Name, cfg.Version, cfg.ReadinessChecks...))
 	r.Handle("/metrics", MetricsHandler())
 	return r
 }

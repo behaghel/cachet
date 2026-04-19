@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"net/http"
 	"os"
@@ -21,15 +22,18 @@ import (
 func main() {
 	common.InitLogging()
 
+	registryURL := os.Getenv("CACHET_REGISTRY_URL")
+	if registryURL == "" {
+		registryURL = "http://localhost:8082"
+	}
+
 	cfg := common.ServerConfig{
 		Name:    "verifier",
 		Version: "0.1.0",
 		Port:    "8081",
-	}
-
-	registryURL := os.Getenv("CACHET_REGISTRY_URL")
-	if registryURL == "" {
-		registryURL = "http://localhost:8082"
+		ReadinessChecks: []common.ReadinessCheck{
+			registryHealthCheck(registryURL),
+		},
 	}
 
 	issuanceURL := os.Getenv("CACHET_ISSUANCE_URL")
@@ -138,4 +142,24 @@ func fetchIssuerKeys(issuanceURL string) eval.DIDResolver {
 
 	log.Warn().Msg("could not fetch issuer keys from issuance gateway — SD-JWT verification will fail")
 	return nil
+}
+
+// registryHealthCheck returns a ReadinessCheck that pings the registry /health endpoint.
+func registryHealthCheck(registryURL string) common.ReadinessCheck {
+	client := &http.Client{Timeout: 2 * time.Second}
+	return func(ctx context.Context) error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, registryURL+"/health", nil)
+		if err != nil {
+			return fmt.Errorf("registry: %w", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("registry unreachable: %w", err)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("registry unhealthy: status %d", resp.StatusCode)
+		}
+		return nil
+	}
 }

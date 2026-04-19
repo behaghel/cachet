@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +27,13 @@ func NewServer(cfg common.ServerConfig) *Server {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load pack definitions")
 	}
+
+	cfg.ReadinessChecks = append(cfg.ReadinessChecks, func(_ context.Context) error {
+		if len(packStore.List()) == 0 {
+			return fmt.Errorf("no packs loaded")
+		}
+		return nil
+	})
 
 	s := &Server{
 		router:    common.NewRouter(cfg),
