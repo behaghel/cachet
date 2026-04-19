@@ -198,6 +198,7 @@ in
     echo ""
     echo "GCP (requires gcloud CLI):"
     echo "  gcp:setup              Setup GCP project"
+    echo "  gcp:kms:setup          Create HSM-backed issuer signing key"
     echo "  gcp:deploy:verifier    Deploy to Cloud Run"
     echo "  gcp:status             Check deployment status"
     echo "  gcp:monitoring:setup   Create alerts + dashboard"
@@ -841,7 +842,72 @@ in
     echo "   Connection: $CONNECTION_NAME"
     echo "⚠️  Remember to change the root password!"
   '';
-  
+
+  scripts."gcp:kms:setup".exec = ''
+    echo "🔑 Setting up GCP Cloud KMS for issuer key management..."
+    set -euo pipefail
+
+    PROJECT_ID=$(gcloud config get-value project)
+    if [ -z "$PROJECT_ID" ]; then
+      echo "❌ No GCP project set. Run 'gcp:setup' first."
+      exit 1
+    fi
+
+    REGION="''${CACHET_KMS_REGION:-europe-west1}"
+    KEYRING="issuer"
+    KEY="sd-jwt-signer"
+
+    echo "🔧 Enabling Cloud KMS API..."
+    gcloud services enable cloudkms.googleapis.com --quiet
+
+    echo "🔑 Creating keyring '$KEYRING' in $REGION..."
+    if ! gcloud kms keyrings describe "$KEYRING" --location="$REGION" >/dev/null 2>&1; then
+      gcloud kms keyrings create "$KEYRING" --location="$REGION"
+    else
+      echo "   Keyring already exists."
+    fi
+
+    echo "🔑 Creating asymmetric signing key '$KEY' (EC P-256)..."
+    if ! gcloud kms keys describe "$KEY" --keyring="$KEYRING" --location="$REGION" >/dev/null 2>&1; then
+      gcloud kms keys create "$KEY" \
+        --keyring="$KEYRING" \
+        --location="$REGION" \
+        --purpose=asymmetric-signing \
+        --default-algorithm=ec-sign-p256-sha256 \
+        --protection-level=hsm
+    else
+      echo "   Key already exists."
+    fi
+
+    # Get the full key version name for CACHET_KMS_KEY_NAME
+    KEY_VERSION=$(gcloud kms keys versions list \
+      --key="$KEY" --keyring="$KEYRING" --location="$REGION" \
+      --filter="state=ENABLED" --format="value(name)" --limit=1)
+
+    if [ -z "$KEY_VERSION" ]; then
+      echo "❌ No enabled key version found."
+      exit 1
+    fi
+
+    echo "🔐 Granting signing permission to Cloud Run service account..."
+    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
+    gcloud kms keys add-iam-policy-binding "$KEY" \
+      --keyring="$KEYRING" \
+      --location="$REGION" \
+      --member="serviceAccount:$SERVICE_ACCOUNT" \
+      --role="roles/cloudkms.signerVerifier" --quiet || true
+
+    echo ""
+    echo "✅ KMS setup complete!"
+    echo "📋 Key version: $KEY_VERSION"
+    echo ""
+    echo "Set this in your deployment:"
+    echo "  CACHET_KMS_KEY_NAME=$KEY_VERSION"
+    echo ""
+    echo "For Cloud Run deploy, add:"
+    echo "  --set-env-vars CACHET_KMS_KEY_NAME=$KEY_VERSION"
+  '';
+
   scripts."gcp:secrets:setup".exec = ''
     echo "🔐 Setting up Secret Manager with SecretSpec integration..."
     set -euo pipefail
