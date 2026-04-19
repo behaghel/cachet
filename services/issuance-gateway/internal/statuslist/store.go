@@ -190,13 +190,13 @@ func (s *Store) saveToDisk() error {
 		return fmt.Errorf("marshaling state: %w", err)
 	}
 
-	if err := os.MkdirAll(s.persistDir, 0o755); err != nil {
+	if err := os.MkdirAll(s.persistDir, 0o750); err != nil {
 		return fmt.Errorf("creating persist dir: %w", err)
 	}
 
 	target := filepath.Join(s.persistDir, "statuslists.json")
 	tmp := target + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
 		return fmt.Errorf("writing temp file: %w", err)
 	}
 	if err := os.Rename(tmp, target); err != nil {
