@@ -1,0 +1,31 @@
+# Exclude non-build files from Docker context.
+# Docker compose builds from repo root (context: ..) so this file
+# must live at the repo root.
+
+mobile/
+.devenv/
+.direnv/
+.claude/
+coverage/
+docs/
+spec/
+sdk/
+testdata/
+schemas/
+design/
+scripts/
+infra/docker-compose.yaml
+
+*.md
+.git/
+.env
+.env.*
+.workonrc
+.envrc
+.gitignore
+node_modules/
+
+# Secrets and keys
+*.key
+*.pem
+*.apk
