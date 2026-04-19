@@ -26,6 +26,16 @@ func main() {
 		issuanceURL = "http://localhost:8090"
 	}
 
+	relayURL := os.Getenv("CACHET_RELAY_URL")
+	if relayURL == "" {
+		relayURL = "http://localhost:8084"
+	}
+
+	verifierURL := os.Getenv("CACHET_VERIFIER_URL")
+	if verifierURL == "" {
+		verifierURL = "http://localhost:8081"
+	}
+
 	cfg := AdminConfig{
 		Common: common.ServerConfig{
 			Name:    "admin",
@@ -35,6 +45,8 @@ func main() {
 		APIKey:      apiKey,
 		RegistryURL: registryURL,
 		IssuanceURL: issuanceURL,
+		RelayURL:    relayURL,
+		VerifierURL: verifierURL,
 	}
 
 	server := NewServer(cfg)

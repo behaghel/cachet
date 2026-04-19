@@ -24,6 +24,8 @@ func testServer(registryURL string) *Server {
 		APIKey:      testAPIKey,
 		RegistryURL: registryURL,
 		IssuanceURL: "http://localhost:8090",
+		RelayURL:    "http://localhost:8084",
+		VerifierURL: "http://localhost:8081",
 	}
 	return NewServer(cfg)
 }

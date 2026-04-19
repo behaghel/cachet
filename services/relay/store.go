@@ -106,6 +106,42 @@ func (s *SessionStore) ResponseLatency(id string) (*RelaySession, time.Duration,
 	return sess, time.Since(sess.CreatedAt), true
 }
 
+// SessionInfo is a summary of an active session for admin visibility.
+type SessionInfo struct {
+	ID          string  `json:"id"`
+	AgeSeconds  float64 `json:"age_seconds"`
+	HasResponse bool    `json:"has_response"`
+}
+
+// List returns info about all active (non-expired) sessions.
+func (s *SessionStore) List() []SessionInfo {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var result []SessionInfo
+	for _, sess := range s.sessions {
+		if time.Since(sess.CreatedAt) > s.ttl {
+			continue
+		}
+		result = append(result, SessionInfo{
+			ID:          sess.ID,
+			AgeSeconds:  time.Since(sess.CreatedAt).Seconds(),
+			HasResponse: sess.Response != nil,
+		})
+	}
+	return result
+}
+
+// ForceExpire removes a session immediately.
+func (s *SessionStore) ForceExpire(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	_, ok := s.sessions[id]
+	if ok {
+		delete(s.sessions, id)
+	}
+	return ok
+}
+
 func (s *SessionStore) evictExpired() {
 	for id, sess := range s.sessions {
 		if time.Since(sess.CreatedAt) > s.ttl {

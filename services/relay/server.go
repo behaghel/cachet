@@ -30,6 +30,11 @@ func NewServer(cfg common.ServerConfig) *Server {
 	s.router.Get("/sessions/{id}/request", s.handleGetRequest)
 	s.router.Post("/sessions/{id}/response", s.handlePostResponse)
 	s.router.Get("/sessions/{id}/response", s.handleGetResponse)
+
+	// Internal endpoints for admin service
+	s.router.Get("/internal/sessions", s.handleListSessions)
+	s.router.Delete("/internal/sessions/{id}", s.handleForceExpireSession)
+
 	return s
 }
 
@@ -113,4 +118,20 @@ func (s *Server) handleGetResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(response)
+}
+
+// handleListSessions returns active sessions for admin visibility.
+func (s *Server) handleListSessions(w http.ResponseWriter, r *http.Request) {
+	sessions := s.sessions.List()
+	common.WriteJSON(w, r, http.StatusOK, map[string]interface{}{
+		"active":   len(sessions),
+		"sessions": sessions,
+	})
+}
+
+// handleForceExpireSession removes a session immediately.
+func (s *Server) handleForceExpireSession(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	s.sessions.ForceExpire(id)
+	w.WriteHeader(http.StatusNoContent)
 }

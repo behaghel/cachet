@@ -113,6 +113,42 @@ func (m *Manager) Get(sessionID string) (*Session, bool) {
 	return s, true
 }
 
+// SessionInfo is a summary of an active session for admin visibility.
+type SessionInfo struct {
+	ID         string  `json:"id"`
+	AgeSeconds float64 `json:"age_seconds"`
+	Used       bool    `json:"used"`
+}
+
+// List returns info about all active (non-expired) sessions.
+func (m *Manager) List() []SessionInfo {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var result []SessionInfo
+	for _, s := range m.sessions {
+		if time.Since(s.CreatedAt) > m.ttl {
+			continue
+		}
+		result = append(result, SessionInfo{
+			ID:         s.ID,
+			AgeSeconds: time.Since(s.CreatedAt).Seconds(),
+			Used:       s.Used,
+		})
+	}
+	return result
+}
+
+// ForceExpire removes a session immediately.
+func (m *Manager) ForceExpire(id string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, ok := m.sessions[id]
+	if ok {
+		delete(m.sessions, id)
+	}
+	return ok
+}
+
 func (m *Manager) evictExpired() {
 	for id, s := range m.sessions {
 		if time.Since(s.CreatedAt) > m.ttl {
