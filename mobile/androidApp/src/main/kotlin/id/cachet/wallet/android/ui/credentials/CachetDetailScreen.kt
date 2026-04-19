@@ -43,11 +43,11 @@ fun CachetDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp)
         ) {
             // ── Back button ──
             item {
-                Spacer(modifier = Modifier.height(48.dp))
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier.offset(x = (-12).dp)
@@ -248,6 +248,13 @@ fun CachetDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                 }
+            }
+
+            // ── Bottom safe area ──
+            item {
+                Spacer(modifier = Modifier
+                    .navigationBarsPadding()
+                    .height(8.dp))
             }
         }
     }

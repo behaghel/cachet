@@ -29,6 +29,7 @@ fun DeepLinkExpiredScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -47,8 +48,6 @@ fun DeepLinkExpiredScreen(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(48.dp))
 
             // Cachet shield (full color, never greyed)
             CachetMark(type = cachetType, size = 80.dp)
@@ -134,7 +133,9 @@ fun DeepLinkExpiredScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier
+                .navigationBarsPadding()
+                .height(8.dp))
         }
     }
 }

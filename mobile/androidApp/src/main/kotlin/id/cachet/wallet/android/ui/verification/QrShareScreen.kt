@@ -62,6 +62,7 @@ fun QrShareScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -69,7 +70,7 @@ fun QrShareScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -249,7 +250,9 @@ fun QrShareScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier
+                .navigationBarsPadding()
+                .height(8.dp))
         }
     }
 }
