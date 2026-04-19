@@ -175,9 +175,11 @@ in
     echo "  android:empty        Empty vault (IDV onboarding)"
     echo ""
     echo "GCP (requires gcloud CLI):"
-    echo "  gcp:setup           Setup GCP project"
-    echo "  gcp:deploy:verifier Deploy to Cloud Run"
-    echo "  gcp:status          Check deployment status"
+    echo "  gcp:setup              Setup GCP project"
+    echo "  gcp:deploy:verifier    Deploy to Cloud Run"
+    echo "  gcp:status             Check deployment status"
+    echo "  gcp:monitoring:setup   Create alerts + dashboard"
+    echo "  gcp:monitoring:status  Show monitoring resources"
   '';
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = ''
@@ -683,6 +685,7 @@ in
       secretmanager.googleapis.com
       containerregistry.googleapis.com
       cloudresourcemanager.googleapis.com
+      monitoring.googleapis.com
     )
     
     for api in "''${APIS[@]}"; do
@@ -889,6 +892,76 @@ EOF
     echo "   • Production uses Secret Manager via Cloud Run"  
     echo "   • Same secret names and consistent access pattern"
     echo "   • Service deployed and functional"
+  '';
+
+  scripts."gcp:monitoring:setup".exec = ''
+    echo "📊 Setting up GCP Cloud Monitoring for Cachet..."
+    set -euo pipefail
+
+    PROJECT_ID=$(gcloud config get-value project)
+    if [ -z "$PROJECT_ID" ]; then
+      echo "❌ No GCP project set. Run 'gcp:setup' first."
+      exit 1
+    fi
+
+    echo "🔧 Enabling Monitoring API..."
+    gcloud services enable monitoring.googleapis.com --quiet || true
+
+    echo "📈 Creating operations dashboard..."
+    if gcloud monitoring dashboards list --format="value(name)" | grep -q "Cachet Operations"; then
+      echo "   Dashboard already exists, updating..."
+      DASH_NAME=$(gcloud monitoring dashboards list --format="value(name)" --filter="displayName='Cachet Operations'" | head -1)
+      gcloud monitoring dashboards update "$DASH_NAME" --config-from-file=infra/monitoring/dashboard.json
+    else
+      gcloud monitoring dashboards create --config-from-file=infra/monitoring/dashboard.json
+    fi
+    echo "   ✅ Dashboard created"
+
+    echo "🚨 Creating alert policies..."
+    ALERTS=$(cat infra/monitoring/alerts.json)
+    POLICY_COUNT=$(echo "$ALERTS" | jq '.policies | length')
+    for i in $(seq 0 $((POLICY_COUNT - 1))); do
+      POLICY_NAME=$(echo "$ALERTS" | jq -r ".policies[$i].displayName")
+      POLICY_JSON=$(echo "$ALERTS" | jq ".policies[$i]")
+
+      # Check if policy already exists
+      if gcloud alpha monitoring policies list --format="value(displayName)" 2>/dev/null | grep -qF "$POLICY_NAME"; then
+        echo "   ⏭️  $POLICY_NAME (already exists)"
+      else
+        echo "$POLICY_JSON" | gcloud alpha monitoring policies create --policy-from-file=- 2>/dev/null && \
+          echo "   ✅ $POLICY_NAME" || \
+          echo "   ⚠️  $POLICY_NAME (failed — may need notification channel first)"
+      fi
+    done
+
+    echo ""
+    echo "✅ Monitoring setup complete!"
+    echo "📝 Next steps:"
+    echo "   1. Create a notification channel: https://console.cloud.google.com/monitoring/alerting/notifications?project=$PROJECT_ID"
+    echo "   2. Link it to the alert policies above"
+    echo "   3. View dashboard: https://console.cloud.google.com/monitoring/dashboards?project=$PROJECT_ID"
+  '';
+
+  scripts."gcp:monitoring:status".exec = ''
+    echo "📊 Cachet Monitoring Status"
+    set -euo pipefail
+
+    PROJECT_ID=$(gcloud config get-value project)
+
+    echo ""
+    echo "📈 Dashboards:"
+    gcloud monitoring dashboards list --format="table(displayName,name)" --filter="displayName~'Cachet'" 2>/dev/null || echo "   (none)"
+
+    echo ""
+    echo "🚨 Alert Policies:"
+    gcloud alpha monitoring policies list --format="table(displayName,enabled,conditions.displayName)" --filter="displayName~'Cachet'" 2>/dev/null || echo "   (none)"
+
+    echo ""
+    echo "🔔 Notification Channels:"
+    gcloud alpha monitoring channels list --format="table(displayName,type)" 2>/dev/null || echo "   (none)"
+
+    echo ""
+    echo "🔗 Console: https://console.cloud.google.com/monitoring?project=$PROJECT_ID"
   '';
 
   # Service processes with automatic port allocation.
