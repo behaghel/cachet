@@ -93,6 +93,7 @@ api/openapi.*.yaml
 .devenv*
 devenv.local.nix
 .direnv
+.pre-commit-config.yaml
 .mcp.json
 
 # Android SDK and build artifacts
