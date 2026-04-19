@@ -1179,37 +1179,17 @@ EOF
     _sedi() { local expr="$1" file="$2" tmp; tmp=$(mktemp); sed "$expr" "$file" > "$tmp" && mv "$tmp" "$file"; }
     export -f _sedi
 
-    # Helper: switch environment context (prompt, .env, .workonrc, gcloud project).
+    # Helper: switch environment context (.env + gcloud project).
     # Usage: cachet_env_switch <env> [gcp-project-id]
     cachet_env_switch() {
       local env_name="$1"
       local gcp_project="''${2:-}"
 
-      local prompt_context
-      if [ -n "$gcp_project" ]; then
-        prompt_context="''${env_name}@''${gcp_project}"
-      else
-        prompt_context="$env_name"
-      fi
-
-      # Update .env
-      if grep -q '^CACHET_PROMPT_CONTEXT=' .env 2>/dev/null; then
-        _sedi "s/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT=\"$prompt_context\"/" .env
-      else
-        echo "CACHET_PROMPT_CONTEXT=\"$prompt_context\"" >> .env
-      fi
-
+      # Update CACHET_ENV in .env
       if grep -q '^CACHET_ENV=' .env 2>/dev/null; then
         _sedi "s/^CACHET_ENV=.*/CACHET_ENV=\"$env_name\"/" .env
       else
         echo "CACHET_ENV=\"$env_name\"" >> .env
-      fi
-
-      # Update .workonrc
-      if grep -q '^STARSHIP_PROJECT_LABEL=' .workonrc 2>/dev/null; then
-        _sedi "s/^STARSHIP_PROJECT_LABEL=.*/STARSHIP_PROJECT_LABEL=$prompt_context/" .workonrc
-      else
-        echo "STARSHIP_PROJECT_LABEL=$prompt_context" >> .workonrc
       fi
 
       # Update gcloud project if provided
@@ -1229,7 +1209,7 @@ EOF
         fi
       fi
 
-      echo "Switched to $prompt_context"
+      echo "Switched to $env_name"
     }
     export -f cachet_env_switch
 

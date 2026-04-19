@@ -37,8 +37,9 @@ pids
 *.seed
 *.pid.lock
 
-# Environment files
+# Environment files (per-developer, not shared)
 .env
+.workonrc
 .env.local
 .env.development.local
 .env.test.local

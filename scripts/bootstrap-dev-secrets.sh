@@ -2,7 +2,6 @@
 set -euo pipefail
 
 ENV_FILE="${CACHET_ENV_FILE:-.env}"
-WORKONRC_FILE="${CACHET_WORKONRC_FILE:-.workonrc}"
 DEFAULT_DB_URL="${CACHET_DEFAULT_DB_URL:-postgresql://cachet:cachet@127.0.0.1:5432/cachet?sslmode=disable}"
 DEFAULT_PROFILE_ENV="${CACHET_DEFAULT_PROFILE_ENV:-local}"
 AUTO_CONFIRM=false
@@ -131,17 +130,13 @@ current_db_url="$(extract_value "$ENV_FILE" "CACHET_DB_URL")"
 current_jwt_secret="$(extract_value "$ENV_FILE" "CACHET_JWT_SECRET")"
 current_profile_env="$(extract_value "$ENV_FILE" "CACHET_ENV")"
 current_runtime_env="$(extract_value "$ENV_FILE" "ENVIRONMENT")"
-current_prompt_context="$(extract_value "$ENV_FILE" "CACHET_PROMPT_CONTEXT")"
 current_google_project="$(extract_value "$ENV_FILE" "GOOGLE_CLOUD_PROJECT")"
 current_cloudsdk_project="$(extract_value "$ENV_FILE" "CLOUDSDK_CORE_PROJECT")"
-current_starship_label="$(extract_value "$WORKONRC_FILE" "STARSHIP_PROJECT_LABEL")"
 
 missing_db_url=false
 missing_jwt_secret=false
 missing_profile_env=false
 missing_runtime_env=false
-missing_prompt_context=false
-missing_starship_label=false
 
 if [[ -z "$current_db_url" ]]; then
   missing_db_url=true
@@ -159,15 +154,7 @@ if [[ -z "$current_runtime_env" ]]; then
   missing_runtime_env=true
 fi
 
-if [[ -z "$current_prompt_context" ]]; then
-  missing_prompt_context=true
-fi
-
-if [[ -z "$current_starship_label" || "$current_starship_label" != "$current_prompt_context" ]]; then
-  missing_starship_label=true
-fi
-
-if ! $missing_db_url && ! $missing_jwt_secret && ! $missing_profile_env && ! $missing_runtime_env && ! $missing_prompt_context && ! $missing_starship_label; then
+if ! $missing_db_url && ! $missing_jwt_secret && ! $missing_profile_env && ! $missing_runtime_env; then
   sync_task_shims
   check_service_modules
   exit 0
@@ -185,12 +172,12 @@ fi
 
 if ! $AUTO_CONFIRM; then
   if $NON_INTERACTIVE; then
-    echo "Local development bootstrap is incomplete in $ENV_FILE / $WORKONRC_FILE."
+    echo "Local development bootstrap is incomplete in $ENV_FILE."
     echo "Run ./scripts/bootstrap-dev-secrets.sh --yes to bootstrap automatically."
     exit 0
   elif [[ -t 0 && -t 1 ]]; then
     echo "🧭 Fresh development environment detected."
-    echo "   Missing bootstrap values will be added to $ENV_FILE and $WORKONRC_FILE:"
+    echo "   Missing bootstrap values will be added to $ENV_FILE:"
     if $missing_db_url; then
       echo "   - CACHET_DB_URL"
     fi
@@ -203,13 +190,6 @@ if ! $AUTO_CONFIRM; then
     if $missing_runtime_env; then
       echo "   - ENVIRONMENT"
     fi
-    if $missing_prompt_context; then
-      echo "   - CACHET_PROMPT_CONTEXT"
-    fi
-    if $missing_starship_label; then
-      echo "   - STARSHIP_PROJECT_LABEL (shell prompt context)"
-    fi
-
     if $gcloud_available; then
       if [[ -n "$detected_gcloud_project" ]]; then
         echo "   - Detected active gcloud project: $detected_gcloud_project"
@@ -226,7 +206,7 @@ if ! $AUTO_CONFIRM; then
       exit 0
     fi
   else
-    echo "Local development bootstrap is incomplete in $ENV_FILE / $WORKONRC_FILE."
+    echo "Local development bootstrap is incomplete in $ENV_FILE."
     echo "Run ./scripts/bootstrap-dev-secrets.sh --yes to bootstrap automatically."
     exit 0
   fi
@@ -236,7 +216,6 @@ db_url_value="$current_db_url"
 jwt_secret_value="$current_jwt_secret"
 profile_env_value="$current_profile_env"
 runtime_env_value="$current_runtime_env"
-prompt_context_value="$current_prompt_context"
 gcloud_project_value="$current_google_project"
 set_gcloud_project=false
 
@@ -298,12 +277,6 @@ fi
 
 runtime_env_value="$(runtime_env_from_profile "$profile_env_value")"
 
-if [[ -n "$gcloud_project_value" ]]; then
-  prompt_context_value="${profile_env_value}@${gcloud_project_value}"
-else
-  prompt_context_value="${profile_env_value}@local"
-fi
-
 tmp_file="$(mktemp "${ENV_FILE}.tmp.XXXXXX")"
 
 if [[ -f "$ENV_FILE" ]]; then
@@ -320,7 +293,6 @@ echo "CACHET_DB_URL=\"$db_url_value\"" >> "$tmp_file"
 echo "CACHET_JWT_SECRET=\"$jwt_secret_value\"" >> "$tmp_file"
 echo "CACHET_ENV=\"$profile_env_value\"" >> "$tmp_file"
 echo "ENVIRONMENT=\"$runtime_env_value\"" >> "$tmp_file"
-echo "CACHET_PROMPT_CONTEXT=\"$prompt_context_value\"" >> "$tmp_file"
 
 if [[ -n "$gcloud_project_value" ]]; then
   echo "GOOGLE_CLOUD_PROJECT=\"$gcloud_project_value\"" >> "$tmp_file"
@@ -329,20 +301,6 @@ fi
 
 mv "$tmp_file" "$ENV_FILE"
 chmod 600 "$ENV_FILE" 2>/dev/null || true
-
-workon_tmp_file="$(mktemp "${WORKONRC_FILE}.tmp.XXXXXX")"
-if [[ -f "$WORKONRC_FILE" ]]; then
-  # Remove legacy STARSHIP_PROJECT_ENV and CACHET_PROMPT_CONTEXT (now lives in .env only)
-  grep -Ev '^[[:space:]]*(export[[:space:]]+)?(STARSHIP_PROJECT_LABEL|STARSHIP_PROJECT_ENV|CACHET_PROMPT_CONTEXT)=' "$WORKONRC_FILE" > "$workon_tmp_file" || true
-fi
-if [[ ! -s "$workon_tmp_file" ]]; then
-  echo "ASSIST_CMD=claude" > "$workon_tmp_file"
-fi
-if [[ "$(tail -c 1 "$workon_tmp_file" 2>/dev/null || true)" != "" ]]; then
-  echo "" >> "$workon_tmp_file"
-fi
-echo "STARSHIP_PROJECT_LABEL=$prompt_context_value" >> "$workon_tmp_file"
-mv "$workon_tmp_file" "$WORKONRC_FILE"
 
 if $set_gcloud_project; then
   if gcloud config set project "$gcloud_project_value" >/dev/null 2>&1; then
@@ -358,7 +316,6 @@ echo "   - CACHET_DB_URL is configured"
 echo "   - CACHET_JWT_SECRET is configured"
 echo "   - CACHET_ENV=$profile_env_value"
 echo "   - ENVIRONMENT=$runtime_env_value"
-echo "   - Prompt context: $prompt_context_value"
 if [[ -n "$gcloud_project_value" ]]; then
   echo "   - GCP project: $gcloud_project_value"
 else
