@@ -96,12 +96,12 @@ func (s *Store) Put(p models.PackDefinition) error {
 	}
 
 	// Atomic write: temp file + rename
-	if err := os.MkdirAll(s.overlayDir, 0o755); err != nil {
+	if err := os.MkdirAll(s.overlayDir, 0o750); err != nil {
 		return fmt.Errorf("creating overlay dir: %w", err)
 	}
 	target := filepath.Join(s.overlayDir, sanitizeFilename(p.Id)+".json")
 	tmp := target + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
 		return fmt.Errorf("writing temp file: %w", err)
 	}
 	if err := os.Rename(tmp, target); err != nil {
@@ -244,7 +244,7 @@ func loadDirInto(dir string, target map[string]models.PackDefinition) error {
 			continue
 		}
 
-		data, err := os.ReadFile(filepath.Join(dir, name))
+		data, err := os.ReadFile(filepath.Clean(filepath.Join(dir, name)))
 		if err != nil {
 			return fmt.Errorf("reading %s: %w", name, err)
 		}
