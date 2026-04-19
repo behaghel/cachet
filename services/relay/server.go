@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/cachet-id/cachet/services/common"
 )
@@ -43,6 +45,7 @@ func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess := s.sessions.Create(body)
+	relaySessionsTotal.Add(r.Context(), 1, metric.WithAttributes(attribute.String("status", "created")))
 	log.Ctx(r.Context()).Info().Str("session_id", sess.ID).Msg("relay session created")
 
 	common.WriteJSON(w, r, http.StatusOK, map[string]string{
@@ -79,6 +82,13 @@ func (s *Server) handlePostResponse(w http.ResponseWriter, r *http.Request) {
 	if err := s.sessions.SetResponse(id, body); err != nil {
 		common.WriteError(w, r, http.StatusNotFound, "not_found", err.Error())
 		return
+	}
+
+	// Record holder response latency (time from session creation to response).
+	if sess, latency, ok := s.sessions.ResponseLatency(id); ok {
+		_ = sess
+		relayResponseLatency.Record(r.Context(), latency.Seconds())
+		relaySessionsTotal.Add(r.Context(), 1, metric.WithAttributes(attribute.String("status", "completed")))
 	}
 
 	log.Ctx(r.Context()).Info().Str("session_id", id).Msg("response posted")

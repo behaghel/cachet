@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
@@ -100,6 +103,7 @@ func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess := s.sessions.Create(s.verifierDID)
+	sessionsCreated.Add(r.Context(), 1)
 	log.Ctx(r.Context()).Info().Str("session_id", sess.ID).Msg("verification session created")
 
 	response := map[string]interface{}{
@@ -161,6 +165,7 @@ type verifyRequest struct {
 }
 
 func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	var req verifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		common.WriteError(w, r, http.StatusBadRequest, "invalid_request", "Invalid request body")
@@ -168,11 +173,14 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 	}
 
 	log.Ctx(r.Context()).Info().Str("policy_id", req.PolicyId).Msg("verifying presentation")
+	packAttr := attribute.String("pack_id", req.PolicyId)
 
 	// Fetch pack definition from registry
+	packsRequested.Add(r.Context(), 1, metric.WithAttributes(packAttr))
 	packDef, err := s.packClient.GetPack(req.PolicyId)
 	if err != nil {
 		log.Ctx(r.Context()).Warn().Err(err).Str("policy_id", req.PolicyId).Msg("pack not found")
+		recordVerification(r.Context(), start, req.PolicyId, "error")
 		common.WriteError(w, r, http.StatusBadRequest, "unknown_pack", "Pack not found: "+req.PolicyId)
 		return
 	}
@@ -190,6 +198,7 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 			sess, err = s.sessions.Consume(req.SessionId)
 			if err != nil {
 				log.Ctx(r.Context()).Warn().Err(err).Str("session_id", req.SessionId).Msg("session validation failed")
+				recordVerification(r.Context(), start, req.PolicyId, "error")
 				common.WriteError(w, r, http.StatusBadRequest, "invalid_session", "Session validation failed: "+err.Error())
 				return
 			}
@@ -205,6 +214,7 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 				decrypted, decErr := jwe.Decrypt(credential, sess.EphemeralPrivateKey())
 				if decErr != nil {
 					log.Ctx(r.Context()).Warn().Err(decErr).Int("credential_index", i).Msg("JWE decryption failed")
+					recordVerification(r.Context(), start, req.PolicyId, "error")
 					common.WriteError(w, r, http.StatusBadRequest, "decryption_failed",
 						fmt.Sprintf("JWE decryption failed for credential %d: %v", i, decErr))
 					return
@@ -216,6 +226,7 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 			vc, err := eval.VerifySDJWT(sdJWT, s.didResolver)
 			if err != nil {
 				log.Ctx(r.Context()).Warn().Err(err).Int("credential_index", i).Msg("SD-JWT verification failed")
+				recordVerification(r.Context(), start, req.PolicyId, "error")
 				common.WriteError(w, r, http.StatusBadRequest, "verification_failed", "Credential verification failed: "+err.Error())
 				return
 			}
@@ -223,10 +234,12 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 			// Validate nonce and audience from KB-JWT if session was provided
 			if expectedNonce != "" && vc.HolderBound {
 				if vc.KBJWTNonce != expectedNonce {
+					recordVerification(r.Context(), start, req.PolicyId, "error")
 					common.WriteError(w, r, http.StatusBadRequest, "nonce_mismatch", "KB-JWT nonce does not match session")
 					return
 				}
 				if expectedAud != "" && vc.KBJWTAud != expectedAud {
+					recordVerification(r.Context(), start, req.PolicyId, "error")
 					common.WriteError(w, r, http.StatusBadRequest, "audience_mismatch", "KB-JWT audience does not match verifier")
 					return
 				}
@@ -245,6 +258,7 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 					if err != nil {
 						log.Ctx(r.Context()).Warn().Err(err).Str("url", slURL).Msg("revocation check failed")
 					} else if revoked {
+						recordVerification(r.Context(), start, req.PolicyId, "error")
 						common.WriteError(w, r, http.StatusBadRequest, "credential_revoked", "Credential has been revoked")
 						return
 					}
@@ -276,6 +290,12 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 		cachet = packDef.Badge.Label
 	}
 
+	status := "fail"
+	if summary.CachetGranted {
+		status = "pass"
+	}
+	recordVerification(r.Context(), start, req.PolicyId, status)
+
 	resp := models.VerifyResponse{
 		Cachet:           cachet,
 		Predicates:       satisfied,
@@ -284,4 +304,14 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 		Summary:          summary,
 	}
 	common.WriteJSON(w, r, http.StatusOK, resp)
+}
+
+// recordVerification records both the counter and duration histogram for a verification attempt.
+func recordVerification(ctx context.Context, start time.Time, packID, status string) {
+	attrs := metric.WithAttributes(
+		attribute.String("pack_id", packID),
+		attribute.String("status", status),
+	)
+	verificationsTotal.Add(ctx, 1, attrs)
+	verificationDuration.Record(ctx, time.Since(start).Seconds(), attrs)
 }
