@@ -1,7 +1,6 @@
 package credential
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 // Non-disclosable claims: iss, sub, iat, exp, _sd_alg, cnf, status, vct.
 // holderJWK is the holder's public key as a JWK map — embedded in cnf for holder binding.
 // If nil, cnf is omitted (no holder binding).
-func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, issuerKey *ecdsa.PrivateKey, issuerKeyID string, holderJWK map[string]interface{}, statusListIndex int) (string, error) {
+func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationResult, types []string, signer Signer, holderJWK map[string]interface{}, statusListIndex int) (string, error) {
 	now := time.Now()
 	expiration := now.Add(90 * 24 * time.Hour)
 
@@ -59,7 +58,7 @@ func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationRe
 		"riskScore":            session.Verification.RiskScore,
 	}
 
-	return BuildSDJWT(nonDisclosable, sdClaims, issuerKey, issuerKeyID)
+	return BuildSDJWT(nonDisclosable, sdClaims, signer)
 }
 
 // Build constructs a VerifiableCredential as JSON (legacy format).

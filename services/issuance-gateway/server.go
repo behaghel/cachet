@@ -35,8 +35,7 @@ import (
 type ServerConfig struct {
 	Common        common.ServerConfig
 	SigningKey    *rsa.PrivateKey   // RSA key for OAuth2 access tokens
-	IssuerKey     *ecdsa.PrivateKey // ES256 key for SD-JWT VC signing
-	IssuerKeyID   string            // kid header for the issuer key (e.g., "did:veriff:production#key-1")
+	IssuerSigner  credential.Signer // SD-JWT VC signing (FileSigner for dev, KMSSigner for prod)
 	Sessions      veriff.SessionStore
 	WebhookSecret string // HMAC-SHA256 secret for Veriff webhook signature verification
 }
@@ -50,6 +49,11 @@ func DefaultServerConfig() ServerConfig {
 		log.Fatal().Err(err).Msg("failed to generate RSA key")
 	}
 
+	kid := os.Getenv("CACHET_ISSUER_KEY_ID")
+	if kid == "" {
+		kid = "did:veriff:production#key-1"
+	}
+
 	ecKey := loadOrGenerateIssuerKey()
 
 	return ServerConfig{
@@ -58,10 +62,9 @@ func DefaultServerConfig() ServerConfig {
 			Version: "0.1.0",
 			Port:    "8090",
 		},
-		SigningKey:  rsaKey,
-		IssuerKey:   ecKey,
-		IssuerKeyID: "did:veriff:production#key-1",
-		Sessions:    veriff.NewInMemoryStore(),
+		SigningKey:   rsaKey,
+		IssuerSigner: credential.NewFileSigner(ecKey, kid),
+		Sessions:     veriff.NewInMemoryStore(),
 	}
 }
 
@@ -128,8 +131,7 @@ func loadOrGenerateIssuerKey() *ecdsa.PrivateKey {
 type Server struct {
 	router          *chi.Mux
 	signingKey      *rsa.PrivateKey
-	issuerKey       *ecdsa.PrivateKey
-	issuerKeyID     string
+	issuerSigner    credential.Signer
 	sessions        veriff.SessionStore
 	webhookSecret   string
 	statusListStore *statuslist.Store
@@ -144,8 +146,7 @@ func NewServerWithConfig(cfg ServerConfig) *Server {
 	s := &Server{
 		router:          common.NewRouter(cfg.Common),
 		signingKey:      cfg.SigningKey,
-		issuerKey:       cfg.IssuerKey,
-		issuerKeyID:     cfg.IssuerKeyID,
+		issuerSigner:    cfg.IssuerSigner,
 		sessions:        cfg.Sessions,
 		webhookSecret:   cfg.WebhookSecret,
 		statusListStore: slStore,
@@ -167,17 +168,21 @@ func (s *Server) Router() *chi.Mux { return s.router }
 // handleJWKS returns the issuer's public key as a JWKS document.
 // Used by the verifier to discover the issuer key for SD-JWT verification.
 func (s *Server) handleJWKS(w http.ResponseWriter, r *http.Request) {
-	if s.issuerKey == nil {
+	if s.issuerSigner == nil {
 		common.WriteError(w, r, http.StatusNotFound, "not_configured", "No issuer key configured")
 		return
 	}
-	pub := s.issuerKey.PublicKey
+	pub, err := s.issuerSigner.PublicKey()
+	if err != nil {
+		common.WriteError(w, r, http.StatusInternalServerError, "key_error", "Failed to retrieve public key")
+		return
+	}
 	jwk := map[string]interface{}{
 		"kty": "EC",
 		"crv": "P-256",
 		"x":   base64URLEncode(pub.X.Bytes()),
 		"y":   base64URLEncode(pub.Y.Bytes()),
-		"kid": s.issuerKeyID,
+		"kid": s.issuerSigner.KeyID(),
 		"use": "sig",
 	}
 	common.WriteJSON(w, r, http.StatusOK, map[string]interface{}{
@@ -262,7 +267,7 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 	qualityTierGauge.Add(r.Context(), 1, metric.WithAttributes(attribute.String("tier", validation.QualityLevel)))
 
 	// SD-JWT format: return signed SD-JWT string
-	if req.Format == models.VcSdJwt && s.issuerKey != nil {
+	if req.Format == models.VcSdJwt && s.issuerSigner != nil {
 		// Extract holder JWK from proof field for holder binding (cnf)
 		var holderJWK map[string]interface{}
 		if req.Proof != nil {
@@ -281,7 +286,7 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerKey, s.issuerKeyID, holderJWK, statusIndex)
+		sdJWT, err := credential.BuildSDJWTCredential(session, validation, req.Types, s.issuerSigner, holderJWK, statusIndex)
 		if err != nil {
 			log.Ctx(r.Context()).Error().Err(err).Msg("SD-JWT credential building failed")
 			common.WriteError(w, r, http.StatusInternalServerError, "server_error", "Failed to build credential")

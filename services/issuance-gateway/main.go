@@ -18,8 +18,8 @@ func main() {
 
 	cfg.Common.ReadinessChecks = []common.ReadinessCheck{
 		func(_ context.Context) error {
-			if cfg.IssuerKey == nil {
-				return fmt.Errorf("issuer key not loaded")
+			if cfg.IssuerSigner == nil {
+				return fmt.Errorf("issuer signer not configured")
 			}
 			return nil
 		},

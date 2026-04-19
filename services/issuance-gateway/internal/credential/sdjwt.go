@@ -13,6 +13,25 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// signJWT constructs a signed JWT using the Signer interface.
+// It builds the signing string (header.payload), hashes it, signs via
+// the signer, and assembles the final JWS compact serialization.
+func signJWT(token *jwt.Token, signer Signer) (string, error) {
+	signingString, err := token.SigningString()
+	if err != nil {
+		return "", fmt.Errorf("build signing string: %w", err)
+	}
+	hasher := sha256.New()
+	hasher.Write([]byte(signingString))
+	digest := hasher.Sum(nil)
+
+	sig, err := signer.Sign(digest)
+	if err != nil {
+		return "", fmt.Errorf("sign digest: %w", err)
+	}
+	return signingString + "." + base64.RawURLEncoding.EncodeToString(sig), nil
+}
+
 // Disclosure represents a single selectively disclosable claim in an SD-JWT.
 type Disclosure struct {
 	Salt      string      // random salt, base64url-encoded
@@ -65,7 +84,7 @@ type SDJWTClaims struct {
 
 // BuildSDJWT constructs a complete SD-JWT string with selective disclosures.
 // Returns: issuerJWT~disclosure1~disclosure2~...~ (trailing ~ for KB-JWT slot)
-func BuildSDJWT(nonDisclosable map[string]interface{}, selectiveDisclosureClaims map[string]interface{}, signingKey *ecdsa.PrivateKey, keyID string) (string, error) {
+func BuildSDJWT(nonDisclosable map[string]interface{}, selectiveDisclosureClaims map[string]interface{}, signer Signer) (string, error) {
 	// Create disclosures for each selectively disclosable claim
 	var disclosures []Disclosure
 	var sdHashes []string
@@ -89,11 +108,11 @@ func BuildSDJWT(nonDisclosable map[string]interface{}, selectiveDisclosureClaims
 	// Sign as JWS with ES256
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims(payload))
 	token.Header["typ"] = "vc+sd-jwt"
-	if keyID != "" {
-		token.Header["kid"] = keyID
+	if kid := signer.KeyID(); kid != "" {
+		token.Header["kid"] = kid
 	}
 
-	issuerJWT, err := token.SignedString(signingKey)
+	issuerJWT, err := signJWT(token, signer)
 	if err != nil {
 		return "", fmt.Errorf("sign issuer JWT: %w", err)
 	}

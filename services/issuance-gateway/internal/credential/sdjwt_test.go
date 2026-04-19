@@ -69,7 +69,7 @@ func TestBuildSDJWT_Format(t *testing.T) {
 		"nationality": "GB",
 	}
 
-	result, err := BuildSDJWT(nonDisclosable, sdClaims, key, "did:veriff:production#key-1")
+	result, err := BuildSDJWT(nonDisclosable, sdClaims, NewFileSigner(key, "did:veriff:production#key-1"))
 	require.NoError(t, err)
 
 	// Should have format: issuerJWT~disc1~disc2~
@@ -96,7 +96,7 @@ func TestBuildSDJWT_IssuerJWTVerifiable(t *testing.T) {
 		"age": 34,
 	}
 
-	result, err := BuildSDJWT(nonDisclosable, sdClaims, key, "")
+	result, err := BuildSDJWT(nonDisclosable, sdClaims, NewFileSigner(key, ""))
 	require.NoError(t, err)
 
 	// Extract the issuer JWT
@@ -134,7 +134,7 @@ func TestBuildSDJWT_DisclosureHashesMatchSD(t *testing.T) {
 		"iss": "did:veriff:production",
 		"iat": 1712188800,
 		"exp": 4102444800,
-	}, sdClaims, key, "")
+	}, sdClaims, NewFileSigner(key, ""))
 	require.NoError(t, err)
 
 	// Parse the issuer JWT to get _sd hashes
@@ -169,7 +169,7 @@ func TestBuildSDJWT_WrongKeyCannotVerify(t *testing.T) {
 		"iss": "did:veriff:production",
 		"iat": 1712188800,
 		"exp": 4102444800,
-	}, map[string]interface{}{"age": 34}, key, "")
+	}, map[string]interface{}{"age": 34}, NewFileSigner(key, ""))
 	require.NoError(t, err)
 
 	issuerJWT := strings.Split(result, "~")[0]
@@ -186,7 +186,7 @@ func TestBuildSDJWT_HeaderFields(t *testing.T) {
 		"iss": "did:veriff:production",
 		"iat": 1712188800,
 		"exp": 4102444800,
-	}, map[string]interface{}{"age": 34}, key, "did:veriff:production#key-1")
+	}, map[string]interface{}{"age": 34}, NewFileSigner(key, "did:veriff:production#key-1"))
 	require.NoError(t, err)
 
 	issuerJWT := strings.Split(result, "~")[0]
