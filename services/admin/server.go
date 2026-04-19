@@ -17,6 +17,8 @@ type AdminConfig struct {
 	APIKey      string
 	RegistryURL string
 	IssuanceURL string
+	RelayURL    string
+	VerifierURL string
 }
 
 // Server is the admin backoffice API.
@@ -24,6 +26,8 @@ type Server struct {
 	router      *chi.Mux
 	registryURL string
 	issuanceURL string
+	relayURL    string
+	verifierURL string
 	httpClient  *http.Client
 	startedAt   time.Time
 }
@@ -34,6 +38,8 @@ func NewServer(cfg AdminConfig) *Server {
 		router:      common.NewRouter(cfg.Common),
 		registryURL: cfg.RegistryURL,
 		issuanceURL: cfg.IssuanceURL,
+		relayURL:    cfg.RelayURL,
+		verifierURL: cfg.VerifierURL,
 		httpClient:  &http.Client{Timeout: 10 * time.Second},
 		startedAt:   time.Now(),
 	}
@@ -52,6 +58,9 @@ func NewServer(cfg AdminConfig) *Server {
 
 		r.Post("/credentials/{index}/revoke", s.handleRevokeCredential)
 		r.Get("/statuslist/{id}", s.handleGetStatusListInfo)
+
+		r.Get("/sessions", s.handleListSessions)
+		r.Delete("/sessions/{service}/{id}", s.handleForceExpireSession)
 	})
 
 	return s

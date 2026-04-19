@@ -63,6 +63,11 @@ func NewServerWithConfig(cfg VerifierConfig) *Server {
 	s.router.Post("/sessions", s.handleCreateSession)
 	s.router.Post("/presentations/verify", s.handleVerifyPresentation)
 	s.router.Get("/.well-known/did.json", s.handleDIDDocument)
+
+	// Internal endpoints for admin service
+	s.router.Get("/internal/sessions", s.handleListSessions)
+	s.router.Delete("/internal/sessions/{id}", s.handleForceExpireSession)
+
 	return s
 }
 
@@ -304,6 +309,22 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 		Summary:          summary,
 	}
 	common.WriteJSON(w, r, http.StatusOK, resp)
+}
+
+// handleListSessions returns active verifier sessions for admin visibility.
+func (s *Server) handleListSessions(w http.ResponseWriter, r *http.Request) {
+	sessions := s.sessions.List()
+	common.WriteJSON(w, r, http.StatusOK, map[string]interface{}{
+		"active":   len(sessions),
+		"sessions": sessions,
+	})
+}
+
+// handleForceExpireSession removes a verifier session immediately.
+func (s *Server) handleForceExpireSession(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	s.sessions.ForceExpire(id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // recordVerification records both the counter and duration histogram for a verification attempt.
