@@ -1,6 +1,10 @@
 package main
 
-import "github.com/cachet-id/cachet/services/common"
+import (
+	"os"
+
+	"github.com/cachet-id/cachet/services/common"
+)
 
 func main() {
 	common.InitLogging()
@@ -11,6 +15,7 @@ func main() {
 		Port:    "8082",
 	}
 
-	server := NewServer(cfg)
+	overlayDir := os.Getenv("CACHET_PACK_OVERLAY_DIR")
+	server := NewServerWithOverlay(cfg, overlayDir)
 	common.ListenAndServe(server.Router(), cfg)
 }
