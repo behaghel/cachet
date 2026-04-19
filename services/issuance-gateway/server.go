@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/hmac"
@@ -17,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 
+	kms "cloud.google.com/go/kms/apiv1"
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
@@ -54,7 +56,19 @@ func DefaultServerConfig() ServerConfig {
 		kid = "did:veriff:production#key-1"
 	}
 
-	ecKey := loadOrGenerateIssuerKey()
+	var signer credential.Signer
+	if kmsKeyName := os.Getenv("CACHET_KMS_KEY_NAME"); kmsKeyName != "" {
+		client, err := kms.NewKeyManagementClient(context.Background())
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create KMS client")
+		}
+		signer = credential.NewKMSSigner(client, kmsKeyName, kid)
+		log.Info().Str("key", kmsKeyName).Msg("using GCP KMS for credential signing")
+	} else {
+		ecKey := loadOrGenerateIssuerKey()
+		signer = credential.NewFileSigner(ecKey, kid)
+		log.Info().Msg("using file-based key for credential signing")
+	}
 
 	return ServerConfig{
 		Common: common.ServerConfig{
@@ -63,7 +77,7 @@ func DefaultServerConfig() ServerConfig {
 			Port:    "8090",
 		},
 		SigningKey:   rsaKey,
-		IssuerSigner: credential.NewFileSigner(ecKey, kid),
+		IssuerSigner: signer,
 		Sessions:     veriff.NewInMemoryStore(),
 	}
 }
