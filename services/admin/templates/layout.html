@@ -1,0 +1,221 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} — Cachet Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%231E293B'/><text x='50' y='68' text-anchor='middle' font-size='50' font-weight='700' fill='%2310B981'>C</text></svg>">
+<style>
+:root {
+  --primary: #1E293B;
+  --primary-dark: #0F172A;
+  --accent: #10B981;
+  --accent-light: #34D399;
+  --accent-dark: #065F46;
+  --destructive: #F97068;
+  --verified: #10B981;
+  --verified-bg: #ECFDF5;
+  --verified-border: #A7F3D0;
+  --pending: #F59E0B;
+  --pending-bg: #FEF3C7;
+  --pending-border: #FCD34D;
+  --revoked: #F97068;
+  --revoked-bg: #FEE2E2;
+  --revoked-border: #FCA5A5;
+  --neutral: #64748B;
+  --bg: #FAFAF9;
+  --card: #FFFFFF;
+  --elevated: #F5F5F4;
+  --border: #E7E5E4;
+  --text: #1C1917;
+  --text-secondary: #57534E;
+  --text-tertiary: #A8A29E;
+  --on-brand: #FFFFFF;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+a { color: var(--accent-dark); text-decoration: none; }
+a:hover { color: var(--accent); }
+
+/* Nav */
+.nav {
+  background: var(--primary);
+  color: var(--on-brand);
+  padding: var(--space-sm) var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+.nav-brand {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+.nav a {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+.nav a:hover { color: var(--on-brand); background: rgba(255,255,255,0.08); }
+.nav a.active { color: var(--on-brand); background: rgba(255,255,255,0.12); }
+.nav-spacer { flex: 1; }
+.nav form { display: inline; }
+.nav button.logout {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav button.logout:hover { color: var(--on-brand); border-color: rgba(255,255,255,0.4); }
+
+/* Layout */
+.container { max-width: 1100px; margin: 0 auto; padding: var(--space-xl); }
+h1 { font-size: 22px; font-weight: 600; margin-bottom: var(--space-lg); }
+h2 { font-size: 18px; font-weight: 600; margin-bottom: var(--space-md); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; padding: var(--space-sm) var(--space-md); border-bottom: 2px solid var(--border); }
+td { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border); font-size: 14px; }
+tr:last-child td { border-bottom: none; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-enabled { background: var(--verified-bg); color: var(--accent-dark); border: 1px solid var(--verified-border); }
+.badge-disabled { background: var(--elevated); color: var(--neutral); border: 1px solid var(--border); }
+.badge-revoked { background: var(--revoked-bg); color: #B91C1C; border: 1px solid var(--revoked-border); }
+.badge-pending { background: var(--pending-bg); color: #92400E; border: 1px solid var(--pending-border); }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: var(--on-brand); }
+.btn-primary:hover { background: var(--accent-light); color: var(--on-brand); }
+.btn-secondary { background: var(--elevated); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger { background: var(--destructive); color: var(--on-brand); }
+.btn-danger:hover { background: #E8605A; }
+.btn-sm { padding: 4px 12px; font-size: 13px; }
+.btn-icon { padding: 4px 8px; font-size: 13px; background: none; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-icon:hover { background: var(--elevated); }
+
+/* Forms */
+label { display: block; font-size: 14px; font-weight: 500; margin-bottom: var(--space-xs); color: var(--text-secondary); }
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+.form-group { margin-bottom: var(--space-md); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.form-actions { margin-top: var(--space-lg); display: flex; gap: var(--space-sm); }
+
+/* Flash */
+.flash {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-lg);
+  font-size: 14px;
+}
+.flash-success { background: var(--verified-bg); color: var(--accent-dark); border: 1px solid var(--verified-border); }
+.flash-error { background: var(--revoked-bg); color: #B91C1C; border: 1px solid var(--revoked-border); }
+
+/* Stats grid */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg); }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+}
+.stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Utility */
+.text-secondary { color: var(--text-secondary); }
+.text-sm { font-size: 14px; }
+.text-xs { font-size: 12px; }
+.mt-md { margin-top: var(--space-md); }
+.mb-md { margin-bottom: var(--space-md); }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.empty { text-align: center; padding: var(--space-2xl); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+{{if not .HideNav}}
+<nav class="nav">
+  <span class="nav-brand">CACHET</span>
+  <a href="/" {{if eq .ActiveNav "dashboard"}}class="active"{{end}}>Dashboard</a>
+  <a href="/packs" {{if eq .ActiveNav "packs"}}class="active"{{end}}>Packs</a>
+  <a href="/revocation" {{if eq .ActiveNav "revocation"}}class="active"{{end}}>Revocation</a>
+  <a href="/sessions" {{if eq .ActiveNav "sessions"}}class="active"{{end}}>Sessions</a>
+  <span class="nav-spacer"></span>
+  <form method="POST" action="/logout"><button type="submit" class="logout">Logout</button></form>
+</nav>
+{{end}}
+<main class="container">
+  {{if .Flash}}<div class="flash flash-success">{{.Flash}}</div>{{end}}
+  {{if .FlashErr}}<div class="flash flash-error">{{.FlashErr}}</div>{{end}}
+  {{block "content" .}}{{end}}
+</main>
+</body>
+</html>{{end}}

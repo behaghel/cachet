@@ -1,0 +1,62 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-md">
+  <h1>Packs</h1>
+  <a href="/packs/new" class="btn btn-primary">New Pack</a>
+</div>
+
+{{with .Data}}
+{{range $e := index . "Errors"}}
+<div class="flash flash-error">{{$e}}</div>
+{{end}}
+
+{{$packs := index . "Packs"}}
+{{if $packs}}
+<div class="card" style="padding:0; overflow:hidden;">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Version</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range $packs}}
+    <tr>
+      <td class="mono">{{index . "id"}}</td>
+      <td>{{index . "name"}}</td>
+      <td>{{index . "version"}}</td>
+      <td>
+        {{if eq (printf "%v" (index . "enabled")) "false"}}
+          <span class="badge badge-disabled">Disabled</span>
+        {{else}}
+          <span class="badge badge-enabled">Enabled</span>
+        {{end}}
+      </td>
+      <td class="flex gap-sm">
+        <a href="/packs/{{index . "id"}}/edit" class="btn btn-icon btn-sm">Edit</a>
+        <form method="POST" action="/packs/{{index . "id"}}/toggle" style="display:inline;">
+          {{if eq (printf "%v" (index . "enabled")) "false"}}
+            <input type="hidden" name="enabled" value="true">
+            <button type="submit" class="btn btn-sm btn-secondary">Enable</button>
+          {{else}}
+            <input type="hidden" name="enabled" value="false">
+            <button type="submit" class="btn btn-sm btn-secondary">Disable</button>
+          {{end}}
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}
+<div class="card empty">
+  <p>No packs registered yet.</p>
+  <a href="/packs/new" class="btn btn-primary mt-md">Create your first pack</a>
+</div>
+{{end}}
+{{end}}
+{{end}}

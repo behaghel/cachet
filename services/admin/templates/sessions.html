@@ -1,0 +1,73 @@
+{{define "content"}}
+<h1>Active Sessions</h1>
+
+{{with .Data}}
+{{range .Errors}}
+<div class="flash flash-error">{{.}}</div>
+{{end}}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-md);">
+  <div class="card">
+    <h2>Relay Sessions</h2>
+    {{if .Relay}}
+      {{$sessions := .Relay}}
+      {{if $sessions}}
+      <table>
+        <thead>
+          <tr><th>Session ID</th><th>Age (s)</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {{range $k, $v := $sessions}}
+          <tr>
+            <td class="mono">{{$k}}</td>
+            <td>{{$v}}</td>
+            <td>
+              <form method="POST" action="/sessions/relay/{{$k}}/expire" style="display:inline;" onsubmit="return confirm('Force-expire this session?');">
+                <button type="submit" class="btn btn-sm btn-danger">Expire</button>
+              </form>
+            </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <p class="text-secondary text-sm">No active sessions</p>
+      {{end}}
+    {{else}}
+    <p class="text-secondary text-sm">Unavailable</p>
+    {{end}}
+  </div>
+
+  <div class="card">
+    <h2>Verifier Sessions</h2>
+    {{if .Verifier}}
+      {{$sessions := .Verifier}}
+      {{if $sessions}}
+      <table>
+        <thead>
+          <tr><th>Session ID</th><th>Age (s)</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {{range $k, $v := $sessions}}
+          <tr>
+            <td class="mono">{{$k}}</td>
+            <td>{{$v}}</td>
+            <td>
+              <form method="POST" action="/sessions/verifier/{{$k}}/expire" style="display:inline;" onsubmit="return confirm('Force-expire this session?');">
+                <button type="submit" class="btn btn-sm btn-danger">Expire</button>
+              </form>
+            </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <p class="text-secondary text-sm">No active sessions</p>
+      {{end}}
+    {{else}}
+    <p class="text-secondary text-sm">Unavailable</p>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

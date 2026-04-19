@@ -21,30 +21,56 @@ type AdminConfig struct {
 	VerifierURL string
 }
 
-// Server is the admin backoffice API.
+// Server is the admin backoffice API and web UI.
 type Server struct {
-	router      *chi.Mux
-	registryURL string
-	issuanceURL string
-	relayURL    string
-	verifierURL string
-	httpClient  *http.Client
-	startedAt   time.Time
+	router       *chi.Mux
+	templates    templateMap
+	apiKey       string
+	cookieSecret []byte
+	registryURL  string
+	issuanceURL  string
+	relayURL     string
+	verifierURL  string
+	httpClient   *http.Client
+	startedAt    time.Time
 }
 
-// NewServer creates an admin server with API key authentication.
+// NewServer creates an admin server with API key authentication and web UI.
 func NewServer(cfg AdminConfig) *Server {
 	s := &Server{
-		router:      common.NewRouter(cfg.Common),
-		registryURL: cfg.RegistryURL,
-		issuanceURL: cfg.IssuanceURL,
-		relayURL:    cfg.RelayURL,
-		verifierURL: cfg.VerifierURL,
-		httpClient:  &http.Client{Timeout: 10 * time.Second},
-		startedAt:   time.Now(),
+		router:       common.NewRouter(cfg.Common),
+		templates:    initTemplates(),
+		apiKey:       cfg.APIKey,
+		cookieSecret: deriveCookieSecret(cfg.APIKey),
+		registryURL:  cfg.RegistryURL,
+		issuanceURL:  cfg.IssuanceURL,
+		relayURL:     cfg.RelayURL,
+		verifierURL:  cfg.VerifierURL,
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
+		startedAt:    time.Now(),
 	}
 
-	// All /admin routes require API key auth and audit logging.
+	// Web UI routes (cookie auth).
+	s.router.Get("/login", s.handleLoginPage)
+	s.router.Post("/login", s.handleLoginSubmit)
+	s.router.Post("/logout", s.handleLogout)
+
+	s.router.Group(func(r chi.Router) {
+		r.Use(s.CookieAuth)
+		r.Get("/", s.handleDashboard)
+		r.Get("/packs", s.handlePacksPage)
+		r.Post("/packs/{id}/toggle", s.handleTogglePackStatus)
+		r.Get("/packs/new", s.handleCreatePackPage)
+		r.Post("/packs/new", s.handleCreatePackSubmit)
+		r.Get("/packs/{id}/edit", s.handleEditPackPage)
+		r.Post("/packs/{id}/edit", s.handleEditPackSubmit)
+		r.Get("/revocation", s.handleRevocationPage)
+		r.Post("/revocation/revoke", s.handleRevokeSubmit)
+		r.Get("/sessions", s.handleSessionsPage)
+		r.Post("/sessions/{service}/{id}/expire", s.handleForceExpireWeb)
+	})
+
+	// API routes (API key auth).
 	s.router.Route("/admin", func(r chi.Router) {
 		r.Use(APIKeyAuth(cfg.APIKey))
 		r.Use(common.AuditMiddleware)
@@ -62,6 +88,8 @@ func NewServer(cfg AdminConfig) *Server {
 		r.Get("/sessions", s.handleListSessions)
 		r.Delete("/sessions/{service}/{id}", s.handleForceExpireSession)
 	})
+
+	s.router.NotFound(s.handleNotFound)
 
 	return s
 }
