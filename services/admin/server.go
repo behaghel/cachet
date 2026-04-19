@@ -46,6 +46,9 @@ func NewServer(cfg AdminConfig) *Server {
 		r.Get("/status", s.handleStatus)
 		r.Get("/packs", s.handleListPacks)
 		r.Get("/packs/{id}", s.handleGetPack)
+		r.Post("/packs", s.handleCreatePack)
+		r.Put("/packs/{id}", s.handleUpdatePack)
+		r.Patch("/packs/{id}/status", s.handlePatchPackStatus)
 	})
 
 	return s
