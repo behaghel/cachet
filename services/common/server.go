@@ -29,6 +29,7 @@ func NewRouter(cfg ServerConfig) *chi.Mux {
 	r.Use(chi.Middlewares{recoverMiddleware}...)
 	r.Get("/health", HealthHandler(cfg.Name, cfg.Version))
 	r.Get("/ready", ReadyHandler(cfg.Name, cfg.Version)) // add ReadinessChecks via ReadyHandler(name, ver, check1, check2...)
+	r.Handle("/metrics", MetricsHandler())
 	return r
 }
 
@@ -36,6 +37,7 @@ func NewRouter(cfg ServerConfig) *chi.Mux {
 // If OTEL_EXPORTER_OTLP_ENDPOINT is set, tracing is automatically enabled.
 func ListenAndServe(handler http.Handler, cfg ServerConfig) {
 	ctx := context.Background()
+	InitMeterProvider()
 	otelShutdown := InitOTel(ctx, cfg.Name, cfg.Version)
 	defer otelShutdown()
 
