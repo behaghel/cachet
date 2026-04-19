@@ -154,6 +154,7 @@ func NewServerWithConfig(cfg ServerConfig) *Server {
 	s.router.Post("/oauth/token", s.handleOAuthToken)
 	s.router.Post("/credential", s.handleCredentialIssuance)
 	s.router.Get("/status/{listId}", s.handleGetStatusList)
+	s.router.Get("/status/{listId}/info", s.handleStatusListInfo)
 	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 	s.router.Get("/.well-known/jwks.json", s.handleJWKS)
@@ -379,6 +380,16 @@ func (s *Server) handleGetStatusList(w http.ResponseWriter, r *http.Request) {
 		"purpose":     purpose,
 		"encodedList": encoded,
 	})
+}
+
+func (s *Server) handleStatusListInfo(w http.ResponseWriter, r *http.Request) {
+	listID := chi.URLParam(r, "listId")
+	info, err := s.statusListStore.Info(listID)
+	if err != nil {
+		common.WriteError(w, r, http.StatusNotFound, "not_found", "Status list not found")
+		return
+	}
+	common.WriteJSON(w, r, http.StatusOK, info)
 }
 
 func (s *Server) handleRevoke(w http.ResponseWriter, r *http.Request) {
