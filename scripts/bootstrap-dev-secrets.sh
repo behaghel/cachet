@@ -134,16 +134,14 @@ current_runtime_env="$(extract_value "$ENV_FILE" "ENVIRONMENT")"
 current_prompt_context="$(extract_value "$ENV_FILE" "CACHET_PROMPT_CONTEXT")"
 current_google_project="$(extract_value "$ENV_FILE" "GOOGLE_CLOUD_PROJECT")"
 current_cloudsdk_project="$(extract_value "$ENV_FILE" "CLOUDSDK_CORE_PROJECT")"
-current_starship_project_env="$(extract_value "$WORKONRC_FILE" "STARSHIP_PROJECT_ENV")"
-current_workon_prompt_context="$(extract_value "$WORKONRC_FILE" "CACHET_PROMPT_CONTEXT")"
+current_starship_label="$(extract_value "$WORKONRC_FILE" "STARSHIP_PROJECT_LABEL")"
 
 missing_db_url=false
 missing_jwt_secret=false
 missing_profile_env=false
 missing_runtime_env=false
 missing_prompt_context=false
-missing_starship_project_env=false
-needs_workon_prompt_context_sync=false
+missing_starship_label=false
 
 if [[ -z "$current_db_url" ]]; then
   missing_db_url=true
@@ -165,15 +163,11 @@ if [[ -z "$current_prompt_context" ]]; then
   missing_prompt_context=true
 fi
 
-if [[ "$current_starship_project_env" != "CACHET_PROMPT_CONTEXT" ]]; then
-  missing_starship_project_env=true
+if [[ -z "$current_starship_label" || "$current_starship_label" != "$current_prompt_context" ]]; then
+  missing_starship_label=true
 fi
 
-if [[ -n "$current_prompt_context" && "$current_workon_prompt_context" != "$current_prompt_context" ]]; then
-  needs_workon_prompt_context_sync=true
-fi
-
-if ! $missing_db_url && ! $missing_jwt_secret && ! $missing_profile_env && ! $missing_runtime_env && ! $missing_prompt_context && ! $missing_starship_project_env && ! $needs_workon_prompt_context_sync; then
+if ! $missing_db_url && ! $missing_jwt_secret && ! $missing_profile_env && ! $missing_runtime_env && ! $missing_prompt_context && ! $missing_starship_label; then
   sync_task_shims
   check_service_modules
   exit 0
@@ -212,11 +206,8 @@ if ! $AUTO_CONFIRM; then
     if $missing_prompt_context; then
       echo "   - CACHET_PROMPT_CONTEXT"
     fi
-    if $missing_starship_project_env; then
-      echo "   - STARSHIP_PROJECT_ENV (for prompt project context)"
-    fi
-    if $needs_workon_prompt_context_sync; then
-      echo "   - CACHET_PROMPT_CONTEXT sync in $WORKONRC_FILE"
+    if $missing_starship_label; then
+      echo "   - STARSHIP_PROJECT_LABEL (shell prompt context)"
     fi
 
     if $gcloud_available; then
@@ -341,7 +332,8 @@ chmod 600 "$ENV_FILE" 2>/dev/null || true
 
 workon_tmp_file="$(mktemp "${WORKONRC_FILE}.tmp.XXXXXX")"
 if [[ -f "$WORKONRC_FILE" ]]; then
-  grep -Ev '^[[:space:]]*(export[[:space:]]+)?(STARSHIP_PROJECT_ENV|CACHET_PROMPT_CONTEXT)=' "$WORKONRC_FILE" > "$workon_tmp_file" || true
+  # Remove legacy STARSHIP_PROJECT_ENV and CACHET_PROMPT_CONTEXT (now lives in .env only)
+  grep -Ev '^[[:space:]]*(export[[:space:]]+)?(STARSHIP_PROJECT_LABEL|STARSHIP_PROJECT_ENV|CACHET_PROMPT_CONTEXT)=' "$WORKONRC_FILE" > "$workon_tmp_file" || true
 fi
 if [[ ! -s "$workon_tmp_file" ]]; then
   echo "ASSIST_CMD=claude" > "$workon_tmp_file"
@@ -349,8 +341,7 @@ fi
 if [[ "$(tail -c 1 "$workon_tmp_file" 2>/dev/null || true)" != "" ]]; then
   echo "" >> "$workon_tmp_file"
 fi
-echo "STARSHIP_PROJECT_ENV=CACHET_PROMPT_CONTEXT" >> "$workon_tmp_file"
-echo "CACHET_PROMPT_CONTEXT=$prompt_context_value" >> "$workon_tmp_file"
+echo "STARSHIP_PROJECT_LABEL=$prompt_context_value" >> "$workon_tmp_file"
 mv "$workon_tmp_file" "$WORKONRC_FILE"
 
 if $set_gcloud_project; then

@@ -130,7 +130,7 @@ build/
 target/
 
 # Docker
-.dockerignore
+# .dockerignore is tracked — needed for docker compose builds
 
 # Backup files
 *.bak

@@ -4,6 +4,8 @@ let
   # Enable Android only when DEVENV_ENABLE_ANDROID is set
   enableAndroid = builtins.getEnv "DEVENV_ENABLE_ANDROID" != "";
 
+  isDarwin = pkgs.stdenv.isDarwin;
+
   # Service list — single source of truth for all per-service scripts
   goServices = [ "verifier" "registry" "receipts-log" "issuance-gateway" "relay" "admin" ];
   forEachService = f: builtins.concatStringsSep "\n" (map f goServices);
@@ -91,7 +93,7 @@ in
 
   # Packages needed for daily development.
   # GCP tools (gcloud, terraform) are NOT included — install them
-  # separately or add when needed. docker/docker-compose are system-level.
+  # separately or add when needed.
   packages = with pkgs; [
     # Node extras (Node itself comes from languages.javascript)
     pnpm
@@ -114,6 +116,13 @@ in
     openssl
     secretspec
     uv  # Python package manager — needed for Android MCP server
+  ]
+  # macOS: Docker CLI + Compose for local container builds/verification.
+  # Requires a Docker-compatible runtime (colima, Docker Desktop, OrbStack).
+  # Runtime is not managed by devenv — install via: brew install colima
+  ++ lib.optionals isDarwin [
+    docker-client
+    docker-compose
   ];
 
   # Fixed port env vars — must match the PORT= values in process exec commands above
@@ -174,12 +183,114 @@ in
     echo "  android:seller-only  Seller cachet only"
     echo "  android:empty        Empty vault (IDV onboarding)"
     echo ""
+    echo "Docker (macOS — requires colima):"
+    echo "  docker:start        Start Colima + Docker daemon"
+    echo "  docker:build        Build all service images"
+    echo "  docker:up           Run all services in containers"
+    echo "  docker:test         Build, run, and smoke-test all images"
+    echo "  docker:stop         Stop containers + Colima"
+    echo ""
+    echo "Environment:"
+    echo "  env:dev             Switch to local dev (backend-driven)"
+    echo "  env:demo            Switch to demo (fixtures, no backend)"
+    echo "  env:staging [proj]  Switch to staging (requires GCP project)"
+    echo "  env:prod [proj]     Switch to production (requires GCP project)"
+    echo ""
     echo "GCP (requires gcloud CLI):"
     echo "  gcp:setup              Setup GCP project"
     echo "  gcp:deploy:verifier    Deploy to Cloud Run"
     echo "  gcp:status             Check deployment status"
     echo "  gcp:monitoring:setup   Create alerts + dashboard"
     echo "  gcp:monitoring:status  Show monitoring resources"
+  '';
+  scripts."env:dev".exec = ''
+    cachet_env_switch dev
+  '';
+  scripts."env:demo".exec = ''
+    cachet_env_switch demo
+  '';
+  scripts."env:staging".exec = ''
+    set -euo pipefail
+    PROJECT="''${1:-}"
+    if [ -z "$PROJECT" ]; then
+      PROJECT=$(grep '^GOOGLE_CLOUD_PROJECT=' .env 2>/dev/null | sed 's/^GOOGLE_CLOUD_PROJECT="//' | sed 's/"$//' || true)
+    fi
+    if [ -z "$PROJECT" ]; then
+      echo "Usage: env:staging <gcp-project-id>"
+      echo "No GCP project found. Pass it as argument or set GOOGLE_CLOUD_PROJECT in .env"
+      exit 1
+    fi
+    cachet_env_switch staging "$PROJECT"
+  '';
+  scripts."env:prod".exec = ''
+    set -euo pipefail
+    PROJECT="''${1:-}"
+    if [ -z "$PROJECT" ]; then
+      PROJECT=$(grep '^GOOGLE_CLOUD_PROJECT=' .env 2>/dev/null | sed 's/^GOOGLE_CLOUD_PROJECT="//' | sed 's/"$//' || true)
+    fi
+    if [ -z "$PROJECT" ]; then
+      echo "Usage: env:prod <gcp-project-id>"
+      echo "No GCP project found. Pass it as argument or set GOOGLE_CLOUD_PROJECT in .env"
+      exit 1
+    fi
+    cachet_env_switch prod "$PROJECT"
+  '';
+  scripts."docker:start".exec = ''
+    if docker info >/dev/null 2>&1; then
+      echo "Docker daemon already running."
+      docker version --format 'client={{.Client.Version}} server={{.Server.Version}}'
+      exit 0
+    fi
+    if command -v colima >/dev/null 2>&1; then
+      echo "Starting Colima..."
+      colima start
+    else
+      echo "No Docker daemon running and colima not found."
+      echo "Install a Docker-compatible runtime:"
+      echo "  brew install colima    # lightweight, recommended"
+      echo "  brew install orbstack  # fast alternative"
+      echo "  # or Docker Desktop"
+      exit 1
+    fi
+    echo "Docker ready: $(docker version --format 'client={{.Client.Version}} server={{.Server.Version}}')"
+  '';
+  scripts."docker:build".exec = ''
+    set -euo pipefail
+    if ! docker info >/dev/null 2>&1; then
+      echo "Docker daemon not running. Run docker:start first."
+      exit 1
+    fi
+    echo "Building all service images..."
+    docker compose -f infra/docker-compose.yaml build
+    echo "Images built:"
+    docker compose -f infra/docker-compose.yaml images
+  '';
+  scripts."docker:up".exec = ''
+    set -euo pipefail
+    if ! docker info >/dev/null 2>&1; then
+      echo "Docker daemon not running. Run docker:start first."
+      exit 1
+    fi
+    docker compose -f infra/docker-compose.yaml up -d
+    echo "Waiting for services..."
+    sleep 3
+    for port in 8081 8082 8083 8084 8090 8091; do
+      if curl -sf "http://localhost:$port/health" >/dev/null 2>&1; then
+        echo "  :$port /health OK"
+      else
+        echo "  :$port /health FAIL"
+      fi
+    done
+  '';
+  scripts."docker:test".exec = ''
+    ./infra/test-docker.sh
+  '';
+  scripts."docker:stop".exec = ''
+    docker compose -f infra/docker-compose.yaml down 2>/dev/null || true
+    if command -v colima >/dev/null 2>&1 && colima status 2>/dev/null | grep -q Running; then
+      colima stop
+      echo "Colima stopped."
+    fi
   '';
   scripts."fmt:go".exec = "gofmt -s -w services";
   scripts."lint:go".exec = ''
@@ -439,8 +550,7 @@ in
     cd mobile && ./gradlew :androidApp:installDemoDebug $HOST_ARGS
     echo "3. Launching app (real mode — backend-driven)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity
-    # Update active environment for shell prompt (direnv watches .env)
-    sed -i ''' 's/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT="dev"/' .env
+    cachet_env_switch dev
     echo "✅ Done! Backend running, app installed and launched."
     echo "💡 For demo mode with fixtures: android:demo"
   '';
@@ -458,8 +568,7 @@ in
     cd mobile && ./gradlew :androidApp:installDemoDebug $HOST_ARGS
     echo "3. Launching app (demo mode — fixtures)..."
     $ADB shell am start -n id.cachet.wallet.android.demo/id.cachet.wallet.android.MainActivity --ez demo_mode true
-    # Update active environment for shell prompt (direnv watches .env)
-    sed -i ''' 's/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT="demo"/' .env
+    cachet_env_switch demo
     echo "✅ Done! App launched in demo mode with fixtures (no backend)."
     echo "💡 Switch scenario: android:revoked, android:expired, android:seller-only"
   '';
@@ -805,6 +914,8 @@ EOF
         --role="roles/secretmanager.secretAccessor" --quiet || true
     
     # Build and push container
+    # TODO(#100): switch to --file infra/Dockerfile --build-arg SERVICE=verifier
+    # with repo-root context once multi-service deploy is implemented.
     echo "📦 Building container..."
     gcloud builds submit --tag gcr.io/$PROJECT_ID/$SERVICE_NAME ./services/verifier
     
@@ -1063,6 +1174,64 @@ EOF
       fi
     }
     export -f cachet_host_args
+
+    # In-place sed helper (avoids macOS sed -i quoting issues in Nix strings)
+    _sedi() { local expr="$1" file="$2" tmp; tmp=$(mktemp); sed "$expr" "$file" > "$tmp" && mv "$tmp" "$file"; }
+    export -f _sedi
+
+    # Helper: switch environment context (prompt, .env, .workonrc, gcloud project).
+    # Usage: cachet_env_switch <env> [gcp-project-id]
+    cachet_env_switch() {
+      local env_name="$1"
+      local gcp_project="''${2:-}"
+
+      local prompt_context
+      if [ -n "$gcp_project" ]; then
+        prompt_context="''${env_name}@''${gcp_project}"
+      else
+        prompt_context="$env_name"
+      fi
+
+      # Update .env
+      if grep -q '^CACHET_PROMPT_CONTEXT=' .env 2>/dev/null; then
+        _sedi "s/^CACHET_PROMPT_CONTEXT=.*/CACHET_PROMPT_CONTEXT=\"$prompt_context\"/" .env
+      else
+        echo "CACHET_PROMPT_CONTEXT=\"$prompt_context\"" >> .env
+      fi
+
+      if grep -q '^CACHET_ENV=' .env 2>/dev/null; then
+        _sedi "s/^CACHET_ENV=.*/CACHET_ENV=\"$env_name\"/" .env
+      else
+        echo "CACHET_ENV=\"$env_name\"" >> .env
+      fi
+
+      # Update .workonrc
+      if grep -q '^STARSHIP_PROJECT_LABEL=' .workonrc 2>/dev/null; then
+        _sedi "s/^STARSHIP_PROJECT_LABEL=.*/STARSHIP_PROJECT_LABEL=$prompt_context/" .workonrc
+      else
+        echo "STARSHIP_PROJECT_LABEL=$prompt_context" >> .workonrc
+      fi
+
+      # Update gcloud project if provided
+      if [ -n "$gcp_project" ]; then
+        if grep -q '^GOOGLE_CLOUD_PROJECT=' .env 2>/dev/null; then
+          _sedi "s/^GOOGLE_CLOUD_PROJECT=.*/GOOGLE_CLOUD_PROJECT=\"$gcp_project\"/" .env
+        else
+          echo "GOOGLE_CLOUD_PROJECT=\"$gcp_project\"" >> .env
+        fi
+        if grep -q '^CLOUDSDK_CORE_PROJECT=' .env 2>/dev/null; then
+          _sedi "s/^CLOUDSDK_CORE_PROJECT=.*/CLOUDSDK_CORE_PROJECT=\"$gcp_project\"/" .env
+        else
+          echo "CLOUDSDK_CORE_PROJECT=\"$gcp_project\"" >> .env
+        fi
+        if command -v gcloud >/dev/null 2>&1; then
+          gcloud config set project "$gcp_project" 2>/dev/null || true
+        fi
+      fi
+
+      echo "Switched to $prompt_context"
+    }
+    export -f cachet_env_switch
 
     if [ -n "''${DIRENV_IN_ENVRC:-}" ] || [ -n "''${DIRENV_DIR:-}" ]; then
       # `use devenv` imports shell code via direnv; stdout here corrupts that stream.
