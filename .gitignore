@@ -191,3 +191,4 @@ services/registry/registry
 services/receipts-log/receipts-log
 services/issuance-gateway/issuance-gateway
 services/relay/relay
+services/admin/admin
