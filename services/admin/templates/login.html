@@ -1,0 +1,18 @@
+{{define "content"}}
+<div style="max-width:380px; margin:80px auto;">
+  <div style="text-align:center; margin-bottom:var(--space-xl);">
+    <div style="font-size:24px; font-weight:600; letter-spacing:4px; color:var(--accent); margin-bottom:var(--space-xs);">CACHET</div>
+    <div style="font-size:14px; color:var(--text-secondary);">Operator Console</div>
+  </div>
+  <div class="card">
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label for="api_key">API Key</label>
+        <input type="password" id="api_key" name="api_key" placeholder="Enter admin API key" required autofocus>
+      </div>
+      {{if .Data}}<div class="flash flash-error" style="margin-bottom:var(--space-md);">{{.Data}}</div>{{end}}
+      <button type="submit" class="btn btn-primary" style="width:100%;">Sign In</button>
+    </form>
+  </div>
+</div>
+{{end}}

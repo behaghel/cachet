@@ -1,0 +1,51 @@
+{{define "content"}}
+<h1>Credential Revocation</h1>
+
+{{with .Data}}
+{{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+
+{{if .StatusList}}
+<div class="card">
+  <h2>Status List</h2>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">List ID</div>
+      <div class="stat-value" style="font-size:22px;">{{index .StatusList "id"}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Allocated</div>
+      <div class="stat-value">{{index .StatusList "allocated"}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Revoked</div>
+      <div class="stat-value" style="color:var(--destructive);">{{index .StatusList "revoked"}}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Capacity</div>
+      <div class="stat-value">{{index .StatusList "capacity"}}</div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<div class="card">
+  <h2>Revoke Credential</h2>
+  <p class="text-secondary text-sm mb-md">Revocation is irreversible. Once a credential is revoked, it cannot be reinstated.</p>
+  <form method="POST" action="/revocation/revoke" onsubmit="return confirm('Are you sure you want to revoke this credential? This action cannot be undone.');">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="index">Status List Index</label>
+        <input type="number" id="index" name="index" placeholder="42" required min="0">
+      </div>
+      <div class="form-group">
+        <label for="list_id">List ID (optional)</label>
+        <input type="text" id="list_id" name="list_id" placeholder="1" value="1">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-danger">Revoke Credential</button>
+    </div>
+  </form>
+</div>
+{{end}}
+{{end}}

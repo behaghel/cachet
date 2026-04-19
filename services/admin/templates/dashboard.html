@@ -1,0 +1,45 @@
+{{define "content"}}
+<h1>Dashboard</h1>
+
+{{with .Data}}
+{{range .Errors}}
+<div class="flash flash-error">{{.}}</div>
+{{end}}
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Service Version</div>
+    <div class="stat-value" style="font-size:22px;">{{.Version}}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Uptime</div>
+    <div class="stat-value" style="font-size:22px;">{{.Uptime}}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Registered Packs</div>
+    <div class="stat-value">{{.PackCount}}</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-md);">
+  <div class="card">
+    <h2>Relay Sessions</h2>
+    {{if .RelaySessions}}
+    <div class="stat-value">{{index .RelaySessions "active"}}</div>
+    <div class="stat-label">Active</div>
+    {{else}}
+    <p class="text-secondary text-sm">Unavailable</p>
+    {{end}}
+  </div>
+  <div class="card">
+    <h2>Verifier Sessions</h2>
+    {{if .VerifierSessions}}
+    <div class="stat-value">{{index .VerifierSessions "active"}}</div>
+    <div class="stat-label">Active</div>
+    {{else}}
+    <p class="text-secondary text-sm">Unavailable</p>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

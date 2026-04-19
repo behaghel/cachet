@@ -1,0 +1,143 @@
+{{define "content"}}
+{{with .Data}}
+<h1>{{if eq .Mode "edit"}}Edit Pack{{else}}New Pack{{end}}</h1>
+
+{{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+
+<form method="POST" action="{{.Action}}">
+<div class="card">
+  <h2>Pack Definition</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="id">Pack ID</label>
+      <input type="text" id="id" name="id" value="{{.Pack.ID}}" placeholder="pack.example" {{if eq .Mode "edit"}}readonly style="background:var(--elevated);"{{end}} required>
+    </div>
+    <div class="form-group">
+      <label for="version">Version</label>
+      <input type="text" id="version" name="version" value="{{.Pack.Version}}" placeholder="1.0.0" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" value="{{.Pack.Name}}" placeholder="Human-readable pack name" required>
+  </div>
+  <div class="form-group">
+    <label for="purpose">Purpose</label>
+    <input type="text" id="purpose" name="purpose" value="{{.Pack.Purpose}}" placeholder="What this pack verifies">
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="jurisdictions">Jurisdictions (comma-separated)</label>
+      <input type="text" id="jurisdictions" name="jurisdictions" value="{{.Pack.Jurisdictions}}" placeholder="GLOBAL">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Badge</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="badge_label">Label</label>
+      <input type="text" id="badge_label" name="badge_label" value="{{.Pack.BadgeLabel}}" placeholder="Verified">
+    </div>
+    <div class="form-group">
+      <label for="badge_ttl">TTL (ISO 8601 duration)</label>
+      <input type="text" id="badge_ttl" name="badge_ttl" value="{{.Pack.BadgeTTL}}" placeholder="P180D">
+    </div>
+  </div>
+</div>
+
+<div class="card" id="predicates-card">
+  <div class="flex justify-between items-center mb-md">
+    <h2>Predicates</h2>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="addPredicate()">Add Predicate</button>
+  </div>
+  <div id="predicates-list">
+    {{range $i, $p := .Pack.Predicates}}
+    <div class="predicate-row" style="border:1px solid var(--border); border-radius:var(--radius-md); padding:var(--space-md); margin-bottom:var(--space-md);">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Predicate ID</label>
+          <input type="text" name="pred_id" value="{{$p.ID}}" placeholder="age.ge.18" required>
+        </div>
+        <div class="form-group">
+          <label>Claim</label>
+          <input type="text" name="pred_claim" value="{{$p.Claim}}" placeholder="age" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Operator</label>
+          <input type="text" name="pred_operator" value="{{$p.Operator}}" placeholder=">=" required>
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="text" name="pred_value" value="{{$p.Value}}" placeholder="18" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Proof Type</label>
+          <input type="text" name="pred_proof_type" value="{{$p.ProofType}}" placeholder="sd-jwt">
+        </div>
+        <div class="form-group">
+          <label>Issuers Accepted (comma-separated)</label>
+          <input type="text" name="pred_issuers" value="{{$p.Issuers}}" placeholder="did:veriff:*">
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-icon" style="color:var(--destructive);" onclick="this.parentElement.remove()">Remove</button>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<div class="form-actions">
+  <button type="submit" class="btn btn-primary">{{if eq .Mode "edit"}}Update Pack{{else}}Create Pack{{end}}</button>
+  <a href="/packs" class="btn btn-secondary">Cancel</a>
+</div>
+</form>
+
+<template id="predicate-template">
+  <div class="predicate-row" style="border:1px solid var(--border); border-radius:var(--radius-md); padding:var(--space-md); margin-bottom:var(--space-md);">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Predicate ID</label>
+        <input type="text" name="pred_id" placeholder="age.ge.18" required>
+      </div>
+      <div class="form-group">
+        <label>Claim</label>
+        <input type="text" name="pred_claim" placeholder="age" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Operator</label>
+        <input type="text" name="pred_operator" placeholder=">=" required>
+      </div>
+      <div class="form-group">
+        <label>Value</label>
+        <input type="text" name="pred_value" placeholder="18" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Proof Type</label>
+        <input type="text" name="pred_proof_type" placeholder="sd-jwt">
+      </div>
+      <div class="form-group">
+        <label>Issuers Accepted (comma-separated)</label>
+        <input type="text" name="pred_issuers" placeholder="did:veriff:*">
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-icon" style="color:var(--destructive);" onclick="this.parentElement.remove()">Remove</button>
+  </div>
+</template>
+<script>
+function addPredicate() {
+  var t = document.getElementById('predicate-template');
+  var clone = t.content.cloneNode(true);
+  document.getElementById('predicates-list').appendChild(clone);
+}
+</script>
+{{end}}
+{{end}}
