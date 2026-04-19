@@ -815,8 +815,7 @@ in
   scripts."gcp:db:setup".exec = ''
     echo "🗄️  Setting up Cloud SQL database..."
     set -euo pipefail
-    
-    PROJECT_ID=$(gcloud config get-value project)
+    PROJECT_ID=$(gcp_require_project "Create Cloud SQL instance") || exit 1
     INSTANCE_NAME="cachet-db"
     DB_NAME="cachet"
     
@@ -846,22 +845,7 @@ in
   scripts."gcp:kms:setup".exec = ''
     echo "🔑 Setting up GCP Cloud KMS for issuer key management..."
     set -euo pipefail
-
-    PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
-    if [ -z "$PROJECT_ID" ]; then
-      echo "❌ No GCP project set. Run 'env:staging <project>' or 'env:prod <project>' first."
-      exit 1
-    fi
-    CACHET_ENV="''${CACHET_ENV:-unknown}"
-
-    echo "  Project:     $PROJECT_ID"
-    echo "  Environment: $CACHET_ENV"
-    echo ""
-    read -r -p "Proceed with KMS setup in $CACHET_ENV ($PROJECT_ID)? [y/N]: " confirm
-    if [[ ! "$confirm" =~ ^[yY] ]]; then
-      echo "Aborted."
-      exit 0
-    fi
+    PROJECT_ID=$(gcp_require_project "Create HSM-backed issuer signing key") || exit 1
 
     REGION="''${CACHET_KMS_REGION:-europe-west1}"
     KEYRING="issuer"
@@ -900,11 +884,10 @@ in
     fi
 
     echo "🔐 Granting signing permission to Cloud Run service account..."
-    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
     gcloud kms keys add-iam-policy-binding "$KEY" \
       --keyring="$KEYRING" \
       --location="$REGION" \
-      --member="serviceAccount:$SERVICE_ACCOUNT" \
+      --member="serviceAccount:$CACHET_GCP_SA" \
       --role="roles/cloudkms.signerVerifier" --quiet || true
 
     echo ""
@@ -921,8 +904,7 @@ in
   scripts."gcp:secrets:setup".exec = ''
     echo "🔐 Setting up Secret Manager with SecretSpec integration..."
     set -euo pipefail
-    
-    PROJECT_ID=$(gcloud config get-value project)
+    PROJECT_ID=$(gcp_require_project "Create/update secrets in Secret Manager") || exit 1
     
     # Generate secure database password
     echo "🔑 Generating secure database password..."
@@ -970,15 +952,14 @@ EOF
   '';
   
   scripts."gcp:deploy:verifier".exec = ''
-    echo "🚀 Deploying Verifier service to Cloud Run with SecretSpec integration..."
+    echo "🚀 Deploying Verifier service to Cloud Run..."
     set -euo pipefail
-    
-    PROJECT_ID=$(gcloud config get-value project)
+    PROJECT_ID=$(gcp_require_project "Deploy verifier to Cloud Run") || exit 1
     SERVICE_NAME="cachet-verifier"
-    
+    SERVICE_ACCOUNT="$CACHET_GCP_SA"
+
     # Ensure service account has secret access (idempotent)
     echo "🔐 Ensuring service account has Secret Manager access..."
-    SERVICE_ACCOUNT="$PROJECT_ID-compute@developer.gserviceaccount.com"
     
     # Grant Secret Manager access (these commands are idempotent)
     gcloud secrets add-iam-policy-binding database-url \
@@ -1023,6 +1004,7 @@ EOF
   scripts."gcp:status".exec = ''
     echo "📊 Checking GCP deployment status..."
     set -euo pipefail
+    PROJECT_ID=$(gcp_require_project --no-confirm "Check status") || exit 1
     
     echo "🗄️  Cloud SQL Status:"
     gcloud sql instances list
@@ -1043,8 +1025,9 @@ EOF
   '';
   
   scripts."gcp:test-deployment".exec = ''
-    echo "🧪 Testing complete GCP deployment with SecretSpec..."
+    echo "🧪 Testing complete GCP deployment..."
     set -euo pipefail
+    PROJECT_ID=$(gcp_require_project --no-confirm "Test deployment") || exit 1
     
     SERVICE_URL=$(gcloud run services describe cachet-verifier --region=us-central1 --format='value(status.url)')
     
@@ -1084,12 +1067,7 @@ EOF
   scripts."gcp:monitoring:setup".exec = ''
     echo "📊 Setting up GCP Cloud Monitoring for Cachet..."
     set -euo pipefail
-
-    PROJECT_ID=$(gcloud config get-value project)
-    if [ -z "$PROJECT_ID" ]; then
-      echo "❌ No GCP project set. Run 'gcp:setup' first."
-      exit 1
-    fi
+    PROJECT_ID=$(gcp_require_project "Create monitoring dashboard and alerts") || exit 1
 
     echo "🔧 Enabling Monitoring API..."
     gcloud services enable monitoring.googleapis.com --quiet || true
@@ -1130,6 +1108,8 @@ EOF
   '';
 
   scripts."gcp:monitoring:status".exec = ''
+    set -euo pipefail
+    PROJECT_ID=$(gcp_require_project --no-confirm "Check monitoring") || exit 1
     echo "📊 Cachet Monitoring Status"
     set -euo pipefail
 
@@ -1288,6 +1268,56 @@ EOF
       echo "Switched to $env_name"
     }
     export -f cachet_env_switch
+
+    # GCP guardrail: validates auth, shows project + env, optionally confirms.
+    # Usage: PROJECT_ID=$(gcp_require_project "action description")
+    #        PROJECT_ID=$(gcp_require_project --no-confirm "read-only action")
+    # Exits 1 if not authenticated or user declines.
+    # Sets PROJECT_ID and CACHET_GCP_SA (service account) for the caller.
+    gcp_require_project() {
+      local confirm=true
+      if [ "''${1:-}" = "--no-confirm" ]; then
+        confirm=false
+        shift
+      fi
+      local action="''${1:-GCP operation}"
+
+      if ! command -v gcloud >/dev/null 2>&1; then
+        echo "gcloud CLI not found. Install it: https://cloud.google.com/sdk/docs/install" >&2
+        return 1
+      fi
+      if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | head -n1 | grep -q .; then
+        echo "Not authenticated with GCP. Run gcp:auth first." >&2
+        return 1
+      fi
+
+      local project
+      project=$(gcloud config get-value project 2>/dev/null)
+      if [ -z "$project" ]; then
+        echo "No GCP project set. Run env:staging <project> or env:prod <project> first." >&2
+        return 1
+      fi
+
+      local env_name="''${CACHET_ENV:-unknown}"
+      echo "  Project:     $project"
+      echo "  Environment: $env_name"
+      echo ""
+
+      if $confirm; then
+        read -r -p "$action in $env_name ($project)? [y/N]: " answer
+        if [[ ! "$answer" =~ ^[yY] ]]; then
+          echo "Aborted."
+          return 1
+        fi
+        echo ""
+      fi
+
+      # Export for the calling script
+      export CACHET_GCP_PROJECT="$project"
+      export CACHET_GCP_SA="''${project}-compute@developer.gserviceaccount.com"
+      echo "$project"
+    }
+    export -f gcp_require_project
 
     if [ -n "''${DIRENV_IN_ENVRC:-}" ] || [ -n "''${DIRENV_DIR:-}" ]; then
       # `use devenv` imports shell code via direnv; stdout here corrupts that stream.
