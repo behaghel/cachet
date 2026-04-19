@@ -6,12 +6,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	promexporter "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
@@ -61,6 +64,26 @@ func InitOTel(ctx context.Context, serviceName, serviceVersion string) func() {
 			log.Error().Err(err).Msg("otel: shutdown failed")
 		}
 	}
+}
+
+// InitMeterProvider sets up an OTEL MeterProvider backed by a Prometheus exporter.
+// This is always enabled (unlike tracing which requires OTEL_EXPORTER_OTLP_ENDPOINT),
+// because metrics are scraped via /metrics — no push destination needed.
+// Instruments created before this call (e.g. in init()) are retroactively connected.
+func InitMeterProvider() {
+	exporter, err := promexporter.New()
+	if err != nil {
+		log.Warn().Err(err).Msg("otel: failed to create prometheus exporter, metrics disabled")
+		return
+	}
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
+	otel.SetMeterProvider(mp)
+	log.Info().Msg("otel: metrics enabled (prometheus)")
+}
+
+// MetricsHandler returns an HTTP handler that serves Prometheus metrics.
+func MetricsHandler() http.Handler {
+	return promhttp.Handler()
 }
 
 // Meter returns a named OTEL meter for recording custom metrics.
