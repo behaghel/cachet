@@ -8,4 +8,8 @@ actual class JWSVerifier actual constructor() {
     actual fun verify(jwsCompact: String, publicKeyJWK: String): String {
         throw UnsupportedOperationException("JWS verification not yet implemented for iOS")
     }
+
+    actual fun verifyJWS(jwsCompact: String, publicKeyJWK: String, expectedTyp: String?): String {
+        throw UnsupportedOperationException("JWS verification not yet implemented for iOS")
+    }
 }

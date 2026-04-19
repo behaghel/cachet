@@ -11,10 +11,7 @@ class SDJWTParserTest {
     // Helper: base64url-encode a disclosure array [salt, claimName, value]
     private fun encodeDisclosure(salt: String, claim: String, value: String): String {
         val json = """["$salt","$claim","$value"]"""
-        return json.encodeToByteArray().toBase64()
-            .replace('+', '-')
-            .replace('/', '_')
-            .trimEnd('=')
+        return Base64Url.encode(json.encodeToByteArray())
     }
 
     private val issuerJwt = "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJkaWQ6d2ViOmlzc3VlciJ9.sig"
