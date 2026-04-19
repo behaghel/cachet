@@ -1,6 +1,6 @@
 module github.com/cachet-id/cachet/services/relay
 
-go 1.25.7
+go 1.25.0
 
 require (
 	github.com/cachet-id/cachet/services/common v0.0.0
