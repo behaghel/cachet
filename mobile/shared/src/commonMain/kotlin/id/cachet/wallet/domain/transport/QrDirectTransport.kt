@@ -68,7 +68,7 @@ class QrDirectTransport(
 class PayloadTooLargeException(message: String) : Exception(message)
 
 /** Build the proximity session URI for the verifier's QR. */
-internal fun buildProximityUri(session: ProximitySession): String {
+fun buildProximityUri(session: ProximitySession): String {
     val encodedQ = urlEncode(session.question)
     val preds = session.predicates.joinToString(",")
     return "${QrDirectTransport.SCHEME}?" +
@@ -80,7 +80,7 @@ internal fun buildProximityUri(session: ProximitySession): String {
 }
 
 /** Parse a proximity session URI from the holder's QR scan. */
-internal fun parseProximityUri(uri: String): TransportRequest {
+fun parseProximityUri(uri: String): TransportRequest {
     require(uri.startsWith("${QrDirectTransport.SCHEME}?")) {
         "Not a proximity URI: expected ${QrDirectTransport.SCHEME}?..."
     }
