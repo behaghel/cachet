@@ -15,6 +15,9 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
+
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
@@ -343,6 +346,262 @@ func TestCredential_NoSession(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, cw.Code)
 	assert.Contains(t, cw.Body.String(), "no_session")
+}
+
+// ── T15: Issuance proof replay prevention ──
+
+// TestNonce_ReturnsValidNonce verifies the /nonce endpoint issues a c_nonce.
+func TestNonce_ReturnsValidNonce(t *testing.T) {
+	s := testServer(t)
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/nonce", nil))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.NotEmpty(t, resp["c_nonce"])
+	assert.Equal(t, float64(300), resp["c_nonce_expires_in"])
+}
+
+// TestIssuerMetadata_ReturnsDiscoveryDocument verifies /.well-known/openid-credential-issuer.
+func TestIssuerMetadata_ReturnsDiscoveryDocument(t *testing.T) {
+	s := testServer(t)
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/.well-known/openid-credential-issuer", nil))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var meta map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &meta))
+	assert.Contains(t, meta, "credential_issuer")
+	assert.Contains(t, meta, "credential_endpoint")
+	assert.Contains(t, meta, "nonce_endpoint")
+	assert.Contains(t, meta, "credential_configurations_supported")
+}
+
+// TestT15_ProofJWT_HappyPath exercises the full c_nonce flow:
+// webhook → token → nonce → proof JWT → credential (succeeds).
+func TestT15_ProofJWT_HappyPath(t *testing.T) {
+	secret := "t15-test-secret"
+	s := testServerWithSDJWT(t, secret)
+
+	// 1. Webhook
+	storeVerifiedSession(t, s, secret, "t15-happy")
+
+	// 2. Token
+	token := getTestTokenWithSession(t, s, "t15-happy")
+
+	// 3. Get c_nonce
+	cNonce := getNonce(t, s)
+
+	// 4. Build proof JWT signed by holder key
+	holderKey, holderJWK := generateHolderKey(t)
+	proofJWT := buildProofJWT(t, holderKey, holderJWK, cNonce, "https://cachet.id")
+
+	// 5. Request credential with proof JWT
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential", "IdentityCredential"},
+		"proof": map[string]interface{}{
+			"jwt": proofJWT,
+		},
+	})
+	credReq := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	credReq.Header.Set("Authorization", "Bearer "+token)
+	cw := httptest.NewRecorder()
+	s.Router().ServeHTTP(cw, credReq)
+
+	assert.Equal(t, http.StatusOK, cw.Code)
+	var resp map[string]string
+	require.NoError(t, json.Unmarshal(cw.Body.Bytes(), &resp))
+	assert.Equal(t, "vc+sd-jwt", resp["format"])
+	assert.Contains(t, resp["credential"], "~")
+}
+
+// TestT15_ReplayAttack_Fails verifies that reusing a proof JWT is rejected
+// because the c_nonce was already consumed.
+func TestT15_ReplayAttack_Fails(t *testing.T) {
+	secret := "t15-replay-secret"
+	s := testServerWithSDJWT(t, secret)
+
+	storeVerifiedSession(t, s, secret, "t15-replay-1")
+	storeVerifiedSession(t, s, secret, "t15-replay-2")
+
+	// Get ONE nonce, build ONE proof JWT
+	cNonce := getNonce(t, s)
+	holderKey, holderJWK := generateHolderKey(t)
+	proofJWT := buildProofJWT(t, holderKey, holderJWK, cNonce, "https://cachet.id")
+
+	// First request: succeeds
+	token1 := getTestTokenWithSession(t, s, "t15-replay-1")
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential"},
+		"proof":  map[string]interface{}{"jwt": proofJWT},
+	})
+	w1 := httptest.NewRecorder()
+	req1 := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	req1.Header.Set("Authorization", "Bearer "+token1)
+	s.Router().ServeHTTP(w1, req1)
+	require.Equal(t, http.StatusOK, w1.Code, "first use should succeed")
+
+	// Second request with SAME proof JWT: must fail (nonce consumed)
+	token2 := getTestTokenWithSession(t, s, "t15-replay-2")
+	credBody2, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential"},
+		"proof":  map[string]interface{}{"jwt": proofJWT},
+	})
+	w2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody2))
+	req2.Header.Set("Authorization", "Bearer "+token2)
+	s.Router().ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusBadRequest, w2.Code, "replay must be rejected")
+	assert.Contains(t, w2.Body.String(), "invalid_proof")
+}
+
+// TestT15_MissingNonce_Fails verifies that a proof JWT without a nonce claim is rejected.
+func TestT15_MissingNonce_Fails(t *testing.T) {
+	secret := "t15-nononce-secret"
+	s := testServerWithSDJWT(t, secret)
+	storeVerifiedSession(t, s, secret, "t15-nononce")
+	token := getTestTokenWithSession(t, s, "t15-nononce")
+
+	holderKey, holderJWK := generateHolderKey(t)
+	// Build proof JWT without nonce
+	proofJWT := buildProofJWT(t, holderKey, holderJWK, "", "https://cachet.id")
+
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential"},
+		"proof":  map[string]interface{}{"jwt": proofJWT},
+	})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	req.Header.Set("Authorization", "Bearer "+token)
+	s.Router().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid_proof")
+}
+
+// TestT15_WrongAudience_Fails verifies that a proof JWT with wrong audience is rejected.
+func TestT15_WrongAudience_Fails(t *testing.T) {
+	secret := "t15-aud-secret"
+	s := testServerWithSDJWT(t, secret)
+	storeVerifiedSession(t, s, secret, "t15-aud")
+	token := getTestTokenWithSession(t, s, "t15-aud")
+
+	cNonce := getNonce(t, s)
+	holderKey, holderJWK := generateHolderKey(t)
+	// Build proof JWT with WRONG audience
+	proofJWT := buildProofJWT(t, holderKey, holderJWK, cNonce, "https://evil-issuer.com")
+
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential"},
+		"proof":  map[string]interface{}{"jwt": proofJWT},
+	})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	req.Header.Set("Authorization", "Bearer "+token)
+	s.Router().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid_proof")
+}
+
+// TestT15_LegacyRawJWK_StillWorks verifies backward compat:
+// raw JWK without proof JWT is accepted (with warning).
+func TestT15_LegacyRawJWK_StillWorks(t *testing.T) {
+	secret := "t15-legacy-secret"
+	s := testServerWithSDJWT(t, secret)
+	storeVerifiedSession(t, s, secret, "t15-legacy")
+	token := getTestTokenWithSession(t, s, "t15-legacy")
+
+	_, holderJWK := generateHolderKey(t)
+
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential"},
+		"proof": map[string]interface{}{
+			"jwk": holderJWK,
+		},
+	})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	req.Header.Set("Authorization", "Bearer "+token)
+	s.Router().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code, "legacy path should still work")
+}
+
+// ── T15 test helpers ──
+
+func storeVerifiedSession(t *testing.T, s *Server, secret, sessionID string) {
+	t.Helper()
+	session := veriff.Session{SessionID: sessionID, Status: "approved"}
+	session.Person.DateOfBirth = "1990-01-15"
+	session.Document.Country = "NL"
+	session.Document.Type = "ID_CARD"
+	session.Document.Authenticity = 0.97
+	session.Verification.OverallConfidence = 0.96
+	session.Verification.LivenessScore = 0.91
+	session.Verification.RiskScore = 0.03
+
+	body, _ := json.Marshal(session)
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/veriff", bytes.NewReader(body))
+	req.Header.Set("X-HMAC-Signature", signBody(body, secret))
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+}
+
+func getNonce(t *testing.T, s *Server) string {
+	t.Helper()
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/nonce", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	return resp["c_nonce"].(string)
+}
+
+func generateHolderKey(t *testing.T) (*ecdsa.PrivateKey, map[string]interface{}) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	jwk := map[string]interface{}{
+		"kty": "EC",
+		"crv": "P-256",
+		"x":   base64URLEncode(key.X.Bytes()),
+		"y":   base64URLEncode(key.Y.Bytes()),
+	}
+	return key, jwk
+}
+
+func buildProofJWT(t *testing.T, holderKey *ecdsa.PrivateKey, holderJWK map[string]interface{}, nonce string, audience string) string {
+	t.Helper()
+
+	token := jwtv5.New(jwtv5.SigningMethodES256)
+	token.Header["typ"] = "openid4vci-proof+jwt"
+	token.Header["jwk"] = holderJWK
+
+	claims := jwtv5.MapClaims{
+		"aud": audience,
+		"iat": time.Now().Unix(),
+	}
+	if nonce != "" {
+		claims["nonce"] = nonce
+	}
+	token.Claims = claims
+
+	signed, err := token.SignedString(holderKey)
+	require.NoError(t, err)
+	return signed
 }
 
 func getTestToken(t *testing.T, s *Server) string {
