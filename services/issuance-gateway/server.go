@@ -13,10 +13,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"github.com/go-chi/chi/v5"
@@ -28,6 +31,7 @@ import (
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/nonce"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/oauth"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/statuslist"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
@@ -149,6 +153,7 @@ type Server struct {
 	sessions        veriff.SessionStore
 	webhookSecret   string
 	statusListStore *statuslist.Store
+	nonceStore      *nonce.Store
 }
 
 func NewServer() *Server {
@@ -164,15 +169,18 @@ func NewServerWithConfig(cfg ServerConfig) *Server {
 		sessions:        cfg.Sessions,
 		webhookSecret:   cfg.WebhookSecret,
 		statusListStore: slStore,
+		nonceStore:      nonce.NewStore(),
 	}
 
 	s.router.Post("/oauth/token", s.handleOAuthToken)
+	s.router.Post("/nonce", s.handleNonce)
 	s.router.Post("/credential", s.handleCredentialIssuance)
 	s.router.Get("/status/{listId}", s.handleGetStatusList)
 	s.router.Get("/status/{listId}/info", s.handleStatusListInfo)
 	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
 	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
 	s.router.Get("/.well-known/jwks.json", s.handleJWKS)
+	s.router.Get("/.well-known/openid-credential-issuer", s.handleIssuerMetadata)
 
 	return s
 }
@@ -282,13 +290,26 @@ func (s *Server) handleCredentialIssuance(w http.ResponseWriter, r *http.Request
 
 	// SD-JWT format: return signed SD-JWT string
 	if req.Format == models.VcSdJwt && s.issuerSigner != nil {
-		// Extract holder JWK from proof field for holder binding (cnf)
+		// Extract and validate proof JWT for holder binding (cnf) — T15 mitigation
 		var holderJWK map[string]interface{}
 		if req.Proof != nil {
-			if jwk, ok := (*req.Proof)["jwk"]; ok {
-				if jwkMap, ok := jwk.(map[string]interface{}); ok {
-					holderJWK = jwkMap
+			proofJWT, _ := (*req.Proof)["jwt"].(string)
+			proofJWK, _ := (*req.Proof)["jwk"].(map[string]interface{})
+
+			if proofJWT != "" {
+				// Validate the proof JWT: signature, nonce, audience, freshness
+				validatedJWK, err := validateProofJWT(proofJWT, s.nonceStore, issuerID())
+				if err != nil {
+					log.Ctx(r.Context()).Warn().Err(err).Msg("proof JWT validation failed")
+					common.WriteError(w, r, http.StatusBadRequest, "invalid_proof", err.Error())
+					return
 				}
+				holderJWK = validatedJWK
+			} else if proofJWK != nil {
+				// Legacy path: raw JWK without proof JWT.
+				// Accept but log a warning — clients should migrate to JWT proof with c_nonce.
+				log.Ctx(r.Context()).Warn().Msg("credential request uses raw JWK proof without JWT — no replay protection (T15)")
+				holderJWK = proofJWK
 			}
 		}
 
@@ -429,6 +450,148 @@ func (s *Server) handleRevoke(w http.ResponseWriter, r *http.Request) {
 
 	log.Ctx(r.Context()).Info().Str("list_id", listID).Int("index", req.Index).Msg("credential revoked")
 	w.WriteHeader(http.StatusOK)
+}
+
+// handleNonce issues a fresh c_nonce for OpenID4VCI proof replay prevention (T15).
+func (s *Server) handleNonce(w http.ResponseWriter, r *http.Request) {
+	cNonce, expiresIn := s.nonceStore.Issue()
+	log.Ctx(r.Context()).Info().Str("c_nonce", cNonce[:8]+"...").Int("expires_in", expiresIn).Msg("c_nonce issued")
+	common.WriteJSON(w, r, http.StatusOK, map[string]interface{}{
+		"c_nonce":            cNonce,
+		"c_nonce_expires_in": expiresIn,
+	})
+}
+
+// handleIssuerMetadata returns the OpenID4VCI credential issuer metadata.
+func (s *Server) handleIssuerMetadata(w http.ResponseWriter, r *http.Request) {
+	meta := map[string]interface{}{
+		"credential_issuer":   issuerID(),
+		"credential_endpoint": issuerID() + "/credential",
+		"nonce_endpoint":      issuerID() + "/nonce",
+		"credential_configurations_supported": map[string]interface{}{
+			"IdentityCredential_sd_jwt": map[string]interface{}{
+				"format": "vc+sd-jwt",
+				"vct":    issuerID() + "/vc/identity",
+				"cryptographic_binding_methods_supported": []string{"jwk"},
+				"proof_types_supported": map[string]interface{}{
+					"jwt": map[string]interface{}{
+						"proof_signing_alg_values_supported": []string{"ES256"},
+					},
+				},
+			},
+		},
+	}
+	common.WriteJSON(w, r, http.StatusOK, meta)
+}
+
+// validateProofJWT validates the holder's proof JWT per OpenID4VCI Section 7.2:
+//   - Verifies the JWS signature matches the embedded JWK
+//   - Verifies the nonce claim against the nonce store (single-use, T15)
+//   - Verifies the aud claim matches the credential issuer
+//   - Verifies the iat is recent (within 5 minutes)
+//
+// Returns the holder's public key as a JWK map on success.
+func validateProofJWT(proofJWT string, nonceStore *nonce.Store, expectedAud string) (map[string]interface{}, error) {
+	// Parse without verification first to extract the JWK from the header
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
+	token, parts, err := parser.ParseUnverified(proofJWT, jwt.MapClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("malformed proof JWT: %w", err)
+	}
+	_ = parts
+
+	// Extract JWK from header
+	jwkRaw, ok := token.Header["jwk"]
+	if !ok {
+		return nil, fmt.Errorf("proof JWT header missing 'jwk'")
+	}
+	jwkMap, ok := jwkRaw.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("proof JWT header 'jwk' is not a JSON object")
+	}
+
+	// Reconstruct the ECDSA public key from the JWK for signature verification
+	pubKey, err := ecdsaPubKeyFromJWK(jwkMap)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWK in proof: %w", err)
+	}
+
+	// Re-parse with signature verification
+	verifiedToken, err := jwt.Parse(proofJWT, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return pubKey, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("proof JWT signature invalid: %w", err)
+	}
+
+	claims, ok := verifiedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("proof JWT claims not readable")
+	}
+
+	// Validate nonce (c_nonce) — single-use, T15 mitigation
+	proofNonce, _ := claims["nonce"].(string)
+	if proofNonce == "" {
+		return nil, fmt.Errorf("proof JWT missing 'nonce' claim (c_nonce required)")
+	}
+	if !nonceStore.Consume(proofNonce) {
+		return nil, fmt.Errorf("proof JWT nonce is invalid, expired, or already used")
+	}
+
+	// Validate audience
+	aud, _ := claims["aud"].(string)
+	if aud != expectedAud {
+		return nil, fmt.Errorf("proof JWT audience mismatch: got %q, want %q", aud, expectedAud)
+	}
+
+	// Validate iat freshness (within 5 minutes)
+	if iat, ok := claims["iat"].(float64); ok {
+		iatTime := time.Unix(int64(iat), 0)
+		if time.Since(iatTime) > 5*time.Minute {
+			return nil, fmt.Errorf("proof JWT iat too old: %v", iatTime)
+		}
+	}
+
+	return jwkMap, nil
+}
+
+// ecdsaPubKeyFromJWK reconstructs an ECDSA P-256 public key from a JWK map.
+func ecdsaPubKeyFromJWK(jwk map[string]interface{}) (*ecdsa.PublicKey, error) {
+	crv, _ := jwk["crv"].(string)
+	if crv != "P-256" {
+		return nil, fmt.Errorf("unsupported curve: %s (only P-256)", crv)
+	}
+	xB64, _ := jwk["x"].(string)
+	yB64, _ := jwk["y"].(string)
+	if xB64 == "" || yB64 == "" {
+		return nil, fmt.Errorf("JWK missing x or y coordinate")
+	}
+
+	xBytes, err := base64.RawURLEncoding.DecodeString(xB64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid x coordinate: %w", err)
+	}
+	yBytes, err := base64.RawURLEncoding.DecodeString(yB64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid y coordinate: %w", err)
+	}
+
+	pub := &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+	}
+	pub.X = new(big.Int).SetBytes(xBytes)
+	pub.Y = new(big.Int).SetBytes(yBytes)
+	return pub, nil
+}
+
+func issuerID() string {
+	if id := os.Getenv("CACHET_ISSUER_ID"); id != "" {
+		return id
+	}
+	return "https://cachet.id"
 }
 
 func base64URLEncode(b []byte) string {

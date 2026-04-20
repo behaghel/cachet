@@ -8,7 +8,7 @@ last-reviewed: 2026-04-12
 
 ## 1. Threat Model
 
-14 threats identified in verification-protocol.md Section 3.
+15 threats identified in verification-protocol.md Section 3.
 
 | ID | Threat | Severity | Mitigation | Status |
 |----|--------|----------|------------|--------|
@@ -26,6 +26,7 @@ last-reviewed: 2026-04-12
 | T12 | Transport Metadata Leakage | Low | Future: Tor/mixnet relay | Not implemented |
 | T13 | Session ID Prediction | Medium | UUID v4 (128-bit) + crypto/rand nonce | Implemented |
 | T14 | Webhook Injection | Critical | HMAC-SHA256 fail-closed | Implemented |
+| T15 | Issuance Proof Replay | Critical | c_nonce per credential request, single-use validation | Not implemented |
 
 ---
 

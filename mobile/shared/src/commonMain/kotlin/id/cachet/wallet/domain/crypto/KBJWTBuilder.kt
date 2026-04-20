@@ -48,6 +48,36 @@ object KBJWTBuilder {
     }
 
     /**
+     * Build a proof JWT for OpenID4VCI credential issuance (T15 mitigation).
+     * Proves the holder controls the key and binds the proof to a c_nonce.
+     *
+     * @param nonce c_nonce from the issuer's /nonce endpoint
+     * @param audience Credential issuer identifier (e.g., "https://cachet.id")
+     * @param keyManager Platform key manager for signing
+     * @param keyAlias Alias of the holder's private key
+     * @return Signed proof JWT (header.payload.signature)
+     */
+    fun buildProofJWT(
+        nonce: String,
+        audience: String,
+        keyManager: KeyManager,
+        keyAlias: String
+    ): String {
+        val header = """{"alg":"ES256","typ":"openid4vci-proof+jwt"}"""
+        val iat = Clock.System.now().epochSeconds
+        val payload = """{"nonce":"$nonce","aud":"$audience","iat":$iat}"""
+
+        val headerEncoded = Base64Url.encode(header.encodeToByteArray())
+        val payloadEncoded = Base64Url.encode(payload.encodeToByteArray())
+        val signingInput = "$headerEncoded.$payloadEncoded"
+
+        val signatureBytes = keyManager.sign(keyAlias, signingInput.encodeToByteArray())
+        val signatureEncoded = Base64Url.encode(signatureBytes)
+
+        return "$signingInput.$signatureEncoded"
+    }
+
+    /**
      * Compute the sd_hash: base64url(sha256(sdJwtWithDisclosures))
      */
     fun computeSDHash(sdJwtContent: String): String {

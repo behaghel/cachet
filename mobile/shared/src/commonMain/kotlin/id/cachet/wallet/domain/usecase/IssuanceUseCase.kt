@@ -83,11 +83,28 @@ class IssuanceUseCase(
                 sessionId = sessionId
             )
 
-            // Step 3: Request SD-JWT credential with holder JWK proof
+            // Step 2.5: Fetch c_nonce for proof replay prevention (T15)
+            val cNonce = try {
+                openID4VCIClient.requestNonce().cNonce
+            } catch (_: Exception) {
+                null // graceful fallback if issuer doesn't support nonce yet
+            }
+
+            // Step 3: Build proof JWT and request SD-JWT credential
+            val proofJWT = if (cNonce != null) {
+                id.cachet.wallet.domain.crypto.KBJWTBuilder.buildProofJWT(
+                    nonce = cNonce,
+                    audience = id.cachet.wallet.config.AppConfig.baseUrl,
+                    keyManager = km,
+                    keyAlias = keyAlias
+                )
+            } else null
+
             val credentialResponse = openID4VCIClient.requestSDJWTCredential(
                 accessToken = tokenResponse.accessToken,
                 types = credentialTypes,
-                holderJWK = holderJWK
+                holderJWK = holderJWK,
+                proofJWT = proofJWT
             )
 
             // Step 4: Parse SD-JWT to extract display data
