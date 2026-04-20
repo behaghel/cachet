@@ -12,8 +12,9 @@ import kotlinx.serialization.Serializable
 
 interface OpenID4VCIClient {
     suspend fun requestToken(clientId: String, scope: String, sessionId: String? = null): TokenResponse
+    suspend fun requestNonce(): NonceResponse
     suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse
-    suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String): SDJWTCredentialResponse
+    suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String, proofJWT: String? = null): SDJWTCredentialResponse
 }
 
 @Serializable
@@ -47,6 +48,15 @@ data class SDJWTCredentialResponse(
     val format: String
 )
 
+@Serializable
+data class NonceResponse(
+    val c_nonce: String,
+    val c_nonce_expires_in: Int
+) {
+    val cNonce get() = c_nonce
+    val cNonceExpiresIn get() = c_nonce_expires_in
+}
+
 class OpenID4VCIException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 class KtorOpenID4VCIClient(
@@ -74,6 +84,19 @@ class KtorOpenID4VCIClient(
         } catch (e: Exception) {
             if (e is OpenID4VCIException) throw e
             throw OpenID4VCIException("Network error during token request", e)
+        }
+    }
+
+    override suspend fun requestNonce(): NonceResponse {
+        try {
+            val response: HttpResponse = httpClient.post("$baseUrl/nonce")
+            if (response.status.isSuccess()) {
+                return response.body<NonceResponse>()
+            }
+            throw OpenID4VCIException("Nonce request failed: ${response.status}")
+        } catch (e: Exception) {
+            if (e is OpenID4VCIException) throw e
+            throw OpenID4VCIException("Network error during nonce request", e)
         }
     }
 
@@ -107,15 +130,27 @@ class KtorOpenID4VCIClient(
     override suspend fun requestSDJWTCredential(
         accessToken: String,
         types: List<String>,
-        holderJWK: String
+        holderJWK: String,
+        proofJWT: String?
     ): SDJWTCredentialResponse {
         try {
+            val proof = if (proofJWT != null) {
+                // OpenID4VCI compliant: proof JWT with c_nonce (T15 mitigation)
+                kotlinx.serialization.json.buildJsonObject {
+                    put("jwt", kotlinx.serialization.json.JsonPrimitive(proofJWT))
+                    put("jwk", kotlinx.serialization.json.Json.parseToJsonElement(holderJWK))
+                }
+            } else {
+                // Legacy: raw JWK only
+                kotlinx.serialization.json.buildJsonObject {
+                    put("jwk", kotlinx.serialization.json.Json.parseToJsonElement(holderJWK))
+                }
+            }
+
             val request = CredentialRequest(
                 format = "vc+sd-jwt",
                 types = types,
-                proof = kotlinx.serialization.json.buildJsonObject {
-                    put("jwk", kotlinx.serialization.json.Json.parseToJsonElement(holderJWK))
-                }
+                proof = proof
             )
 
             val response: HttpResponse = httpClient.post("$baseUrl/credential") {

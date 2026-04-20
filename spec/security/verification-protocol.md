@@ -59,6 +59,7 @@
 | T12 | **Issuer tracking** | Issuer learns when/where credentials are verified | Issuer not involved at verification time. StatusList fetched via CDN with cache. No phone-home. | MVP |
 | T13 | **Session ID prediction** | Attacker guesses active relay sessions | Session IDs must have >= 128 bits of entropy (UUID v4 or equivalent). Session TTL <= 5 minutes. | MVP |
 | T14 | **Webhook injection** | Attacker sends fabricated Veriff results to issuance gateway | HMAC-SHA256 webhook signature verification. **Fail closed** — reject if secret is unset or signature is missing. | MVP |
+| T15 | **Issuance proof replay** | Attacker intercepts a holder's proof JWT during credential issuance and replays it to obtain a duplicate credential bound to the same holder key | Issuer generates a fresh `c_nonce` per credential request (OpenID4VCI Section 7.3). Proof JWT must include the `c_nonce` in its `nonce` claim. Issuer validates the nonce is fresh and single-use. Without this, the `/credential` endpoint accepts any valid proof JWT indefinitely. | MVP |
 
 ### 3.3 Out of Scope
 

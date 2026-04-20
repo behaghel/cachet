@@ -1,6 +1,7 @@
 package id.cachet.wallet.testfixtures
 
 import id.cachet.wallet.network.CredentialResponse
+import id.cachet.wallet.network.NonceResponse
 import id.cachet.wallet.network.OpenID4VCIClient
 import id.cachet.wallet.network.SDJWTCredentialResponse
 import id.cachet.wallet.network.TokenResponse
@@ -23,6 +24,10 @@ class FakeOpenID4VCIClient(
         return tokenResponse
     }
 
+    override suspend fun requestNonce(): NonceResponse {
+        return NonceResponse(c_nonce = "fake-nonce", c_nonce_expires_in = 300)
+    }
+
     override suspend fun requestCredential(
         accessToken: String,
         format: String,
@@ -35,7 +40,8 @@ class FakeOpenID4VCIClient(
     override suspend fun requestSDJWTCredential(
         accessToken: String,
         types: List<String>,
-        holderJWK: String
+        holderJWK: String,
+        proofJWT: String?
     ): SDJWTCredentialResponse {
         return sdJwtCredentialResponse ?: error("FakeOpenID4VCIClient: sdJwtCredentialResponse not configured")
     }
