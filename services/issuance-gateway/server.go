@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -408,6 +409,11 @@ func (s *Server) handleGetStatusList(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "listId")
 	encoded, err := s.statusListStore.GetEncoded(listID)
 	if err != nil {
+		if errors.Is(err, statuslist.ErrAnonymitySetNotMet) {
+			w.Header().Set("Retry-After", "300")
+			common.WriteError(w, r, http.StatusServiceUnavailable, "anonymity_set_not_met", "Status list not yet available")
+			return
+		}
 		common.WriteError(w, r, http.StatusNotFound, "not_found", "Status list not found")
 		return
 	}
@@ -416,7 +422,7 @@ func (s *Server) handleGetStatusList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=300")
 	common.WriteJSON(w, r, http.StatusOK, map[string]string{
 		"id":          "https://cachet.id/status/" + listID,
-		"type":        "BitstringStatusListCredential",
+		"type":        "AttestationStatusList",
 		"purpose":     purpose,
 		"encodedList": encoded,
 	})

@@ -12,7 +12,7 @@
 ## Enum: type
 | Name | Value |
 | ---- | ----- |
-| type | StatusList2021Entry |
+| type | AttestationStatusListEntry, StatusList2021Entry |
 
 
 

@@ -87,7 +87,7 @@ last-reviewed: 2026-04-12
 - `exp`: Unix timestamp (now + 90 days)
 - `jti`: URN UUID
 - `vct`: Credential type URIs
-- `status`: StatusList2021Entry (listCredential URL, index, purpose=revocation)
+- `status`: AttestationStatusListEntry (listCredential URL, index, purpose=revocation)
 - `cnf`: Holder's JWK (if proof.jwk provided — enables KB-JWT binding)
 
 ### Selectively Disclosable Claims
@@ -144,11 +144,12 @@ last-reviewed: 2026-04-12
 
 ---
 
-## 5. Status List Management
+## 5. Attestation Status List (ASL) Management
 
 ### GET /status/{listId}
 
-Returns StatusList2021 bitstring credential. Cache-Control: max-age=300.
+Returns EUDI Attestation Status List (type: `AttestationStatusList`). Cache-Control: max-age=300.
+Returns 503 + Retry-After if anonymity set not met (safety net; default config seeds decoys on creation).
 
 ### POST /status/{listId}/revoke
 
@@ -156,9 +157,17 @@ Sets bit at given index to 1 (revoked). MSB-first bit ordering per W3C spec.
 
 ### Index Allocation
 
-- Sequential allocation from list
+- **Random allocation** via crypto/rand (EUDI ASL requirement — prevents index as correlator)
+- Rejection sampling with linear-scan fallback
 - Default list "1": 16 KB = 131,072 credential slots
 - Error when list full
+
+### Herd Privacy
+
+- **Minimum anonymity set**: configurable via `CACHET_ASL_MIN_ANONYMITY_SET` (default: 1000)
+- **Decoy entries**: seeded on list creation via `CACHET_ASL_INITIAL_DECOY_COUNT` (default: 1000)
+- Decoys are tracked separately; they consume allocation slots but are not revocable credentials
+- Status list is always servable from creation when InitialDecoyCount >= MinAnonymitySet
 
 ---
 

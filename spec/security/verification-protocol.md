@@ -51,7 +51,7 @@
 | T4 | **Verifier-in-the-middle** | Attacker poses as verifier to Holder, simultaneously poses as holder to real Verifier. Forwards QR. Victim's presentation goes to the real verifier. | Audience binding (`aud` in KB-JWT matches QR originator). Verifier identity displayed to holder before consent. Channel binding via `sd_hash` in KB-JWT. | MVP |
 | T5 | **Relay eavesdropping** | Relay operator reads credential claims in transit | End-to-end encryption: wallet encrypts VP to verifier's ephemeral public key (from QR). Relay sees only ciphertext. | MVP |
 | T6 | **QR phishing (quishing)** | Attacker places malicious QR over legitimate one | Signed Request Objects — wallet verifies verifier identity before disclosing. Dynamic QR refresh (30-60s). Verifier identity displayed prominently. | MVP |
-| T7 | **Revoked credential used** | Holder presents a credential that has been revoked | StatusList2021 check on every verification. Cached with short TTL. CDN distribution prevents issuer from learning which credential is checked. | MVP |
+| T7 | **Revoked credential used** | Holder presents a credential that has been revoked | EUDI Attestation Status List (ASL) check on every verification. Random index allocation prevents index as correlator. Minimum anonymity set + decoys for herd privacy. Cached with short TTL. CDN distribution prevents issuer from learning which credential is checked. | MVP |
 | T8 | **Device compromise** | Attacker gains full access to holder's device | Hardware-backed keys (non-exportable). Biometric gate before signing KB-JWT. Remote revocation of compromised credentials. Re-issuance flow for new device. | MVP |
 | T9 | **Relay suppression** | Relay drops holder's response, making verifier believe no one scanned | Inherent DoS risk of any transport. Mitigated by: session timeout UX (retry prompt), future multi-relay support. The relay cannot selectively suppress without detection (verifier sees timeout, not success). | MVP |
 | T10 | **Cross-presentation correlation** | Colluding verifiers link the same holder across presentations via identical issuer signature | SD-JWT limitation: base JWT is identical across presentations. **Accepted for MVP.** BBS+ signatures produce unlinkable derived proofs. | v2 |
@@ -316,17 +316,20 @@ Per SD-JWT spec, section on Key Binding.
 | Key export | Impossible by design (hardware-backed) |
 | Device migration | Re-issuance required. Old credential revoked. |
 
-### 5.5 Revocation: Bitstring Status List
+### 5.5 Revocation: EUDI Attestation Status List (ASL)
 
-Per W3C Bitstring Status List (CR 2025).
+Per EUDI Attestation Status Lists specification. Backward-compatible with W3C Bitstring Status List (CR 2025).
 
 | Requirement | Specification |
 |-------------|--------------|
 | Status purposes | `revocation` and `suspension` (separate lists) |
+| Index allocation | **Random** via crypto/rand (prevents index as correlator) |
+| Minimum anonymity set | Configurable threshold; list not served until met (default: 1000) |
+| Decoy entries | Random fake entries seeded on list creation to ensure immediate serveability |
 | Distribution | CDN-cached. `Cache-Control: max-age=300` (5 minutes). |
 | Verification requirement | Verifier MUST check on every verification. No skip for "trusted" issuers. |
-| Privacy | Verifier fetches entire bitstring (herd privacy). Never queries individual credential status. |
-| Issuer correlation | Credential's `statusListIndex` is a persistent identifier — known limitation. Mitigated by CDN caching (issuer doesn't see individual checks). |
+| Privacy | Verifier fetches entire bitstring (herd privacy). Never queries individual credential status. Random indices prevent positional correlation. |
+| Issuer correlation | Mitigated by random index allocation + CDN caching (issuer doesn't see individual checks). |
 
 ---
 

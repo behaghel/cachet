@@ -11,7 +11,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Fetches, caches, and checks StatusList2021 bitstrings for credential revocation.
+ * Fetches, caches, and checks Attestation Status List bitstrings for credential revocation.
+ * Backward-compatible with StatusList2021 (same encodedList wire format).
  *
  * Cache hierarchy:
  * 1. SQLite (5-min TTL per spec)
@@ -27,6 +28,8 @@ class StatusListCache(
     companion object {
         const val TTL_MS = 5 * 60 * 1000L // 5 minutes per spec
     }
+
+    private val lenientJson = Json { ignoreUnknownKeys = true }
 
     @Serializable
     private data class StatusListCredential(val encodedList: String)
@@ -62,7 +65,7 @@ class StatusListCache(
 
     private suspend fun fetchEncodedList(url: String): String {
         val responseText: String = httpClient.get(url).body()
-        val credential = Json.decodeFromString<StatusListCredential>(responseText)
+        val credential = lenientJson.decodeFromString<StatusListCredential>(responseText)
         return credential.encodedList
     }
 

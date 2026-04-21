@@ -18,7 +18,7 @@ last-reviewed: 2026-04-12
 | T4 | Verifier-in-the-Middle | High | Signed Request Objects + KB-JWT holder binding | Implemented |
 | T5 | Relay Eavesdropping | High | JWE with ephemeral X25519 ECDH-ES+A256KW/A256GCM | Implemented |
 | T6 | QR Phishing | Medium | Signed Request Objects (verifier identity before consent) | Implemented |
-| T7 | Revoked Credential | High | StatusList2021 check on every verification | Implemented |
+| T7 | Revoked Credential | High | EUDI Attestation Status List check on every verification (backward-compat with StatusList2021) | Implemented |
 | T8 | Device Compromise | High | Hardware-backed keys (StrongBox/Secure Enclave) | Implemented (mobile) |
 | T9 | Session DoS | Medium | 5-min TTL, in-memory store with eviction | Implemented |
 | T10 | Cross-Presentation Correlation | Medium | Future: BBS+ unlinkable proofs | Not implemented |

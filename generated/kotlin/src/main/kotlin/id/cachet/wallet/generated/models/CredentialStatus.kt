@@ -40,12 +40,13 @@ data class CredentialStatus (
 ) {
 
     /**
-     * 
      *
-     * Values: StatusList2021Entry
+     *
+     * Values: AttestationStatusListEntry,StatusList2021Entry
      */
     @Serializable
     enum class Type(val value: kotlin.String) {
+        @SerialName(value = "AttestationStatusListEntry") AttestationStatusListEntry("AttestationStatusListEntry"),
         @SerialName(value = "StatusList2021Entry") StatusList2021Entry("StatusList2021Entry");
     }
 

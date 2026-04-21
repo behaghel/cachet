@@ -641,7 +641,7 @@ components:
           description: Status list entry URI
         type:
           type: string
-          enum: [StatusList2021Entry]
+          enum: [AttestationStatusListEntry, StatusList2021Entry]
 
     # ── Veriff Integration ─────────────────────────────────────────
 

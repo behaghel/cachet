@@ -72,6 +72,33 @@ func (b *Bitstring) Encode() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf.Bytes()), nil
 }
 
+// IsSet returns true if the bit at the given index is 1.
+func (b *Bitstring) IsSet(index int) bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	byteIdx := index / 8
+	bitIdx := 7 - (index % 8)
+	if byteIdx >= len(b.bits) {
+		return false
+	}
+	return (b.bits[byteIdx]>>bitIdx)&1 == 1
+}
+
+// CountSetBits returns the number of 1-bits in the bitstring.
+func (b *Bitstring) CountSetBits() int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return countSetBits(b.bits)
+}
+
+// Capacity returns the total number of bits in the bitstring.
+func (b *Bitstring) Capacity() int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return len(b.bits) * 8
+}
+
 // Decode populates the bitstring from base64url(gzip(bits)).
 func (b *Bitstring) Decode(encoded string) error {
 	b.mu.Lock()
