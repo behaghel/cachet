@@ -117,3 +117,45 @@ func TestServerDown(t *testing.T) {
 	_, err := checker.IsRevoked("http://localhost:1", 0)
 	assert.Error(t, err)
 }
+
+// TestIsRevoked_ASLResponse confirms the checker works with EUDI ASL response format.
+func TestIsRevoked_ASLResponse(t *testing.T) {
+	encoded := buildTestBitstring(t, 16, []int{7})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"id":          "https://cachet.id/status/1",
+			"type":        "AttestationStatusList",
+			"purpose":     "revocation",
+			"encodedList": encoded,
+		})
+	}))
+	defer srv.Close()
+
+	checker := NewChecker()
+	revoked, err := checker.IsRevoked(srv.URL, 7)
+	require.NoError(t, err)
+	assert.True(t, revoked)
+
+	notRevoked, err := checker.IsRevoked(srv.URL, 0)
+	require.NoError(t, err)
+	assert.False(t, notRevoked)
+}
+
+// TestIsRevoked_StatusList2021Response confirms backward compat with old format.
+func TestIsRevoked_StatusList2021Response(t *testing.T) {
+	encoded := buildTestBitstring(t, 16, []int{3})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"id":          "https://cachet.id/status/1",
+			"type":        "BitstringStatusListCredential",
+			"purpose":     "revocation",
+			"encodedList": encoded,
+		})
+	}))
+	defer srv.Close()
+
+	checker := NewChecker()
+	revoked, err := checker.IsRevoked(srv.URL, 3)
+	require.NoError(t, err)
+	assert.True(t, revoked)
+}

@@ -24,7 +24,8 @@ const (
 
 // Defines values for CredentialStatusType.
 const (
-	StatusList2021Entry CredentialStatusType = "StatusList2021Entry"
+	AttestationStatusListEntry CredentialStatusType = "AttestationStatusListEntry"
+	StatusList2021Entry        CredentialStatusType = "StatusList2021Entry"
 )
 
 // Defines values for CredentialSubjectVerificationLevel.

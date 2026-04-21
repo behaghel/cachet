@@ -117,20 +117,21 @@ For each predicate in pack definition:
 | verification_failed | SD-JWT signature invalid |
 | nonce_mismatch | KB-JWT nonce != session nonce |
 | audience_mismatch | KB-JWT audience != verifier DID |
-| credential_revoked | StatusList2021 bit is set |
+| credential_revoked | Attestation Status List bit is set |
 
 ---
 
 ## 3. Revocation Checking
 
-### StatusList2021
+### Attestation Status List (ASL)
 
 - Credential includes `status` claim with `statusListCredential` URL and `statusListIndex`
+- New credentials use type `AttestationStatusListEntry`; legacy credentials may have `StatusList2021Entry` (both accepted — field names are identical)
 - Fetch bitstring from issuer: base64url-decode → gzip-decompress → raw bytes
 - Check bit at index: byte = index/8, bit = 7-(index%8) (MSB-first per W3C)
 - Cache TTL: 5 minutes
 - **Failure handling:** Network errors are non-fatal (log warning, continue)
-- **Privacy:** Always fetch full bitstring (herd privacy)
+- **Privacy:** Always fetch full bitstring (herd privacy); issuer enforces minimum anonymity set + decoys
 
 ---
 

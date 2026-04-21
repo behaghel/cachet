@@ -31,7 +31,7 @@ func BuildSDJWTCredential(session veriff.Session, validation veriff.ValidationRe
 		"vct": types,
 		"status": map[string]interface{}{
 			"id":                   fmt.Sprintf("https://cachet.id/status/1#%d", statusListIndex),
-			"type":                 "StatusList2021Entry",
+			"type":                 "AttestationStatusListEntry",
 			"statusPurpose":        "revocation",
 			"statusListIndex":      fmt.Sprintf("%d", statusListIndex),
 			"statusListCredential": "https://cachet.id/status/1",
@@ -124,7 +124,7 @@ func Build(session veriff.Session, validation veriff.ValidationResult, types []s
 		},
 		CredentialStatus: &models.CredentialStatus{
 			Id:   fmt.Sprintf("https://cachet.id/status/1#%s", uuid.New().String()),
-			Type: models.StatusList2021Entry,
+			Type: models.AttestationStatusListEntry,
 		},
 	}
 

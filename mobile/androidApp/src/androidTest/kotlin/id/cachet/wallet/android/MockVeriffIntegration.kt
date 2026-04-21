@@ -129,7 +129,7 @@ class MockVeriffIntegration : OpenID4VCIClient {
             credentialSubject = credentialSubject,
             credentialStatus = CredentialStatus(
                 id = "https://cachet.id/status/v1#${System.currentTimeMillis()}",
-                type = "StatusList2021Entry"
+                type = "AttestationStatusListEntry"
             )
         )
     }

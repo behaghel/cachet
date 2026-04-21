@@ -250,7 +250,7 @@ func (s *Server) handleVerifyPresentation(w http.ResponseWriter, r *http.Request
 				}
 			}
 
-			// Check revocation via StatusList2021
+			// Check revocation via Attestation Status List (backward-compat with StatusList2021)
 			if vc.Status != nil {
 				slURL, _ := vc.Status["statusListCredential"].(string)
 				slIdxStr, _ := vc.Status["statusListIndex"].(string)
