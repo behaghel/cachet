@@ -2,14 +2,18 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,6 +26,8 @@ import (
 	"github.com/cachet-id/cachet/generated/go/models"
 	"github.com/cachet-id/cachet/services/common"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/credential"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/nonce"
+	"github.com/cachet-id/cachet/services/issuance-gateway/internal/statuslist"
 	"github.com/cachet-id/cachet/services/issuance-gateway/internal/veriff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -628,4 +634,277 @@ func getTestTokenWithSession(t *testing.T, s *Server, sessionID string) string {
 	var resp models.TokenResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	return resp.AccessToken
+}
+
+// ── ASL: Attestation Status List integration tests ──
+
+// testServerWithASLConfig creates a server with a custom ASL config for testing.
+func testServerWithASLConfig(t *testing.T, secret string, aslConfig statuslist.ASLConfig) *Server {
+	t.Helper()
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	slStore := statuslist.NewStoreWithConfig(aslConfig)
+	s := &Server{
+		router:          common.NewRouter(common.ServerConfig{Name: "test", Version: "0.0.1", Port: "0"}),
+		signingKey:      rsaKey,
+		issuerSigner:    credential.NewFileSigner(ecKey, "did:veriff:production#key-1"),
+		sessions:        veriff.NewInMemoryStore(),
+		webhookSecret:   secret,
+		statusListStore: slStore,
+		nonceStore:      nonce.NewStore(),
+	}
+
+	s.router.Post("/oauth/token", s.handleOAuthToken)
+	s.router.Post("/nonce", s.handleNonce)
+	s.router.Post("/credential", s.handleCredentialIssuance)
+	s.router.Get("/status/{listId}", s.handleGetStatusList)
+	s.router.Get("/status/{listId}/info", s.handleStatusListInfo)
+	s.router.Post("/status/{listId}/revoke", s.handleRevoke)
+	s.router.Post("/webhooks/veriff", s.handleVeriffWebhook)
+	return s
+}
+
+// issueSDJWTCredential issues an SD-JWT credential and returns the raw SD-JWT string.
+func issueSDJWTCredential(t *testing.T, s *Server, sessionID string) string {
+	t.Helper()
+	token := getTestTokenWithSession(t, s, sessionID)
+	cNonce := getNonce(t, s)
+	holderKey, holderJWK := generateHolderKey(t)
+	proofJWT := buildProofJWT(t, holderKey, holderJWK, cNonce, "https://cachet.id")
+
+	credBody, _ := json.Marshal(map[string]interface{}{
+		"format": "vc+sd-jwt",
+		"types":  []string{"VerifiableCredential", "IdentityCredential"},
+		"proof":  map[string]interface{}{"jwt": proofJWT},
+	})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/credential", bytes.NewReader(credBody))
+	req.Header.Set("Authorization", "Bearer "+token)
+	s.Router().ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	return resp["credential"]
+}
+
+// decodeIssuerJWTPayload extracts and decodes the payload from an SD-JWT's issuer JWT.
+func decodeIssuerJWTPayload(t *testing.T, sdJWT string) map[string]interface{} {
+	t.Helper()
+	parts := strings.Split(sdJWT, "~")
+	require.GreaterOrEqual(t, len(parts), 2, "SD-JWT should have issuer JWT + disclosures")
+
+	jwtParts := strings.Split(parts[0], ".")
+	require.Len(t, jwtParts, 3)
+
+	payload, err := jwtv5.NewParser().DecodeSegment(jwtParts[1])
+	require.NoError(t, err)
+
+	var claims map[string]interface{}
+	require.NoError(t, json.Unmarshal(payload, &claims))
+	return claims
+}
+
+// TestASL_CredentialStatusType verifies that issued SD-JWT credentials
+// contain AttestationStatusListEntry (not StatusList2021Entry).
+func TestASL_CredentialStatusType(t *testing.T) {
+	secret := "asl-type-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   0,
+		InitialDecoyCount: 0,
+	})
+	storeVerifiedSession(t, s, secret, "asl-type-1")
+
+	sdJWT := issueSDJWTCredential(t, s, "asl-type-1")
+	claims := decodeIssuerJWTPayload(t, sdJWT)
+
+	statusClaim, ok := claims["status"].(map[string]interface{})
+	require.True(t, ok, "credential must have status claim")
+	assert.Equal(t, "AttestationStatusListEntry", statusClaim["type"])
+	assert.Equal(t, "revocation", statusClaim["statusPurpose"])
+	assert.NotEmpty(t, statusClaim["statusListIndex"])
+	assert.Contains(t, statusClaim["statusListCredential"].(string), "https://cachet.id/status/")
+}
+
+// TestASL_RandomIndexAllocation verifies that multiple credential issuances
+// produce non-sequential status list indices.
+func TestASL_RandomIndexAllocation(t *testing.T) {
+	secret := "asl-random-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   0,
+		InitialDecoyCount: 0,
+	})
+
+	indices := make(map[string]bool)
+	for i := 0; i < 10; i++ {
+		sessionID := "asl-rand-" + strings.Repeat("x", i+1) // unique session IDs
+		storeVerifiedSession(t, s, secret, sessionID)
+		sdJWT := issueSDJWTCredential(t, s, sessionID)
+		claims := decodeIssuerJWTPayload(t, sdJWT)
+		statusClaim := claims["status"].(map[string]interface{})
+		idx := statusClaim["statusListIndex"].(string)
+		assert.False(t, indices[idx], "duplicate index %s on issuance %d", idx, i)
+		indices[idx] = true
+	}
+
+	// Indices should not be 0,1,2,...,9 (sequential)
+	sequential := true
+	for i := 0; i < 10; i++ {
+		if !indices[fmt.Sprintf("%d", i)] {
+			sequential = false
+			break
+		}
+	}
+	assert.False(t, sequential, "10 indices should not be perfectly sequential 0..9")
+}
+
+// TestASL_StatusListEndpoint_ReturnsASLType verifies that GET /status/{listId}
+// returns type "AttestationStatusList" (not "BitstringStatusListCredential").
+func TestASL_StatusListEndpoint_ReturnsASLType(t *testing.T) {
+	secret := "asl-endpoint-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   0,
+		InitialDecoyCount: 0,
+	})
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/status/1", nil))
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "max-age=300", w.Header().Get("Cache-Control"))
+
+	var resp map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "AttestationStatusList", resp["type"])
+	assert.Equal(t, "revocation", resp["purpose"])
+	assert.NotEmpty(t, resp["encodedList"])
+}
+
+// TestASL_IssueThenRevoke_StatusListReflectsRevocation verifies the full
+// issuance → revocation → status list check flow.
+func TestASL_IssueThenRevoke_StatusListReflectsRevocation(t *testing.T) {
+	secret := "asl-revoke-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   0,
+		InitialDecoyCount: 0,
+	})
+	storeVerifiedSession(t, s, secret, "asl-revoke-1")
+
+	// 1. Issue credential
+	sdJWT := issueSDJWTCredential(t, s, "asl-revoke-1")
+	claims := decodeIssuerJWTPayload(t, sdJWT)
+	statusClaim := claims["status"].(map[string]interface{})
+	indexStr := statusClaim["statusListIndex"].(string)
+
+	// Parse index as int
+	var index int
+	_, err := json.Number(indexStr).Int64()
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal([]byte(indexStr), &index))
+
+	// 2. Status list before revocation — bit should be 0
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/status/1", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var slResp map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &slResp))
+	bits := decodeStatusListBits(t, slResp["encodedList"])
+	byteIdx := index / 8
+	bitIdx := 7 - (index % 8)
+	assert.Equal(t, byte(0), bits[byteIdx]>>(bitIdx)&1, "bit should be 0 before revocation")
+
+	// 3. Revoke the credential
+	revokeBody, _ := json.Marshal(map[string]int{"index": index})
+	revokeReq := httptest.NewRequest(http.MethodPost, "/status/1/revoke", bytes.NewReader(revokeBody))
+	rw := httptest.NewRecorder()
+	s.Router().ServeHTTP(rw, revokeReq)
+	require.Equal(t, http.StatusOK, rw.Code)
+
+	// 4. Status list after revocation — bit should be 1
+	w2 := httptest.NewRecorder()
+	s.Router().ServeHTTP(w2, httptest.NewRequest(http.MethodGet, "/status/1", nil))
+	require.Equal(t, http.StatusOK, w2.Code)
+
+	var slResp2 map[string]string
+	require.NoError(t, json.Unmarshal(w2.Body.Bytes(), &slResp2))
+	bits2 := decodeStatusListBits(t, slResp2["encodedList"])
+	assert.Equal(t, byte(1), bits2[byteIdx]>>(bitIdx)&1, "bit should be 1 after revocation")
+}
+
+// TestASL_StatusListInfo_IncludesDecoys verifies the /status/{listId}/info
+// endpoint reports decoy count correctly.
+func TestASL_StatusListInfo_IncludesDecoys(t *testing.T) {
+	secret := "asl-info-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   0,
+		InitialDecoyCount: 200,
+	})
+
+	// Issue one credential to have 201 allocated (200 decoys + 1 real)
+	storeVerifiedSession(t, s, secret, "asl-info-1")
+	issueSDJWTCredential(t, s, "asl-info-1")
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/status/1/info", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var info map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &info))
+	assert.Equal(t, float64(201), info["allocated"])
+	assert.Equal(t, float64(200), info["decoys"])
+	assert.Equal(t, float64(0), info["revoked"])
+	assert.Equal(t, float64(131072), info["capacity"])
+}
+
+// TestASL_AnonymitySetNotMet_Returns503 verifies that the status list endpoint
+// returns 503 when the anonymity set is not met.
+func TestASL_AnonymitySetNotMet_Returns503(t *testing.T) {
+	secret := "asl-503-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   100,
+		InitialDecoyCount: 0, // no decoys — anonymity set won't be met
+	})
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/status/1", nil))
+
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+	assert.Equal(t, "300", w.Header().Get("Retry-After"))
+	assert.Contains(t, w.Body.String(), "anonymity_set_not_met")
+}
+
+// TestASL_DecoysSatisfyAnonymitySet verifies that decoy seeding makes the
+// status list immediately servable.
+func TestASL_DecoysSatisfyAnonymitySet(t *testing.T) {
+	secret := "asl-decoy-serve-secret"
+	s := testServerWithASLConfig(t, secret, statuslist.ASLConfig{
+		MinAnonymitySet:   500,
+		InitialDecoyCount: 500,
+	})
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/status/1", nil))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "AttestationStatusList", resp["type"])
+	assert.NotEmpty(t, resp["encodedList"])
+}
+
+// decodeStatusListBits decodes a base64url(gzip) encoded status list into raw bytes.
+func decodeStatusListBits(t *testing.T, encoded string) []byte {
+	t.Helper()
+	compressed, err := base64.RawURLEncoding.DecodeString(encoded)
+	require.NoError(t, err)
+	gz, err := gzip.NewReader(bytes.NewReader(compressed))
+	require.NoError(t, err)
+	defer func() { _ = gz.Close() }()
+	result, err := io.ReadAll(gz)
+	require.NoError(t, err)
+	return result
 }
