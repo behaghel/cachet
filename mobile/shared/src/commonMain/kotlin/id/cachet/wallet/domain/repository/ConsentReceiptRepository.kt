@@ -42,6 +42,11 @@ interface ConsentReceiptRepository {
      * Verify the integrity of all stored receipts
      */
     suspend fun verifyAllReceipts(): Result<Map<String, Boolean>>
+
+    /**
+     * Update the transparency log entry for a receipt (async anchoring on reconnect).
+     */
+    suspend fun updateTransparencyLog(receiptId: String, transparencyLogJson: String): Result<Unit>
 }
 
 /**
@@ -113,6 +118,15 @@ class InMemoryConsentReceiptRepository : ConsentReceiptRepository {
                 receipt.receiptHash != null && receipt.signature != null && receipt.salt != null
             }
             Result.success(verificationResults)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateTransparencyLog(receiptId: String, transparencyLogJson: String): Result<Unit> {
+        return try {
+            // In-memory: no-op (transparency log stored on receipt object directly)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

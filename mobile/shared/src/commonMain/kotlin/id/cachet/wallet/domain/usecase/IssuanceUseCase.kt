@@ -3,6 +3,8 @@ package id.cachet.wallet.domain.usecase
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.model.StoredCredential
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.sync.IssuanceQueue
+import id.cachet.wallet.domain.sync.PendingIssuanceState
 import id.cachet.wallet.network.OpenID4VCIClient
 import kotlin.time.Clock
 import kotlin.random.Random
@@ -10,7 +12,8 @@ import kotlin.random.Random
 class IssuanceUseCase(
     private val credentialRepository: CredentialRepository,
     private val openID4VCIClient: OpenID4VCIClient,
-    private val keyManager: KeyManager? = null
+    private val keyManager: KeyManager? = null,
+    private val issuanceQueue: IssuanceQueue? = null
 ) {
     
     private fun generateUuid(): String {
@@ -32,28 +35,45 @@ class IssuanceUseCase(
                 scope = "credential_issuance",
                 sessionId = sessionId
             )
-            
+
             // Step 2: Request credential using the token
-            val credentialResponse = openID4VCIClient.requestCredential(
-                accessToken = tokenResponse.accessToken,
-                format = format,
-                types = credentialTypes
-            )
-            
-            // Step 3: Create stored credential with local ID
-            val storedCredential = StoredCredential(
-                localId = generateUuid(),
-                credential = credentialResponse.credential,
-                rawJwt = null, // TODO: Extract JWT from response if format is jwt_vc
-                createdAt = Clock.System.now(),
-                isRevoked = false
-            )
-            
-            // Step 4: Store credential in local repository
-            credentialRepository.storeCredential(storedCredential)
-            
-            Result.success(storedCredential)
+            // If this fails, persist partial state for retry on reconnect
+            try {
+                val credentialResponse = openID4VCIClient.requestCredential(
+                    accessToken = tokenResponse.accessToken,
+                    format = format,
+                    types = credentialTypes
+                )
+
+                val storedCredential = StoredCredential(
+                    localId = generateUuid(),
+                    credential = credentialResponse.credential,
+                    rawJwt = null,
+                    createdAt = Clock.System.now(),
+                    isRevoked = false
+                )
+
+                credentialRepository.storeCredential(storedCredential)
+                Result.success(storedCredential)
+            } catch (e: Exception) {
+                val expiresAt = Clock.System.now().toEpochMilliseconds() + (tokenResponse.expiresIn * 1000L)
+                issuanceQueue?.enqueue(
+                    PendingIssuanceState(
+                        id = generateUuid(),
+                        clientId = clientId,
+                        credentialTypes = credentialTypes,
+                        format = format,
+                        sessionId = sessionId,
+                        accessToken = tokenResponse.accessToken,
+                        tokenExpiresAt = expiresAt,
+                        keyAlias = null,
+                        holderJwk = null
+                    )
+                )
+                Result.failure(IssuanceException("Credential fetch failed, queued for retry: ${e.message}", e))
+            }
         } catch (e: Exception) {
+            // Token request itself failed — nothing to queue
             Result.failure(IssuanceException("Failed to issue credential: ${e.message}", e))
         }
     }
@@ -83,49 +103,65 @@ class IssuanceUseCase(
                 sessionId = sessionId
             )
 
-            // Step 2.5: Fetch c_nonce for proof replay prevention (T15)
-            val cNonce = try {
-                openID4VCIClient.requestNonce().cNonce
-            } catch (_: Exception) {
-                null // graceful fallback if issuer doesn't support nonce yet
-            }
+            // Step 3: Fetch credential — if this fails, persist partial state for retry
+            try {
+                // Fetch c_nonce for proof replay prevention (T15)
+                val cNonce = try {
+                    openID4VCIClient.requestNonce().cNonce
+                } catch (_: Exception) {
+                    null // graceful fallback if issuer doesn't support nonce yet
+                }
 
-            // Step 3: Build proof JWT and request SD-JWT credential
-            val proofJWT = if (cNonce != null) {
-                id.cachet.wallet.domain.crypto.KBJWTBuilder.buildProofJWT(
-                    nonce = cNonce,
-                    audience = id.cachet.wallet.config.AppConfig.baseUrl,
-                    keyManager = km,
-                    keyAlias = keyAlias
+                val proofJWT = if (cNonce != null) {
+                    id.cachet.wallet.domain.crypto.KBJWTBuilder.buildProofJWT(
+                        nonce = cNonce,
+                        audience = id.cachet.wallet.config.AppConfig.baseUrl,
+                        keyManager = km,
+                        keyAlias = keyAlias
+                    )
+                } else null
+
+                val credentialResponse = openID4VCIClient.requestSDJWTCredential(
+                    accessToken = tokenResponse.accessToken,
+                    types = credentialTypes,
+                    holderJWK = holderJWK,
+                    proofJWT = proofJWT
                 )
-            } else null
 
-            val credentialResponse = openID4VCIClient.requestSDJWTCredential(
-                accessToken = tokenResponse.accessToken,
-                types = credentialTypes,
-                holderJWK = holderJWK,
-                proofJWT = proofJWT
-            )
+                val parsed = id.cachet.wallet.domain.crypto.SDJWTParser.parse(credentialResponse.credential)
+                val displayCredential = buildDisplayCredentialFromSDJWT(parsed, credentialTypes)
 
-            // Step 4: Parse SD-JWT to extract display data
-            val parsed = id.cachet.wallet.domain.crypto.SDJWTParser.parse(credentialResponse.credential)
+                val storedCredential = StoredCredential(
+                    localId = generateUuid(),
+                    credential = displayCredential,
+                    rawSdJwt = credentialResponse.credential,
+                    keyAlias = keyAlias,
+                    createdAt = Clock.System.now(),
+                    isRevoked = false
+                )
 
-            // Step 5: Build a minimal VerifiableCredential for display
-            // The real credential is the raw SD-JWT string
-            val displayCredential = buildDisplayCredentialFromSDJWT(parsed, credentialTypes)
-
-            val storedCredential = StoredCredential(
-                localId = generateUuid(),
-                credential = displayCredential,
-                rawSdJwt = credentialResponse.credential,
-                keyAlias = keyAlias,
-                createdAt = Clock.System.now(),
-                isRevoked = false
-            )
-
-            credentialRepository.storeCredential(storedCredential)
-            Result.success(storedCredential)
+                credentialRepository.storeCredential(storedCredential)
+                Result.success(storedCredential)
+            } catch (e: Exception) {
+                // Credential fetch failed after token was obtained — persist for retry
+                val expiresAt = Clock.System.now().toEpochMilliseconds() + (tokenResponse.expiresIn * 1000L)
+                issuanceQueue?.enqueue(
+                    PendingIssuanceState(
+                        id = generateUuid(),
+                        clientId = clientId,
+                        credentialTypes = credentialTypes,
+                        format = "vc+sd-jwt",
+                        sessionId = sessionId,
+                        accessToken = tokenResponse.accessToken,
+                        tokenExpiresAt = expiresAt,
+                        keyAlias = keyAlias,
+                        holderJwk = holderJWK
+                    )
+                )
+                Result.failure(IssuanceException("Credential fetch failed, queued for retry: ${e.message}", e))
+            }
         } catch (e: Exception) {
+            // Token request itself failed — nothing to queue
             Result.failure(IssuanceException("Failed to issue SD-JWT credential: ${e.message}", e))
         }
     }

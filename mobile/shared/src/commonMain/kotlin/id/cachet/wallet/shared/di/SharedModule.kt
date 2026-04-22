@@ -22,6 +22,14 @@ import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.domain.crypto.EphemeralKeyGenerator
+import id.cachet.wallet.domain.sync.AnchoringQueue
+import id.cachet.wallet.domain.sync.ConnectivityObserver
+import id.cachet.wallet.domain.sync.IssuanceQueue
+import id.cachet.wallet.domain.sync.SqlDelightAnchoringQueue
+import id.cachet.wallet.domain.sync.SqlDelightIssuanceQueue
+import id.cachet.wallet.domain.sync.SqlDelightSyncQueueRepository
+import id.cachet.wallet.domain.sync.SyncManager
+import id.cachet.wallet.domain.sync.SyncQueueRepository
 import id.cachet.wallet.domain.transport.LocalSessionManager
 import id.cachet.wallet.domain.transport.QrDirectTransport
 import id.cachet.wallet.config.AppConfig
@@ -127,12 +135,31 @@ val sharedModule = module {
         )
     }
 
+    // Offline sync queues
+    single<AnchoringQueue> { SqlDelightAnchoringQueue(database = get<WalletDatabase>()) }
+    single<IssuanceQueue> { SqlDelightIssuanceQueue(database = get<WalletDatabase>()) }
+    single<SyncQueueRepository> { SqlDelightSyncQueueRepository(database = get<WalletDatabase>()) }
+
+    // SyncManager — ConnectivityObserver is provided by the platform-specific module
+    single {
+        SyncManager(
+            connectivity = get(),
+            queueRepository = get(),
+            consentReceiptRepository = get(),
+            transparencyLogRepository = get(),
+            openID4VCIClient = get(),
+            credentialRepository = get(),
+            keyManager = get()
+        )
+    }
+
     // Use cases
     single {
         IssuanceUseCase(
             credentialRepository = get(),
             openID4VCIClient = get(),
-            keyManager = get()
+            keyManager = get(),
+            issuanceQueue = get()
         )
     }
 
@@ -140,7 +167,8 @@ val sharedModule = module {
         ConsentUseCase(
             credentialRepository = get(),
             consentReceiptRepository = get(),
-            transparencyLogRepository = get()
+            transparencyLogRepository = get(),
+            anchoringQueue = get()
         )
     }
 

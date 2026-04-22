@@ -17,6 +17,9 @@ import id.cachet.wallet.domain.model.ConsentDetails
 import id.cachet.wallet.domain.model.ConsentReceipt
 import id.cachet.wallet.domain.model.PresentationRequest
 import id.cachet.wallet.domain.model.VerifiableCredential
+import id.cachet.wallet.domain.sync.ConnectivityObserver
+import id.cachet.wallet.domain.sync.SyncManager
+import id.cachet.wallet.domain.sync.SyncStatus
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
@@ -33,6 +36,8 @@ class WalletViewModel(
     private val veriffService: VeriffService,
     private val consentUseCase: ConsentUseCase,
     private val verificationUseCase: VerificationUseCase,
+    private val syncManager: SyncManager,
+    private val connectivityObserver: ConnectivityObserver,
     private val demoModeParam: Boolean = false,
     private val demoEmpty: Boolean = false
 ) : ViewModel() {
@@ -49,6 +54,15 @@ class WalletViewModel(
     private val _activityState = MutableStateFlow(ActivityUiState())
     val activityState: StateFlow<ActivityUiState> = _activityState.asStateFlow()
 
+    /** Network connectivity exposed to UI for status indicator. */
+    val isOnline: StateFlow<Boolean> = connectivityObserver.isOnline
+
+    /** Pending sync items count for badge/indicator. */
+    val pendingSyncCount: StateFlow<Int> = syncManager.pendingCount
+
+    /** Sync status for progress indicator. */
+    val syncStatus: StateFlow<SyncStatus> = syncManager.syncStatus
+
     /** Active verifier session -- set when QR overlay is shown, consumed when verification completes. */
     private var activeVerifierSession: VerifierSessionInfo? = null
 
@@ -64,6 +78,7 @@ class WalletViewModel(
             loadCredentials()
             loadActivity()
         }
+        syncManager.start()
     }
 
     // -- Relay flow --

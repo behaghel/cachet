@@ -10,10 +10,15 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.InMemoryConsentReceiptRepository
 import id.cachet.wallet.domain.repository.MockTransparencyLogRepository
+import id.cachet.wallet.domain.sync.ConnectivityObserver
+import id.cachet.wallet.domain.sync.SyncManager
+import id.cachet.wallet.domain.sync.SyncQueueRepository
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.network.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -60,11 +65,22 @@ class WalletViewModelTest {
         )
         val veriffService = FakeVeriffService(veriffResult)
 
+        val connectivity = StubConnectivityObserver()
+        val syncManager = SyncManager(
+            connectivity = connectivity,
+            queueRepository = StubSyncQueueRepository(),
+            consentReceiptRepository = InMemoryConsentReceiptRepository(),
+            transparencyLogRepository = MockTransparencyLogRepository(),
+            openID4VCIClient = openIdClient,
+            credentialRepository = credRepo
+        )
         return WalletViewModel(
             issuanceUseCase = issuanceUseCase,
             veriffService = veriffService,
             consentUseCase = consentUseCase,
             verificationUseCase = verificationUseCase,
+            syncManager = syncManager,
+            connectivityObserver = connectivity,
             demoModeParam = false,
             demoEmpty = demoEmpty
         )
@@ -112,11 +128,16 @@ class WalletViewModelTest {
     @Test
     fun `startVeriffVerification is no-op in demo mode`() {
         val credRepo = InMemoryCredentialRepository()
+        val connectivity = StubConnectivityObserver()
+        val openIdClient = StubOpenID4VCIClient()
+        val consentUseCase = ConsentUseCase(credRepo, InMemoryConsentReceiptRepository(), MockTransparencyLogRepository())
         val vm = WalletViewModel(
-            issuanceUseCase = IssuanceUseCase(credRepo, StubOpenID4VCIClient()),
+            issuanceUseCase = IssuanceUseCase(credRepo, openIdClient),
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
-            consentUseCase = ConsentUseCase(credRepo, InMemoryConsentReceiptRepository(), MockTransparencyLogRepository()),
-            verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), ConsentUseCase(credRepo, InMemoryConsentReceiptRepository(), MockTransparencyLogRepository())),
+            consentUseCase = consentUseCase,
+            verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
+            syncManager = SyncManager(connectivity, StubSyncQueueRepository(), InMemoryConsentReceiptRepository(), MockTransparencyLogRepository(), openIdClient, credRepo),
+            connectivityObserver = connectivity,
             demoModeParam = true,
             demoEmpty = false
         )
@@ -182,11 +203,15 @@ class WalletViewModelTest {
 
         val consentRepo = InMemoryConsentReceiptRepository()
         val consentUseCase = ConsentUseCase(credRepo, consentRepo, MockTransparencyLogRepository())
+        val connectivity = StubConnectivityObserver()
+        val openIdClient = StubOpenID4VCIClient()
         val vm = WalletViewModel(
-            issuanceUseCase = IssuanceUseCase(credRepo, StubOpenID4VCIClient()),
+            issuanceUseCase = IssuanceUseCase(credRepo, openIdClient),
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
             consentUseCase = consentUseCase,
             verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
+            syncManager = SyncManager(connectivity, StubSyncQueueRepository(), InMemoryConsentReceiptRepository(), MockTransparencyLogRepository(), openIdClient, credRepo),
+            connectivityObserver = connectivity,
             demoModeParam = true,
             demoEmpty = false
         )
@@ -220,11 +245,15 @@ class WalletViewModelTest {
         val credRepo = InMemoryCredentialRepository()
         val consentRepo = InMemoryConsentReceiptRepository()
         val consentUseCase = ConsentUseCase(credRepo, consentRepo, MockTransparencyLogRepository())
+        val connectivity = StubConnectivityObserver()
+        val openIdClient = StubOpenID4VCIClient()
         val vm = WalletViewModel(
-            issuanceUseCase = IssuanceUseCase(credRepo, StubOpenID4VCIClient()),
+            issuanceUseCase = IssuanceUseCase(credRepo, openIdClient),
             veriffService = FakeVeriffService(VeriffResult.Success("s1")),
             consentUseCase = consentUseCase,
             verificationUseCase = VerificationUseCase(credRepo, StubVerifierClient(), StubRelayClient(), consentUseCase),
+            syncManager = SyncManager(connectivity, StubSyncQueueRepository(), InMemoryConsentReceiptRepository(), MockTransparencyLogRepository(), openIdClient, credRepo),
+            connectivityObserver = connectivity,
             demoModeParam = true,
             demoEmpty = false
         )
@@ -276,8 +305,26 @@ private class StubOpenID4VCIClient : OpenID4VCIClient {
         TokenResponse(access_token = "tok", token_type = "Bearer", expires_in = 3600, scope = "openid")
     override suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse =
         throw OpenID4VCIException("no session in stub")
-    override suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String): SDJWTCredentialResponse =
+    override suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String, proofJWT: String?): SDJWTCredentialResponse =
         throw OpenID4VCIException("no session in stub")
+    override suspend fun requestNonce(): NonceResponse =
+        NonceResponse(c_nonce = "stub-nonce", c_nonce_expires_in = 300)
+}
+
+internal class StubConnectivityObserver : ConnectivityObserver {
+    override val isOnline: StateFlow<Boolean> = MutableStateFlow(true)
+}
+
+internal class StubSyncQueueRepository : SyncQueueRepository {
+    override suspend fun getPendingAnchorings() = emptyList<SyncQueueRepository.PendingAnchoringItem>()
+    override suspend fun deletePendingAnchoring(receiptId: String) {}
+    override suspend fun updatePendingAnchoringStatus(receiptId: String, status: String, retryCount: Long, lastAttemptAt: Long) {}
+    override suspend fun deleteExpiredIssuances(nowMillis: Long) {}
+    override suspend fun getPendingIssuances() = emptyList<SyncQueueRepository.PendingIssuanceItem>()
+    override suspend fun deletePendingIssuance(id: String) {}
+    override suspend fun updatePendingIssuanceStatus(id: String, status: String, retryCount: Long, lastAttemptAt: Long) {}
+    override suspend fun getPendingAnchoringCount() = 0
+    override suspend fun getPendingIssuanceCount() = 0
 }
 
 private class StubVerifierClient : VerifierClient {

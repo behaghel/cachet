@@ -3,6 +3,7 @@ package id.cachet.wallet.android.di
 import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import id.cachet.wallet.android.connectivity.AndroidConnectivityObserver
 import id.cachet.wallet.android.data.CredentialRepositoryImpl
 import id.cachet.wallet.android.ui.WalletViewModel
 import id.cachet.wallet.android.BuildConfig
@@ -14,6 +15,7 @@ import id.cachet.wallet.domain.crypto.AndroidKeyStoreKeyManager
 import id.cachet.wallet.domain.crypto.EphemeralKeyGenerator
 import id.cachet.wallet.domain.crypto.KeyManager
 import id.cachet.wallet.domain.repository.CredentialRepository
+import id.cachet.wallet.domain.sync.ConnectivityObserver
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -50,6 +52,9 @@ val androidModule = module {
     // Bundled pack definitions from assets
     single { BundledPackLoader(androidContext()) }
 
+    // Connectivity observation for offline sync
+    single<ConnectivityObserver> { AndroidConnectivityObserver(androidContext()) }
+
     // Verification — demo uses MockVeriffService, prod uses NoOpVeriffService (until real SDK)
     single<VeriffService> {
         if (BuildConfig.DEMO_ENABLED) {
@@ -68,6 +73,8 @@ val androidModule = module {
             veriffService = get(),
             consentUseCase = get(),
             verificationUseCase = get(),
+            syncManager = get(),
+            connectivityObserver = get(),
             demoModeParam = params.get<Boolean>(0),
             demoEmpty = params.get<Boolean>(1)
         )

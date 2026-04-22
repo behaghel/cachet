@@ -4,6 +4,7 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.ConsentReceiptRepository
 import id.cachet.wallet.domain.repository.TransparencyLogRepository
+import id.cachet.wallet.domain.sync.AnchoringQueue
 import kotlin.time.Clock
 
 /**
@@ -12,7 +13,8 @@ import kotlin.time.Clock
 class ConsentUseCase(
     private val credentialRepository: CredentialRepository,
     private val consentReceiptRepository: ConsentReceiptRepository,
-    private val transparencyLogRepository: TransparencyLogRepository
+    private val transparencyLogRepository: TransparencyLogRepository,
+    private val anchoringQueue: AnchoringQueue? = null
 ) {
     
     /**
@@ -249,7 +251,8 @@ class ConsentUseCase(
                 jurisdiction = extractJurisdiction(receipt.rpIdentifier)
             )
             
-            val response = transparencyLogRepository.submitReceiptHash(request).getOrElse { 
+            val response = transparencyLogRepository.submitReceiptHash(request).getOrElse {
+                anchoringQueue?.enqueue(receipt.id)
                 return Result.success(receipt) // Continue without transparency log if it fails
             }
             
@@ -265,7 +268,8 @@ class ConsentUseCase(
             Result.success(receiptWithLog)
             
         } catch (e: Exception) {
-            // Graceful degradation - continue without transparency log
+            // Graceful degradation - enqueue for later and continue without transparency log
+            anchoringQueue?.enqueue(receipt.id)
             Result.success(receipt)
         }
     }
