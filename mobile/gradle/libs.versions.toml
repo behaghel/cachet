@@ -14,7 +14,7 @@ targetSdk = "36"
 activity-compose = "1.13.0"
 lifecycle = "2.10.0"
 camerax = "1.6.0"
-compose-bom = "2026.03.01"
+compose-bom = "2026.04.01"
 
 # KotlinX
 kotlinx-coroutines = "1.10.2"
