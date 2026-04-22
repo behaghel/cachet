@@ -1,58 +1,16 @@
 version: 2
 updates:
-  # Go dependencies — grouped so one PR covers all modules
+  # Go dependencies — one PR per weekly batch across all modules
   - package-ecosystem: "gomod"
-    directory: "/services/common"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "gomod"
-    directory: "/services/verifier"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "gomod"
-    directory: "/services/registry"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "gomod"
-    directory: "/services/receipts-log"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "gomod"
-    directory: "/services/issuance-gateway"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "gomod"
-    directory: "/generated/go"
+    directories:
+      - "/services/admin"
+      - "/services/common"
+      - "/services/issuance-gateway"
+      - "/services/receipts-log"
+      - "/services/registry"
+      - "/services/relay"
+      - "/services/verifier"
+      - "/generated/go"
     schedule:
       interval: "weekly"
     commit-message:
@@ -82,39 +40,9 @@ updates:
         patterns: ["*"]
         exclude-patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*", "io.ktor*", "app.cash.sqldelight*", "androidx.*"]
 
-  # Docker base images — grouped into one PR
+  # Docker base images — single Dockerfile in /infra
   - package-ecosystem: "docker"
-    directory: "/services/verifier"
-    schedule:
-      interval: "monthly"
-    commit-message:
-      prefix: "chore(docker)"
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: "docker"
-    directory: "/services/registry"
-    schedule:
-      interval: "monthly"
-    commit-message:
-      prefix: "chore(docker)"
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: "docker"
-    directory: "/services/receipts-log"
-    schedule:
-      interval: "monthly"
-    commit-message:
-      prefix: "chore(docker)"
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: "docker"
-    directory: "/services/issuance-gateway"
+    directory: "/infra"
     schedule:
       interval: "monthly"
     commit-message:
