@@ -9,10 +9,15 @@ import id.cachet.wallet.domain.model.*
 import id.cachet.wallet.domain.repository.CredentialRepository
 import id.cachet.wallet.domain.repository.InMemoryConsentReceiptRepository
 import id.cachet.wallet.domain.repository.MockTransparencyLogRepository
+import id.cachet.wallet.domain.sync.ConnectivityObserver
+import id.cachet.wallet.domain.sync.SyncManager
+import id.cachet.wallet.domain.sync.SyncQueueRepository
 import id.cachet.wallet.domain.usecase.ConsentUseCase
 import id.cachet.wallet.domain.usecase.IssuanceUseCase
 import id.cachet.wallet.domain.usecase.VerificationUseCase
 import id.cachet.wallet.network.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -125,11 +130,15 @@ class VerificationActivityIntegrationTest {
             relayClient = relayClient,
             consentUseCase = consentUseCase
         )
+        val connectivity = StubConnectivityObserver()
+        val openIdClient = NoOpOpenID4VCIClient()
         val vm = WalletViewModel(
-            issuanceUseCase = IssuanceUseCase(credRepo, NoOpOpenID4VCIClient()),
+            issuanceUseCase = IssuanceUseCase(credRepo, openIdClient),
             veriffService = NoOpVeriffService(),
             consentUseCase = consentUseCase,
             verificationUseCase = verificationUseCase,
+            syncManager = SyncManager(connectivity, StubSyncQueueRepository(), InMemoryConsentReceiptRepository(), MockTransparencyLogRepository(), openIdClient, credRepo),
+            connectivityObserver = connectivity,
             demoModeParam = true,
             demoEmpty = false
         )
@@ -223,13 +232,17 @@ class VerificationActivityIntegrationTest {
             val credRepo = FakeCredRepo()
             val receiptRepo = InMemoryConsentReceiptRepository()
             val consentUseCase = ConsentUseCase(credRepo, receiptRepo, MockTransparencyLogRepository())
+            val connectivity = StubConnectivityObserver()
+            val openIdClient = NoOpOpenID4VCIClient()
             val vm = WalletViewModel(
-                issuanceUseCase = IssuanceUseCase(credRepo, NoOpOpenID4VCIClient()),
+                issuanceUseCase = IssuanceUseCase(credRepo, openIdClient),
                 veriffService = NoOpVeriffService(),
                 consentUseCase = consentUseCase,
                 verificationUseCase = VerificationUseCase(
                     credRepo, ConfigurableVerifierClient(), ConfigurableRelayClient(), consentUseCase
                 ),
+                syncManager = SyncManager(connectivity, StubSyncQueueRepository(), InMemoryConsentReceiptRepository(), MockTransparencyLogRepository(), openIdClient, credRepo),
+                connectivityObserver = connectivity,
                 demoModeParam = true,
                 demoEmpty = false
             )
@@ -295,9 +308,13 @@ private class NoOpOpenID4VCIClient : OpenID4VCIClient {
         TokenResponse(access_token = "tok", token_type = "Bearer", expires_in = 3600, scope = "openid")
     override suspend fun requestCredential(accessToken: String, format: String, types: List<String>): CredentialResponse =
         throw OpenID4VCIException("stub")
-    override suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String): SDJWTCredentialResponse =
+    override suspend fun requestSDJWTCredential(accessToken: String, types: List<String>, holderJWK: String, proofJWT: String?): SDJWTCredentialResponse =
         throw OpenID4VCIException("stub")
+    override suspend fun requestNonce(): NonceResponse =
+        NonceResponse(c_nonce = "noop-nonce", c_nonce_expires_in = 300)
 }
+
+// StubConnectivityObserver and StubSyncQueueRepository defined in WalletViewModelTest.kt
 
 private class NoOpVeriffService : VeriffService {
     override suspend fun startVerification(): VeriffResult = VeriffResult.Cancelled

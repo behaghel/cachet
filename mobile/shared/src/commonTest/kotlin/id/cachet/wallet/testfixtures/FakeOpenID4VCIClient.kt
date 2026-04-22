@@ -16,7 +16,8 @@ class FakeOpenID4VCIClient(
     var credentialResponse: CredentialResponse? = null,
     var sdJwtCredentialResponse: SDJWTCredentialResponse? = null,
     var tokenError: Throwable? = null,
-    var credentialError: Throwable? = null
+    var credentialError: Throwable? = null,
+    var sdJwtCredentialError: Throwable? = null
 ) : OpenID4VCIClient {
 
     override suspend fun requestToken(clientId: String, scope: String, sessionId: String?): TokenResponse {
@@ -43,6 +44,7 @@ class FakeOpenID4VCIClient(
         holderJWK: String,
         proofJWT: String?
     ): SDJWTCredentialResponse {
+        sdJwtCredentialError?.let { throw it }
         return sdJwtCredentialResponse ?: error("FakeOpenID4VCIClient: sdJwtCredentialResponse not configured")
     }
 }

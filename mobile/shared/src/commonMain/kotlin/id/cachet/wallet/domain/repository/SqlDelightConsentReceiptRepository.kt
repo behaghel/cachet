@@ -99,6 +99,18 @@ class SqlDelightConsentReceiptRepository(
         }
     }
 
+    override suspend fun updateTransparencyLog(receiptId: String, transparencyLogJson: String): Result<Unit> {
+        return try {
+            database.walletDatabaseQueries.updateReceiptTransparencyLog(
+                transparency_log_json = transparencyLogJson,
+                id = receiptId
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun id.cachet.wallet.db.Consent_receipts.toConsentReceipt(): ConsentReceipt {
         return ConsentReceipt(
             id = id,

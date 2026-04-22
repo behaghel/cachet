@@ -145,3 +145,68 @@ DELETE FROM cached_status_lists WHERE status_list_url = ?;
 
 deleteExpiredStatusLists:
 DELETE FROM cached_status_lists WHERE fetched_at < ?;
+
+-- Offline sync: pending anchoring queue
+CREATE TABLE pending_anchoring (
+    receipt_id TEXT PRIMARY KEY NOT NULL,
+    created_at INTEGER NOT NULL,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending'
+);
+
+CREATE INDEX idx_pending_anchoring_status ON pending_anchoring(status);
+
+insertPendingAnchoring:
+INSERT OR IGNORE INTO pending_anchoring (receipt_id, created_at, retry_count, last_attempt_at, status)
+VALUES (?, ?, ?, ?, ?);
+
+getPendingAnchorings:
+SELECT * FROM pending_anchoring WHERE status = 'pending'
+ORDER BY created_at ASC;
+
+updatePendingAnchoringStatus:
+UPDATE pending_anchoring SET status = ?, retry_count = ?, last_attempt_at = ? WHERE receipt_id = ?;
+
+deletePendingAnchoring:
+DELETE FROM pending_anchoring WHERE receipt_id = ?;
+
+-- Update consent receipt transparency log (for async anchoring)
+updateReceiptTransparencyLog:
+UPDATE consent_receipts SET transparency_log_json = ? WHERE id = ?;
+
+-- Offline sync: pending issuance queue
+CREATE TABLE pending_issuance (
+    id TEXT PRIMARY KEY NOT NULL,
+    client_id TEXT NOT NULL,
+    credential_types_json TEXT NOT NULL,
+    format TEXT NOT NULL,
+    session_id TEXT,
+    access_token TEXT NOT NULL,
+    token_expires_at INTEGER NOT NULL,
+    key_alias TEXT,
+    holder_jwk TEXT,
+    created_at INTEGER NOT NULL,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending'
+);
+
+CREATE INDEX idx_pending_issuance_status ON pending_issuance(status);
+
+insertPendingIssuance:
+INSERT OR REPLACE INTO pending_issuance (id, client_id, credential_types_json, format, session_id, access_token, token_expires_at, key_alias, holder_jwk, created_at, retry_count, last_attempt_at, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getPendingIssuances:
+SELECT * FROM pending_issuance WHERE status = 'pending'
+ORDER BY created_at ASC;
+
+updatePendingIssuanceStatus:
+UPDATE pending_issuance SET status = ?, retry_count = ?, last_attempt_at = ? WHERE id = ?;
+
+deletePendingIssuance:
+DELETE FROM pending_issuance WHERE id = ?;
+
+deleteExpiredIssuances:
+DELETE FROM pending_issuance WHERE token_expires_at < ?;
