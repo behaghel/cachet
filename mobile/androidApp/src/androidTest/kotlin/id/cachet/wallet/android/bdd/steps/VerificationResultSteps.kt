@@ -40,8 +40,7 @@ class VerificationResultSteps {
         // Navigate: Activity tab -> scan QR -> auto-scan -> consent -> result
         rule.onNodeWithText("Activity").performClick()
         rule.waitForIdle()
-        rule.onNodeWithTag("fab_scan_qr").performClick()
-        rule.waitForIdle()
+        BddTestContext.tapActivityAction(rule, "fab_scan_qr")
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -116,8 +115,7 @@ class VerificationResultSteps {
     fun iCompleteTheVerificationFlow() {
         rule.onNodeWithText("Activity").performClick()
         rule.waitForIdle()
-        rule.onNodeWithTag("fab_scan_qr").performClick()
-        rule.waitForIdle()
+        BddTestContext.tapActivityAction(rule, "fab_scan_qr")
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }

@@ -26,20 +26,13 @@ class ScanToVerifySteps {
     // AC-1: Camera viewfinder
     @When("I tap the FAB and select {string}")
     fun iTapTheFABAndSelect(option: String) {
-        when (option) {
-            "Scan" -> {
-                rule.onNodeWithTag("fab_scan_qr").performClick()
-                rule.waitForIdle()
-            }
-            "Verify" -> {
-                rule.onNodeWithTag("fab_in_person").performClick()
-                rule.waitForIdle()
-            }
-            "New request" -> {
-                rule.onNodeWithTag("fab_new_request").performClick()
-                rule.waitForIdle()
-            }
+        val tag = when (option) {
+            "Scan" -> "fab_scan_qr"
+            "Verify" -> "fab_in_person"
+            "New request" -> "fab_new_request"
+            else -> error("Unknown FAB option: $option")
         }
+        BddTestContext.tapActivityAction(rule, tag)
     }
 
     @Then("the QR scanner opens with the camera viewfinder")
@@ -67,8 +60,7 @@ class ScanToVerifySteps {
     fun iHaveScannedAVerifierQRCode() {
         rule.onNodeWithText("Activity").performClick()
         rule.waitForIdle()
-        rule.onNodeWithTag("fab_scan_qr").performClick()
-        rule.waitForIdle()
+        BddTestContext.tapActivityAction(rule, "fab_scan_qr")
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import id.cachet.wallet.android.ui.components.CachetMark
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.SealButton
 import id.cachet.wallet.android.ui.theme.*
@@ -155,7 +156,17 @@ fun LivenessCheckScreen(
             // ── Step indicator ──
             StepIndicator(listOf(StepState.DONE, StepState.ACTIVE, StepState.PENDING))
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ── Pack badge ──
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CachetMark(type = cachetType, size = 56.dp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // ── Header ──
             Text(
@@ -220,7 +231,12 @@ fun LivenessCheckScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorderDark)
             ) {
                 Row(modifier = Modifier.padding(16.dp)) {
-                    Text("\uD83D\uDEE1\uFE0F", fontSize = 16.sp)
+                    Icon(
+                        Icons.Default.Shield,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = BrandAccent
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "This check ensures only you can sign this high-value verification response.",

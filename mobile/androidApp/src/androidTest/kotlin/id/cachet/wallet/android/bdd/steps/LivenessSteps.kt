@@ -38,8 +38,7 @@ class LivenessSteps {
         // Navigate: Activity tab -> scan QR -> demo auto-scan -> incoming request
         rule.onNodeWithText("Activity").performClick()
         rule.waitForIdle()
-        rule.onNodeWithTag("fab_scan_qr").performClick()
-        rule.waitForIdle()
+        BddTestContext.tapActivityAction(rule, "fab_scan_qr")
         rule.waitUntil(timeoutMillis = 5000) {
             rule.onAllNodesWithTag("incoming_request_screen").fetchSemanticsNodes().isNotEmpty()
         }
@@ -73,8 +72,7 @@ class LivenessSteps {
 
     @Then("the verification is performed without a liveness check")
     fun theVerificationIsPerformedWithoutALivenessCheck() {
-        // Tap "Verify & Share" and expect result screen directly (no liveness screen in between)
-        BddTestContext.tapConsentCta(rule)
+        // The "When I tap Verify & Share" step already tapped the CTA — just assert here.
         rule.waitForIdle()
 
         // Should NOT see liveness screen

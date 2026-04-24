@@ -175,7 +175,7 @@ class CommonSteps {
                 composeTestRule.waitForIdle()
                 composeTestRule.onNodeWithText("Activity").performClick()
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithTag("fab_new_request").performClick()
+                BddTestContext.tapActivityAction(composeTestRule, "fab_new_request")
             }
         }
         composeTestRule.waitForIdle()
@@ -211,8 +211,7 @@ class CommonSteps {
         // Navigate: Activity tab -> scan QR -> demo auto-scan -> incoming request
         composeTestRule.onNodeWithText("Activity").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("fab_scan_qr").performClick()
-        composeTestRule.waitForIdle()
+        BddTestContext.tapActivityAction(composeTestRule, "fab_scan_qr")
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -228,7 +227,7 @@ class CommonSteps {
         // Navigate: Activity tab -> FAB new request -> select pack
         composeTestRule.onNodeWithText("Activity").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("fab_new_request").performClick()
+        BddTestContext.tapActivityAction(composeTestRule, "fab_new_request")
         composeTestRule.waitForIdle()
         composeTestRule.onAllNodesWithTag("pack_card").onFirst().performClick()
         composeTestRule.waitForIdle()
@@ -248,8 +247,7 @@ class CommonSteps {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Activity").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("fab_scan_qr").performClick()
-        composeTestRule.waitForIdle()
+        BddTestContext.tapActivityAction(composeTestRule, "fab_scan_qr")
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodes(hasTestTag("incoming_request_screen")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -261,8 +259,7 @@ class CommonSteps {
     fun theQRScannerIsOpen() {
         composeTestRule.onNodeWithText("Activity").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("fab_scan_qr").performClick()
-        composeTestRule.waitForIdle()
+        BddTestContext.tapActivityAction(composeTestRule, "fab_scan_qr")
     }
 
     @When("I press back")
