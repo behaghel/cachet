@@ -1,6 +1,7 @@
 package id.cachet.wallet.android.ui.credentials
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.cachet.wallet.android.ui.components.*
@@ -33,6 +35,7 @@ private fun ActivityFilter.label() = when (this) {
     ActivityFilter.CACHETS -> "Cachets"
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityScreen(
     historyGroups: List<HistoryGroup>,
@@ -138,42 +141,54 @@ fun ActivityScreen(
         }
     }
 
-        Column(
+        // Single FAB — opens action sheet
+        var showActions by remember { mutableStateOf(false) }
+
+        FloatingActionButton(
+            onClick = { showActions = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(bottom = 8.dp)
+                .testTag("fab_actions"),
+            containerColor = BrandAccent,
+            contentColor = TextOnBrand,
+            shape = CircleShape
         ) {
-            // Scan QR (holder flow)
-            SmallFloatingActionButton(
-                onClick = onScanQr,
-                modifier = Modifier.testTag("fab_scan_qr"),
-                containerColor = BrandPrimary,
-                contentColor = TextOnBrand,
-                shape = CircleShape
+            Icon(Icons.Default.Add, contentDescription = "Verification actions")
+        }
+
+        if (showActions) {
+            ModalBottomSheet(
+                onDismissRequest = { showActions = false },
+                containerColor = SurfaceCard,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR")
-            }
-            // In-person verify (proximity)
-            SmallFloatingActionButton(
-                onClick = onInPersonVerify,
-                modifier = Modifier.testTag("fab_in_person"),
-                containerColor = Color(0xFF10B981),
-                contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.NearMe, contentDescription = "In-person verification")
-            }
-            // New request (verifier flow)
-            FloatingActionButton(
-                onClick = onStartVerification,
-                modifier = Modifier.testTag("fab_new_request"),
-                containerColor = BrandAccent,
-                contentColor = TextOnBrand,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "New verification request")
+                Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                    ActionRow(
+                        icon = Icons.Default.QrCodeScanner,
+                        iconColor = BrandPrimary,
+                        title = "Scan QR code",
+                        subtitle = "Scan someone's Cachet QR",
+                        testTag = "fab_scan_qr",
+                        onClick = { showActions = false; onScanQr() }
+                    )
+                    ActionRow(
+                        icon = Icons.Default.NearMe,
+                        iconColor = BrandAccent,
+                        title = "Verify in person",
+                        subtitle = "Proximity verification nearby",
+                        testTag = "fab_in_person",
+                        onClick = { showActions = false; onInPersonVerify() }
+                    )
+                    ActionRow(
+                        icon = Icons.Default.Add,
+                        iconColor = BrandAccent,
+                        title = "New request",
+                        subtitle = "Create a verification request",
+                        testTag = "fab_new_request",
+                        onClick = { showActions = false; onStartVerification() }
+                    )
+                }
             }
         }
     }
@@ -312,6 +327,53 @@ private fun AuditSummaryBar(result: String?) {
                 text = if (result != null) "Just now" else "—",
                 style = MaterialTheme.typography.labelSmall,
                 color = TrustNeutral
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    icon: ImageVector,
+    iconColor: Color,
+    title: String,
+    subtitle: String,
+    testTag: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 14.dp)
+            .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = CircleShape,
+            color = iconColor.copy(alpha = 0.1f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = iconColor
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary
             )
         }
     }

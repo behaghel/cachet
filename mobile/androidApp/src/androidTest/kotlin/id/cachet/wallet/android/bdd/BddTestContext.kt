@@ -3,6 +3,7 @@ package id.cachet.wallet.android.bdd
 import android.content.Intent
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -57,6 +58,20 @@ class BddTestContext {
             }
             try { btn.performScrollTo() } catch (_: Throwable) {}
             btn.performClick()
+            rule.waitForIdle()
+        }
+
+        /**
+         * Opens the Activity action sheet and taps the action identified by [actionTag].
+         * Replaces direct fab_scan_qr / fab_in_person / fab_new_request taps.
+         */
+        fun tapActivityAction(
+            rule: AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>,
+            actionTag: String
+        ) {
+            rule.onNodeWithTag("fab_actions").performClick()
+            rule.waitForIdle()
+            rule.onNodeWithTag(actionTag).performClick()
             rule.waitForIdle()
         }
 

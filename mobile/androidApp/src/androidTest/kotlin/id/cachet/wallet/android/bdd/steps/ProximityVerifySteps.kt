@@ -22,8 +22,7 @@ class ProximityVerifySteps {
         // The "In person" FAB opens the proximity pack picker
         when (mode) {
             "In person" -> {
-                rule.onNodeWithTag("fab_in_person").performClick()
-                rule.waitForIdle()
+                BddTestContext.tapActivityAction(rule, "fab_in_person")
             }
         }
     }

@@ -19,13 +19,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashlightOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -82,7 +82,7 @@ fun QrScannerScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF0F0F0F)
+        color = SurfaceBackgroundDark
     ) {
         Box(modifier = Modifier.fillMaxSize().testTag("qr_scanner_screen")) {
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
@@ -90,9 +90,9 @@ fun QrScannerScreen(
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                     Text(
                         text = "Scan to verify",
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = TextPrimaryDark,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -103,14 +103,14 @@ fun QrScannerScreen(
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color.White
+                            tint = TextSecondaryDark
                         )
                     }
                 }
                 Text(
                     text = "Point your camera at their Cachet QR code",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF94A3B8),
+                    color = TextSecondaryDark,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                 )
@@ -128,7 +128,7 @@ fun QrScannerScreen(
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFF1A1A1A)
+                        color = SurfaceCardDark
                     ) {
                         if (hasCameraPermission && !demoMode) {
                             CameraPreview(
@@ -149,7 +149,7 @@ fun QrScannerScreen(
                                 Text(
                                     text = if (demoMode) "Scanning..." else "Camera permission required",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF64748B)
+                                    color = TextTertiaryDark
                                 )
                             }
                         }
@@ -173,21 +173,23 @@ fun QrScannerScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "\uD83D\uDD12",
-                            style = MaterialTheme.typography.titleMedium
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = BrandAccent
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = "You'll review before sharing",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                                color = Color.White
+                                color = TextPrimaryDark
                             )
                             Text(
                                 text = "Nothing is shared without your consent",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF64748B)
+                                color = TextTertiaryDark
                             )
                         }
                     }
@@ -203,7 +205,7 @@ fun QrScannerScreen(
                     FloatingActionButton(
                         onClick = { torchEnabled = !torchEnabled },
                         containerColor = BrandPrimary,
-                        contentColor = Color.White,
+                        contentColor = TextPrimaryDark,
                         shape = CircleShape,
                         modifier = Modifier.size(56.dp)
                     ) {
@@ -216,7 +218,7 @@ fun QrScannerScreen(
                     Text(
                         text = "Torch",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF64748B)
+                        color = TextTertiaryDark
                     )
                 }
 

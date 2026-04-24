@@ -17,7 +17,7 @@ Feature: Scan to Verify
     And the "happy" demo scenario is loaded
 
   # AC-1: Camera viewfinder
-  @wireframe:cachet-02-qr-scan.svg
+  @wireframe:activity-02-action-sheet.svg @wireframe:cachet-02-qr-scan.svg
   Scenario: Opening QR scanner
     Given I am on the "Activity" tab
     When I tap the FAB and select "Scan"
