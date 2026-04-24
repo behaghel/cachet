@@ -1,4 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812" width="375" height="812">
+  <defs>
+    <symbol id="childcare-shield" viewBox="0 0 400 520">
+      <path d="M 200 35 C 240 60, 348 63, 366 64 V 239 C 366 337, 296 414, 200 453 C 104 414, 34 337, 34 239 V 64 C 52 63, 160 60, 200 35 Z" fill="#D4748E"/>
+      <path d="M 200 51 C 234 68, 334 74, 354 77 V 236 C 354 326, 288 397, 200 434 C 112 397, 46 326, 46 236 V 77 C 66 74, 166 68, 200 51 Z" fill="#B85578"/>
+      <path d="M 200 59 C 230 69, 328 80, 350 79 V 236 C 350 322, 286 393, 200 430 C 114 393, 50 322, 50 236 V 79 C 72 80, 170 69, 200 59 Z" fill="#D88AA0"/>
+      <path d="M 200 67 C 228 77, 322 85, 342 88 V 236 C 342 318, 280 386, 200 420 C 120 386, 58 318, 58 236 V 88 C 78 85, 172 77, 200 67 Z" fill="#263347"/>
+      <path d="M 200 67 C 172 77, 78 85, 58 88 V 236 C 58 318, 120 386, 200 420 Z" fill="#2D3B52"/>
+      <path d="M 200 142 C 280 142, 330 165, 326 278 C 324 347, 268 388, 200 422 Z" fill="#D85B8A"/>
+      <path d="M 200 142 C 120 142, 70 165, 74 278 C 76 347, 132 388, 200 422 Z" fill="#E06B96"/>
+      <path d="M 274 334 A 108 117 0 1 0 126 334" fill="none" stroke="#fff" stroke-width="61" stroke-linecap="round"/>
+      <g transform="matrix(1.3514, 0, 0, 1.3514, -70.28, -51.0)">
+        <circle cx="200" cy="222" r="36" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+        <circle cx="186" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <circle cx="214" cy="214" r="4" fill="#fff" opacity="0.9"/>
+        <path d="M 186,234 Q 200,248 214,234" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 183,188 Q 192,172 200,182 Q 208,172 217,188" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+      </g>
+    </symbol>
+  </defs>
   <!--
     SCREEN 3b: Liveness Check
     On the HOLDER's phone — after they consented on the Incoming Request screen.
@@ -38,12 +57,8 @@
   <line x1="196" y1="90" x2="221" y2="90" stroke="#334155" stroke-width="2"/>
   <circle cx="228" cy="90" r="8" fill="#334155"/>
 
-  <!-- Pack badge (CachetMark — per-type shield, Childcare shown here) -->
-  <g transform="translate(160,110)">
-    <path d="M 28 2 C 36 8 50 9 54 9 V 32 C 54 45 43 54 28 60 C 13 54 2 45 2 32 V 9 C 6 9 20 8 28 2 Z" fill="#D88AA0"/>
-    <path d="M 28 8 C 34 12 46 14 50 14 V 32 C 50 43 40 50 28 56 C 16 50 6 43 6 32 V 14 C 10 14 22 12 28 8 Z" fill="#263347"/>
-    <path d="M 38 44 A 15 15 0 1 0 18 44" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
-  </g>
+  <!-- Pack badge (CachetMark — Childcare shown here; swap symbol for other types) -->
+  <use href="#childcare-shield" x="160" y="108" width="56" height="73"/>
 
   <!-- Header text -->
   <text x="188" y="198" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">Prove it&#x2019;s you</text>
@@ -75,12 +90,12 @@
 
   <!-- Why this is needed — trust explanation card (BrandPrimary bg, SurfaceBorderDark stroke) -->
   <rect x="32" y="620" width="311" height="60" rx="12" fill="#1E293B" stroke="#334155" stroke-width="1"/>
-  <!-- Shield icon (Material Icons style) — BrandAccent -->
-  <g transform="translate(48,628)">
+  <!-- Shield icon (Material Icons style) — BrandAccent, vertically centered in card -->
+  <g transform="translate(48,639)">
     <path d="M 9 1 L 1 5 V 11 C 1 16 4.5 20.5 9 22 C 13.5 20.5 17 16 17 11 V 5 Z" fill="#10B981"/>
   </g>
-  <text x="80" y="643" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">This check ensures only <tspan font-weight="600" fill="#FFFFFF">you</tspan> can sign</text>
-  <text x="80" y="663" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">this high-value verification response.</text>
+  <text x="80" y="645" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">This check ensures only <tspan font-weight="600" fill="#FFFFFF">you</tspan> can sign</text>
+  <text x="80" y="665" font-family="Inter, sans-serif" font-size="12" fill="#A8A29E">this high-value verification response.</text>
 
   <!-- Cancel button (outlined, SurfaceBorderDark stroke, TextSecondaryDark text) -->
   <rect x="32" y="704" width="311" height="44" rx="22" fill="none" stroke="#334155" stroke-width="1"/>
