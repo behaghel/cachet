@@ -230,7 +230,10 @@ fun LivenessCheckScreen(
                 color = BrandPrimary,
                 border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorderDark)
             ) {
-                Row(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         Icons.Default.Shield,
                         contentDescription = null,
