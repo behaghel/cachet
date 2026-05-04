@@ -198,6 +198,70 @@ peace of mind!`,
 	}
 }
 
+func TestExtract_VintedSaleNotification(t *testing.T) {
+	evidence := Extract(
+		`L'équipe Vinted <no-reply@vinted.es>`,
+		"Ton article s'est vendu !",
+		"",
+		`<p><strong>Bonjour maylismb,</strong></p>
+<p><strong>sophieyann2006</strong> a acheté</p>
+<div>Sac polochon personnalisé pour Sixtine</div>
+<div>40,00 €</div>
+<p>Nous transférerons le paiement sur ton porte-monnaie Vinted une fois la commande terminée.</p>
+<p>Expédie cette commande au cours des 5 prochains jours.</p>`,
+		testDate,
+	)
+
+	assert.Equal(t, "vinted", evidence.Platform)
+	assert.Equal(t, "vinted.es", evidence.FromDomain)
+	assert.False(t, evidence.Rejected)
+
+	claimTypes := make(map[string]bool)
+	for _, c := range evidence.Claims {
+		claimTypes[c.Type] = true
+	}
+
+	assert.True(t, claimTypes["sale_notification"], "should detect sale notification")
+	assert.True(t, claimTypes["sale_amount"], "should extract sale amount")
+	assert.True(t, claimTypes["buyer_identity"], "should extract buyer username")
+	assert.True(t, claimTypes["item_name"], "should extract item name")
+
+	// Check specific field values
+	for _, c := range evidence.Claims {
+		switch c.Type {
+		case "sale_amount":
+			assert.Equal(t, "40,00", c.Fields["amount"])
+		case "buyer_identity":
+			assert.Equal(t, "sophieyann2006", c.Fields["buyer"])
+		case "item_name":
+			assert.Equal(t, "Sac polochon personnalisé pour Sixtine", c.Fields["item"])
+		}
+	}
+}
+
+func TestExtract_VintedSaleEnglish(t *testing.T) {
+	evidence := Extract(
+		"Vinted <no-reply@vinted.com>",
+		"Your item has been sold!",
+		"",
+		`<p><strong>Hi johndoe,</strong></p>
+<p><strong>janedoe42</strong> has bought</p>
+<div>Vintage leather jacket</div>
+<div>25.00 €</div>
+<p>We will transfer the payment to your Vinted wallet once the order is complete.</p>`,
+		testDate,
+	)
+
+	assert.Equal(t, "vinted", evidence.Platform)
+	assert.False(t, evidence.Rejected)
+
+	claimTypes := make(map[string]bool)
+	for _, c := range evidence.Claims {
+		claimTypes[c.Type] = true
+	}
+	assert.True(t, claimTypes["sale_notification"], "should detect English sale notification")
+}
+
 func TestExtract_GenericEmail_NoClaims(t *testing.T) {
 	evidence := Extract(
 		"friend@gmail.com",
@@ -209,6 +273,98 @@ func TestExtract_GenericEmail_NoClaims(t *testing.T) {
 
 	assert.Empty(t, evidence.Platform)
 	assert.Empty(t, evidence.Claims, "generic personal email should produce no claims")
+}
+
+// --- Forward detection tests ---
+
+func TestExtract_RejectsForwardBySubjectPrefix(t *testing.T) {
+	prefixes := []string{
+		"Fwd: Your booking confirmed",
+		"Fw: Your booking confirmed",
+		"FWD: Your booking confirmed",
+		"Fwd:Your booking confirmed", // no space
+		"TR: Ton article s'est vendu !",
+		"WG: Deine Buchung bestätigt",
+		"Rv: Reserva confirmada",
+	}
+
+	for _, subj := range prefixes {
+		t.Run(subj, func(t *testing.T) {
+			evidence := Extract(
+				"someone@hotmail.com",
+				subj,
+				"Forwarded email body with booking details.",
+				"",
+				testDate,
+			)
+
+			assert.True(t, evidence.Rejected, "forwarded email should be rejected")
+			assert.Equal(t, "forwarded_email", evidence.RejectionReason)
+			assert.Empty(t, evidence.Claims, "rejected email should have no claims")
+		})
+	}
+}
+
+func TestExtract_RejectsForwardByBodyMarkers(t *testing.T) {
+	markers := []struct {
+		name string
+		body string
+	}{
+		{
+			"Gmail forward marker",
+			"---------- Forwarded message ----------\nFrom: noreply@vinted.es\nTo: someone@gmail.com\nSubject: Your item sold!\n\nDetails here.",
+		},
+		{
+			"French forward marker",
+			"Début du message transféré :\n\nDe: L'équipe Vinted <no-reply@vinted.es>\nDate: 13 avril 2026\n\nTon article s'est vendu !",
+		},
+		{
+			"Outlook forward marker",
+			"-----Original Message-----\nFrom: noreply@care.com\nSent: Monday, April 13, 2026\nSubject: Booking Confirmed\n\nDetails.",
+		},
+	}
+
+	for _, tt := range markers {
+		t.Run(tt.name, func(t *testing.T) {
+			evidence := Extract(
+				"someone@hotmail.com",
+				"Sale notification",
+				tt.body,
+				"",
+				testDate,
+			)
+
+			assert.True(t, evidence.Rejected, "forwarded email should be rejected")
+			assert.Equal(t, "forwarded_email", evidence.RejectionReason)
+			assert.Empty(t, evidence.Claims)
+		})
+	}
+}
+
+func TestExtract_DirectEmailNotRejected(t *testing.T) {
+	evidence := Extract(
+		"noreply@care.com",
+		"Booking Confirmed for Tuesday Jan 14",
+		"Your booking for January 14 has been confirmed.\nAmount: $150.00",
+		"",
+		testDate,
+	)
+
+	assert.False(t, evidence.Rejected)
+	assert.Empty(t, evidence.RejectionReason)
+	assert.NotEmpty(t, evidence.Claims)
+}
+
+func TestExtract_ReplyNotConfusedWithForward(t *testing.T) {
+	evidence := Extract(
+		"noreply@care.com",
+		"Re: Your booking confirmed",
+		"Thank you for confirming.\nAmount: $150.00",
+		"",
+		testDate,
+	)
+
+	assert.False(t, evidence.Rejected, "replies should not be rejected as forwards")
 }
 
 func TestExtractDomain(t *testing.T) {

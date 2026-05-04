@@ -101,6 +101,47 @@ var knownPlatforms = []PlatformPattern{
 		Body: []patternRule{},
 	},
 	{
+		Platform:    "vinted",
+		FromDomains: []string{"vinted.es", "vinted.com", "vinted.fr", "vinted.de", "vinted.nl", "vinted.be", "vinted.it", "vinted.pt", "vinted.pl", "vinted.lt", "vinted.co.uk"},
+		Subject: []patternRule{
+			{
+				ClaimType:  "sale_notification",
+				Pattern:    regexp.MustCompile(`(?i)(s'est vendu|has been sold|wurde verkauft|est[áa] vendido|venduto)`),
+				Confidence: 0.95,
+			},
+			{
+				ClaimType:  "purchase_notification",
+				Pattern:    regexp.MustCompile(`(?i)(a achet[ée]|has bought|hat gekauft|ha comprado|ha acquistato)`),
+				Confidence: 0.95,
+			},
+			{
+				ClaimType:  "shipping_notification",
+				Pattern:    regexp.MustCompile(`(?i)(colis|parcel|paket|paquete|pacco)\s+(envoy[ée]|shipped|versendet|enviado|spedito)`),
+				Confidence: 0.9,
+			},
+		},
+		Body: []patternRule{
+			{
+				ClaimType:  "buyer_identity",
+				Pattern:    regexp.MustCompile(`(?i)\*?(?P<buyer>\w+)\*?\s+(?:a\s+achet[ée]|has\s+bought|hat\s+gekauft)`),
+				Fields:     []string{"buyer"},
+				Confidence: 0.85,
+			},
+			{
+				ClaimType:  "sale_amount",
+				Pattern:    regexp.MustCompile(`(?P<amount>[\d]+[.,]\d{2})\s*[€£]`),
+				Fields:     []string{"amount"},
+				Confidence: 0.9,
+			},
+			{
+				ClaimType:  "item_name",
+				Pattern:    regexp.MustCompile(`(?i)(?:a\s+achet[ée]|has\s+bought|hat\s+gekauft)\s+(?P<item>.+?)\s+\d+[.,]\d{2}\s*[€£]`),
+				Fields:     []string{"item"},
+				Confidence: 0.8,
+			},
+		},
+	},
+	{
 		Platform:    "homeexchange.com",
 		FromDomains: []string{"homeexchange.com", "info.homeexchange.com", "bounces.homeexchange.com"},
 		Subject: []patternRule{
@@ -192,6 +233,44 @@ var genericBodyPatterns = []patternRule{
 		Fields:     []string{"date"},
 		Confidence: 0.4,
 	},
+}
+
+// Forward detection patterns.
+// Subject prefixes used by mail clients worldwide to indicate a forwarded message.
+var forwardSubjectPrefixes = []string{
+	"fwd:", // English (Gmail, Outlook, Apple Mail)
+	"fw:",  // Outlook
+	"tr:",  // French (transféré)
+	"wg:",  // German (weitergeleitet)
+	"rv:",  // Spanish (reenviado)
+	"vs:",  // Italian (verstuurd) / Dutch
+	"vl:",  // Finnish (välitetty)
+	"enc:", // Portuguese (encaminhado)
+}
+
+// Body markers indicating the content below is a forwarded message.
+var forwardBodyMarkers = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)-{3,}\s*forwarded\s+message\s*-{3,}`),
+	regexp.MustCompile(`(?i)d[ée]but\s+du\s+message\s+transf[ée]r[ée]`),
+	regexp.MustCompile(`(?i)-{3,}\s*original\s+message\s*-{3,}`),
+}
+
+// isForwarded detects whether an email is a forward rather than a direct platform email.
+func isForwarded(subject, body string) bool {
+	lower := strings.ToLower(strings.TrimSpace(subject))
+	for _, prefix := range forwardSubjectPrefixes {
+		if strings.HasPrefix(lower, prefix) {
+			return true
+		}
+	}
+
+	for _, re := range forwardBodyMarkers {
+		if re.MatchString(body) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // detectPlatform identifies a known platform from the sending domain.

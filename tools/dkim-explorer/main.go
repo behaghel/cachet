@@ -145,6 +145,11 @@ func runAnalyze(raw []byte, jsonOut, verbose bool) {
 	fmt.Println()
 
 	fmt.Printf("=== Evidence ===\n")
+	if evidence.Rejected {
+		fmt.Printf("REJECTED: %s\n", evidence.RejectionReason)
+		fmt.Printf("  Forwarded emails break the DKIM chain — only direct platform emails qualify as evidence.\n")
+		return
+	}
 	if evidence.Platform != "" {
 		fmt.Printf("Platform: %s\n", evidence.Platform)
 	} else {
@@ -233,6 +238,10 @@ func runClaims(raw []byte, jsonOut bool) {
 		return
 	}
 
+	if evidence.Rejected {
+		fmt.Printf("REJECTED: %s\n", evidence.RejectionReason)
+		return
+	}
 	if evidence.Platform != "" {
 		fmt.Printf("Platform: %s\n", evidence.Platform)
 	}

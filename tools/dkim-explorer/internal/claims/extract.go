@@ -8,11 +8,13 @@ import (
 
 // EmailEvidence holds structured claims extracted from an email.
 type EmailEvidence struct {
-	Platform     string    // detected platform (e.g., "care.com")
-	FromDomain   string    // sending domain
-	Subject      string    // original subject line
-	ReceivedDate time.Time // Date header
-	Claims       []Claim   // extracted structured claims
+	Platform        string    // detected platform (e.g., "care.com")
+	FromDomain      string    // sending domain
+	Subject         string    // original subject line
+	ReceivedDate    time.Time // Date header
+	Claims          []Claim   // extracted structured claims
+	Rejected        bool      // true if the email was rejected as evidence
+	RejectionReason string    // reason for rejection (e.g., "forwarded_email")
 }
 
 // Claim is a single piece of evidence extracted from an email.
@@ -35,20 +37,31 @@ func Extract(from, subject, textBody, htmlBody string, date time.Time) *EmailEvi
 		ReceivedDate: date,
 	}
 
+	// Reject forwarded emails — they break the DKIM chain
+	body := textBody
+	if body == "" && htmlBody != "" {
+		body = stripHTML(htmlBody)
+	}
+	if isForwarded(subject, body) {
+		evidence.Rejected = true
+		evidence.RejectionReason = "forwarded_email"
+		return evidence
+	}
+
 	// Try subject-based extraction
 	if claims := extractFromSubject(subject, platform); len(claims) > 0 {
 		evidence.Claims = append(evidence.Claims, claims...)
 	}
 
 	// Try body-based extraction (prefer text, fall back to HTML)
-	body := textBody
+	bodyForClaims := textBody
 	source := "body_text"
-	if body == "" && htmlBody != "" {
-		body = stripHTML(htmlBody)
+	if bodyForClaims == "" && htmlBody != "" {
+		bodyForClaims = stripHTML(htmlBody)
 		source = "body_html"
 	}
-	if body != "" {
-		if claims := extractFromBody(body, source, platform); len(claims) > 0 {
+	if bodyForClaims != "" {
+		if claims := extractFromBody(bodyForClaims, source, platform); len(claims) > 0 {
 			evidence.Claims = append(evidence.Claims, claims...)
 		}
 	}
