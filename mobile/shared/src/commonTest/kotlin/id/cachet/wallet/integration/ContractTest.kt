@@ -111,7 +111,7 @@ class ContractTest {
     }
 
     @Test
-    fun `VerificationSession - without ephemeral key (backward compat)`() {
+    fun `VerificationSession - without ephemeral key - backward compat`() {
         val input = VERIFICATION_SESSION_NO_EPHEMERAL
         val sess = json.decodeFromString<VerificationSession>(input)
 

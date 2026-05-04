@@ -12,6 +12,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import id.cachet.wallet.android.BuildConfig
+import id.cachet.wallet.android.trusttrail.ui.TrustTrailDemoScreen
+import id.cachet.wallet.android.trusttrail.ui.TrustTrailScreen
 import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
@@ -467,8 +470,13 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
             Spacer(modifier = Modifier.height(12.dp))
 
             // -- Top segmented control --
+            val tabs = buildList {
+                add("My Cachets")
+                add("Activity")
+                if (BuildConfig.TRUSTTRAIL_ENABLED) add("TrustTrail")
+            }
             CachetSegmentedControl(
-                tabs = listOf("My Cachets", "Activity"),
+                tabs = tabs,
                 selectedIndex = selectedTab,
                 onTabSelected = { selectedTab = it }
             )
@@ -512,6 +520,21 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         onScanQr = { overlay = OverlayScreen.QrScanner },
                         onInPersonVerify = { overlay = OverlayScreen.PackPicker(PackPickerMode.PROXIMITY) }
                     )
+                    2 -> if (BuildConfig.TRUSTTRAIL_ENABLED) {
+                        // Demo mode: show fixture evidence + provider connection screen
+                        var showDemo by remember { mutableStateOf(true) }
+                        if (showDemo) {
+                            TrustTrailDemoScreen()
+                        } else {
+                            TrustTrailScreen(
+                                isConnected = false,
+                                isScanning = false,
+                                discoveredPlatforms = emptyList(),
+                                onConnectGmail = { /* Google Sign-In wired in Slice 2 integration */ },
+                                onDisconnect = { },
+                            )
+                        }
+                    }
                 }
             }
         }

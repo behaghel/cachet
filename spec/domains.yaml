@@ -1,5 +1,5 @@
 # Cachet Domain Tree
-# Generated: 2026-04-12
+# Updated: 2026-05-01
 # Convention: spec/{domain}/index.md mirrors code paths below
 
 domains:
@@ -62,6 +62,20 @@ domains:
           - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/network/
           - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/verification/
         spec-path: spec/wallet/verification-flow/
+
+  trusttrail:
+    description: >
+      On-device behavioral evidence engine — connects to email inboxes via OAuth,
+      extracts verified claims from known platforms (Vinted, HomeExchange, Care.com...),
+      and produces evidence bundles for cachet issuance. All processing on-device;
+      raw email content and OAuth tokens never leave the phone.
+    type: core
+    language: kotlin
+    code-paths:
+      - mobile/shared/src/commonMain/kotlin/id/cachet/wallet/trusttrail/
+      - mobile/androidApp/src/main/kotlin/id/cachet/wallet/android/trusttrail/
+    spec-path: spec/trusttrail/
+    feature-flag: TRUSTTRAIL_ENABLED
 
   registry:
     description: >
@@ -257,3 +271,17 @@ context-map:
     downstream: admin
     pattern: shared-kernel
     notes: Shared server infra
+
+  - upstream: trusttrail
+    downstream: issuance
+    pattern: open-host-service
+    protocol: Evidence Bundle (TBD)
+    notes: >
+      TrustTrail produces evidence bundles consumed by issuance gateway.
+      Bridge spec TBD. No direct coupling — evidence submission is a
+      separate integration point.
+
+  - upstream: security
+    downstream: trusttrail
+    pattern: shared-kernel
+    notes: TrustTrail uses DKIM verification, Keystore crypto for token storage

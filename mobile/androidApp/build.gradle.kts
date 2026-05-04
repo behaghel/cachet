@@ -42,10 +42,12 @@ android {
             dimension = "mode"
             applicationIdSuffix = ".demo"
             buildConfigField("boolean", "DEMO_ENABLED", "true")
+            buildConfigField("boolean", "TRUSTTRAIL_ENABLED", "true")
         }
         create("prod") {
             dimension = "mode"
             buildConfigField("boolean", "DEMO_ENABLED", "false")
+            buildConfigField("boolean", "TRUSTTRAIL_ENABLED", "false")
         }
     }
 
