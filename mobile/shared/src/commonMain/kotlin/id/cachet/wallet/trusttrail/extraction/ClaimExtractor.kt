@@ -68,6 +68,30 @@ object ClaimExtractor {
     }
 
     /**
+     * All known From domains across all platforms.
+     * Used to build server-side queries (e.g., Gmail `from:` filter).
+     */
+    val allKnownDomains: List<String>
+        get() = knownPlatforms.flatMap { it.fromDomains }
+
+    /**
+     * Build a Gmail-compatible query filter for known platform emails.
+     * Combines from: domain filters with subject: keyword filters.
+     * Returns a query string like: "(from:vinted.es subject:(vendu OR sold)) OR (from:care.com subject:(confirmed OR receipt))"
+     */
+    fun buildPlatformQuery(): String {
+        return knownPlatforms.joinToString(" OR ") { platform ->
+            val fromPart = platform.fromDomains.joinToString(" OR ") { "from:$it" }
+            if (platform.subjectKeywords.isEmpty()) {
+                "($fromPart)"
+            } else {
+                val subjectPart = platform.subjectKeywords.joinToString(" OR ")
+                "($fromPart subject:($subjectPart))"
+            }
+        }
+    }
+
+    /**
      * Identify a known platform from the sending domain.
      * Returns null if the domain doesn't match any known platform.
      */

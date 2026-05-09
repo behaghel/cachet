@@ -13,8 +13,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import id.cachet.wallet.android.BuildConfig
-import id.cachet.wallet.android.trusttrail.ui.TrustTrailDemoScreen
-import id.cachet.wallet.android.trusttrail.ui.TrustTrailScreen
+import id.cachet.wallet.android.trusttrail.ui.TrustTrailTab
 import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
 import id.cachet.wallet.android.ui.fixtures.DemoFixtures
@@ -521,19 +520,7 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         onInPersonVerify = { overlay = OverlayScreen.PackPicker(PackPickerMode.PROXIMITY) }
                     )
                     2 -> if (BuildConfig.TRUSTTRAIL_ENABLED) {
-                        // Demo mode: show fixture evidence + provider connection screen
-                        var showDemo by remember { mutableStateOf(true) }
-                        if (showDemo) {
-                            TrustTrailDemoScreen()
-                        } else {
-                            TrustTrailScreen(
-                                isConnected = false,
-                                isScanning = false,
-                                discoveredPlatforms = emptyList(),
-                                onConnectGmail = { /* Google Sign-In wired in Slice 2 integration */ },
-                                onDisconnect = { },
-                            )
-                        }
+                        TrustTrailTab()
                     }
                 }
             }

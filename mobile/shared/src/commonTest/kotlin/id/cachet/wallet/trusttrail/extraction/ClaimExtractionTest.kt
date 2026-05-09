@@ -35,9 +35,6 @@ class ClaimExtractionTest {
 
         val payment = evidence.claims.first { it.type == "payment_amount" }
         assertEquals("150.00", payment.fields["amount"])
-
-        val repeat = evidence.claims.first { it.type == "repeat_client" }
-        assertEquals("5", repeat.fields["count"])
     }
 
     @Test
@@ -106,8 +103,6 @@ peace of mind!""",
         assertTrue("stay_dates" in types, "should extract stay dates")
         assertTrue("guest_count" in types, "should extract guest count")
         assertTrue("guestpoints_transfer" in types, "should extract GuestPoints transfer")
-        assertTrue("host_identity" in types, "should extract host name")
-        assertTrue("guarantee_coverage" in types, "should detect guarantee coverage")
 
         val dates = evidence.claims.first { it.type == "stay_dates" }
         assertEquals("Wednesday, May 27, 2026", dates.fields["checkin"])
@@ -118,9 +113,6 @@ peace of mind!""",
 
         val gp = evidence.claims.first { it.type == "guestpoints_transfer" }
         assertEquals("620", gp.fields["points"])
-
-        val host = evidence.claims.first { it.type == "host_identity" }
-        assertEquals("Ana", host.fields["host"])
     }
 
     // --- Vinted ---

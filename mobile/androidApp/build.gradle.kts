@@ -110,6 +110,15 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.sqldelight.android.driver)
 
+    // Google Sign-In for TrustTrail Gmail access
+    implementation(libs.play.services.auth)
+
+    // Ktor client for TrustTrail Gmail API calls
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
     // QR code generation (encoding only, no camera/scanner)
     implementation(libs.zxing.core)
 

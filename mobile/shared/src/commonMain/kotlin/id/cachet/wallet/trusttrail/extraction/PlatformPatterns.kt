@@ -13,10 +13,14 @@ internal data class PatternRule(
 
 /**
  * Extraction rules for a known platform.
+ *
+ * @property subjectKeywords Keywords to filter emails server-side (Gmail `subject:` query).
+ *   Empty list means fetch all emails from this domain (no subject filter).
  */
 internal data class PlatformPattern(
     val platform: String,
     val fromDomains: List<String>,
+    val subjectKeywords: List<String> = emptyList(),
     val subjectRules: List<PatternRule>,
     val bodyRules: List<PatternRule>,
 )
@@ -29,6 +33,7 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
     PlatformPattern(
         platform = "care.com",
         fromDomains = listOf("care.com", "mail.care.com"),
+        subjectKeywords = listOf("confirmed", "confirmation", "receipt", "payment", "review"),
         subjectRules = listOf(
             PatternRule(
                 claimType = "booking_confirmation",
@@ -59,17 +64,12 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
                 fields = listOf("amount"),
                 confidence = 0.8,
             ),
-            PatternRule(
-                claimType = "repeat_client",
-                pattern = Regex("""(?i)(?<count>\d+)(?:st|nd|rd|th)?\s+(?:booking|visit|session)"""),
-                fields = listOf("count"),
-                confidence = 0.7,
-            ),
         ),
     ),
     PlatformPattern(
         platform = "sittercity.com",
         fromDomains = listOf("sittercity.com", "mail.sittercity.com"),
+        subjectKeywords = listOf("confirmed", "accepted", "assigned", "review", "rating"),
         subjectRules = listOf(
             PatternRule(
                 claimType = "booking_confirmation",
@@ -94,6 +94,7 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
     PlatformPattern(
         platform = "urbansitter.com",
         fromDomains = listOf("urbansitter.com", "mail.urbansitter.com"),
+        subjectKeywords = listOf("confirmed", "request"),
         subjectRules = listOf(
             PatternRule(
                 claimType = "booking_confirmation",
@@ -110,6 +111,9 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
             "vinted.be", "vinted.it", "vinted.pt", "vinted.pl", "vinted.lt",
             "vinted.co.uk",
         ),
+        subjectKeywords = listOf("vendu", "sold", "verkauft", "vendido", "venduto",
+            "acheté", "bought", "gekauft", "comprado", "acquistato",
+            "colis", "parcel", "paket", "paquete", "pacco"),
         subjectRules = listOf(
             PatternRule(
                 claimType = "sale_notification",
@@ -151,6 +155,9 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
     PlatformPattern(
         platform = "homeexchange.com",
         fromDomains = listOf("homeexchange.com", "info.homeexchange.com", "bounces.homeexchange.com"),
+        // Only transactional: confirmed exchanges, completed stays, reviews
+        subjectKeywords = listOf("confirmed", "confirmation", "review", "feedback",
+            "rating", "GuestPoints", "completed"),
         subjectRules = listOf(
             PatternRule(
                 claimType = "exchange_confirmation",
@@ -169,6 +176,7 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
             ),
         ),
         bodyRules = listOf(
+            // Only claims that prove a completed transaction
             PatternRule(
                 claimType = "stay_dates",
                 pattern = Regex("""(?i)(?:from|dates?)[:\s]+(?<checkin>[A-Za-z]+,?\s+[A-Za-z]+\s+\d{1,2},?\s+\d{4})\s+to\s+(?<checkout>[A-Za-z]+,?\s+[A-Za-z]+\s+\d{1,2},?\s+\d{4})"""),
@@ -186,18 +194,6 @@ internal val knownPlatforms: List<PlatformPattern> = listOf(
                 pattern = Regex("""(?i)(?<points>\d+)\s*(?:GP|GuestPoints?)\s+(?:have\s+been\s+)?transferred"""),
                 fields = listOf("points"),
                 confidence = 0.9,
-            ),
-            PatternRule(
-                claimType = "host_identity",
-                pattern = Regex("""(?i)(?:exchange|stay)\s+(?:with|at)\s+(?<host>[A-Z][a-z]+)(?:[''\u2019]s)?"""),
-                fields = listOf("host"),
-                confidence = 0.7,
-            ),
-            PatternRule(
-                claimType = "guarantee_coverage",
-                pattern = Regex("""(?i)(?:covered|protected)\s+by\s+(?:our\s+)?(?<guarantee>guarantees?|(?:cancellation|non-conformity)\s+(?:protection|guarantee))"""),
-                fields = listOf("guarantee"),
-                confidence = 0.8,
             ),
         ),
     ),

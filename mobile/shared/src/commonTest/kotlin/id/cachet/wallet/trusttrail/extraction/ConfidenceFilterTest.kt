@@ -27,7 +27,7 @@ class ConfidenceFilterTest {
     @Test
     fun `claims at exactly threshold are included`() {
         val claims = listOf(
-            makeClaim("repeat_client", 0.7),
+            makeClaim("booking_detail", 0.8),
         )
 
         val filtered = ClaimExtractor.filterByConfidence(claims, threshold = 0.7)

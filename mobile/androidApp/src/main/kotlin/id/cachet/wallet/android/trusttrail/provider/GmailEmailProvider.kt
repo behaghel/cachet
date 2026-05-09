@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.trusttrail.provider
 
+import id.cachet.wallet.trusttrail.extraction.ClaimExtractor
 import id.cachet.wallet.trusttrail.model.EmailHeader
 import id.cachet.wallet.trusttrail.provider.EmailProvider
 import id.cachet.wallet.trusttrail.provider.GmailConfig
@@ -29,8 +30,12 @@ class GmailEmailProvider(
 
         val now = clock()
         val cutoff = now - (scanDepthMonths * 30).days
-        val query = "after:${cutoff.epochSeconds}"
+
+        // Build a platform + subject keyword filter to only fetch transactional emails
+        val platformFilter = ClaimExtractor.buildPlatformQuery()
+        val query = "in:anywhere after:${cutoff.epochSeconds} ($platformFilter)"
         val authHeaders = mapOf("Authorization" to "Bearer $token")
+        android.util.Log.d("TrustTrail", "Scanning with query: $query")
 
         val headers = mutableListOf<EmailHeader>()
         var pageToken: String? = null
@@ -45,7 +50,12 @@ class GmailEmailProvider(
             val responseBody = httpGet(url, authHeaders)
             val listResponse = json.decodeFromString<JsonObject>(responseBody)
 
-            val messages = listResponse["messages"]?.jsonArray ?: break
+            val messages = listResponse["messages"]?.jsonArray
+            if (messages == null) {
+                android.util.Log.d("TrustTrail", "No messages in response. Full response: ${listResponse.toString().take(500)}")
+                break
+            }
+            android.util.Log.d("TrustTrail", "Page: ${messages.size} messages, nextPage: ${listResponse["nextPageToken"]}")
             pageToken = listResponse["nextPageToken"]?.jsonPrimitive?.content
 
             for (msg in messages) {
@@ -92,6 +102,7 @@ class GmailEmailProvider(
         if (from == null) return null
 
         val domain = from.substringAfterLast('@').trimEnd('>', ' ').lowercase()
+        android.util.Log.d("TrustTrail", "Header: from=$domain subject=${subject?.take(40)}")
 
         return EmailHeader(
             fromDomain = domain,
@@ -104,19 +115,66 @@ class GmailEmailProvider(
     override suspend fun fetchFullContent(messageId: String): EmailProvider.RawEmail? {
         val token = tokenProvider() ?: return null
 
-        val url = "${GmailConfig.API_BASE_URL}/users/me/messages/$messageId?format=RAW"
+        // Use FULL format — Gmail returns parsed headers + body parts as JSON
+        val url = "${GmailConfig.API_BASE_URL}/users/me/messages/$messageId?format=FULL"
         val responseBody = httpGet(url, mapOf("Authorization" to "Bearer $token"))
         val response = json.decodeFromString<JsonObject>(responseBody)
 
-        val raw = response["raw"]?.jsonPrimitive?.content ?: return null
+        val payload = response["payload"]?.jsonObject ?: return null
+
+        // Extract headers
+        val headersList = payload["headers"]?.jsonArray
+        var from = ""
+        var subject = ""
+        if (headersList != null) {
+            for (header in headersList) {
+                val obj = header.jsonObject
+                when (obj["name"]?.jsonPrimitive?.content) {
+                    "From" -> from = obj["value"]?.jsonPrimitive?.content ?: ""
+                    "Subject" -> subject = obj["value"]?.jsonPrimitive?.content ?: ""
+                }
+            }
+        }
+
+        // Extract body — walk the parts tree for text/plain and text/html
+        var textBody = ""
+        var htmlBody = ""
+        extractBodyParts(payload) { mimeType, data ->
+            when (mimeType) {
+                "text/plain" -> if (textBody.isEmpty()) textBody = decodeBase64UrlString(data)
+                "text/html" -> if (htmlBody.isEmpty()) htmlBody = decodeBase64UrlString(data)
+            }
+        }
+
+        android.util.Log.d("TrustTrail", "FullContent: from=$from subject=${subject.take(40)} textLen=${textBody.length} htmlLen=${htmlBody.length}")
+
         return EmailProvider.RawEmail(
             messageId = messageId,
-            from = "",
-            subject = "",
-            textBody = "",
-            htmlBody = "",
-            rawMime = decodeBase64Url(raw),
+            from = from,
+            subject = subject,
+            textBody = textBody,
+            htmlBody = htmlBody,
         )
+    }
+
+    /**
+     * Recursively walk Gmail payload parts to find text/plain and text/html bodies.
+     */
+    private fun extractBodyParts(part: JsonObject, callback: (mimeType: String, data: String) -> Unit) {
+        val mimeType = part["mimeType"]?.jsonPrimitive?.content ?: ""
+        val bodyData = part["body"]?.jsonObject?.get("data")?.jsonPrimitive?.content
+
+        if (bodyData != null && (mimeType == "text/plain" || mimeType == "text/html")) {
+            callback(mimeType, bodyData)
+        }
+
+        // Recurse into parts (multipart messages)
+        val parts = part["parts"]?.jsonArray
+        if (parts != null) {
+            for (subPart in parts) {
+                extractBodyParts(subPart.jsonObject, callback)
+            }
+        }
     }
 
     override fun isConnected(): Boolean = tokenProvider() != null
@@ -130,10 +188,8 @@ class GmailEmailProvider(
         }
     }
 
-    private fun decodeBase64Url(encoded: String): ByteArray {
-        val base64 = encoded.replace('-', '+').replace('_', '/')
-        val padding = (4 - base64.length % 4) % 4
-        val padded = base64 + "=".repeat(padding)
-        return android.util.Base64.decode(padded, android.util.Base64.DEFAULT)
+    private fun decodeBase64UrlString(encoded: String): String {
+        val bytes = android.util.Base64.decode(encoded, android.util.Base64.URL_SAFE)
+        return String(bytes, Charsets.UTF_8)
     }
 }
