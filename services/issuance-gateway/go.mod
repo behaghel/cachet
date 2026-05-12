@@ -3,7 +3,7 @@ module github.com/cachet-id/cachet/services/issuance-gateway
 go 1.25.7
 
 require (
-	cloud.google.com/go/kms v1.29.0
+	cloud.google.com/go/kms v1.31.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
