@@ -1,7 +1,7 @@
 [versions]
 # Plugins
 agp = "9.2.0"
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 sqldelight = "2.3.2"
 
 # Android SDK
@@ -17,9 +17,9 @@ camerax = "1.6.0"
 compose-bom = "2026.04.01"
 
 # KotlinX
-kotlinx-coroutines = "1.10.2"
+kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
-kotlinx-datetime = "0.7.1"
+kotlinx-datetime = "0.8.0"
 
 # Ktor
 ktor = "3.4.3"
