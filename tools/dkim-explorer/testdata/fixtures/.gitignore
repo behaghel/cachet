@@ -1,0 +1,4 @@
+# Real email fixtures contain PII — never commit them.
+# Only synthetic test fixtures should be tracked.
+*.eml
+!synthetic-*.eml

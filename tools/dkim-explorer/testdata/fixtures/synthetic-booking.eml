@@ -1,0 +1,22 @@
+From: noreply@care.com
+To: alice@example.com
+Subject: Booking Confirmed for Tuesday Jan 14
+Date: Sat, 25 Apr 2026 10:30:00 +0000
+Message-ID: <booking-12345@care.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Dear Alice,
+
+Your booking has been confirmed!
+
+Details:
+- Family: Johnson Family
+- Date: January 14, 2026
+- Time: 3:00 PM - 8:00 PM
+- Amount: $175.00
+
+This is your 8th booking with this family. Thank you for being a trusted caregiver!
+
+Best regards,
+Care.com Team

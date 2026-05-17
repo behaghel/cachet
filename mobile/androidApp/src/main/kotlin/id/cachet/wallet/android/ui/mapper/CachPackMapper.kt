@@ -53,6 +53,16 @@ object CachPackMapper {
             loggedInTransparencyLog = true,
             cachetType = CachetType.IDENTITY
         )
+        CachetType.TRUSTED_HOST -> VerificationRequest(
+            question = "Are you a trusted host?",
+            predicates = listOf(
+                RequestPredicate("Verified hosting track record", "Based on confirmed exchanges, not reviews", DisclosureType.PREDICATE),
+                RequestPredicate("Identity verified", "Linked to an identity cachet", DisclosureType.PREDICATE)
+            ),
+            retentionDays = 90,
+            loggedInTransparencyLog = true,
+            cachetType = CachetType.TRUSTED_HOST
+        )
     }
 
     fun toCachetResult(pack: CachPackUi, allPassed: Boolean): CachetResult {
@@ -97,6 +107,9 @@ object CachPackMapper {
         CachetType.IDENTITY -> mapOf(
             1 to "Liveness check not completed"
         )
+        CachetType.TRUSTED_HOST -> mapOf(
+            0 to "Insufficient hosting evidence"
+        )
     }
 
     private fun cachetName(type: CachetType): String = when (type) {
@@ -104,6 +117,7 @@ object CachPackMapper {
         CachetType.SELLER -> "Trusted Seller"
         CachetType.AGE -> "Age Verified"
         CachetType.IDENTITY -> "Identity Verified"
+        CachetType.TRUSTED_HOST -> "Trusted Host"
     }
 
     /** User-facing pack name for the liveness explanation screen. */
@@ -112,5 +126,6 @@ object CachPackMapper {
         CachetType.SELLER -> "Safe Seller"
         CachetType.AGE -> "Age Verification"
         CachetType.IDENTITY -> "Identity Verification"
+        CachetType.TRUSTED_HOST -> "Trusted Host"
     }
 }

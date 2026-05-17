@@ -34,6 +34,7 @@ fun lisereForType(type: CachetType): Color = when (type) {
     CachetType.SELLER -> ShieldSellerLisere
     CachetType.AGE -> ShieldAgeLisere
     CachetType.IDENTITY -> ShieldIdentityLisere
+    CachetType.TRUSTED_HOST -> ShieldHostLisere
 }
 
 // ── Step indicator (shared by both screens) ──

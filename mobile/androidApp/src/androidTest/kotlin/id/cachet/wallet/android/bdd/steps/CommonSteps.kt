@@ -111,6 +111,7 @@ class CommonSteps {
     // ────────────────────────────────────────
 
     @Given("I am on the {string} tab")
+    @Then("I am on the {string} tab")
     fun iAmOnTheTab(tabName: String) {
         composeTestRule.waitForIdle()
         composeTestRule.waitUntil(timeoutMillis = 3000) {

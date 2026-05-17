@@ -25,7 +25,7 @@ import id.cachet.wallet.android.ui.theme.*
  * Geometry faithfully matches the Inkscape-edited SVG template (400x520 viewBox).
  */
 
-enum class CachetType { CHILDCARE, SELLER, AGE, IDENTITY }
+enum class CachetType { CHILDCARE, SELLER, AGE, IDENTITY, TRUSTED_HOST }
 
 data class ShieldColors(
     val outerRim: Color,
@@ -52,6 +52,10 @@ private fun shieldColorsFor(type: CachetType) = when (type) {
     CachetType.IDENTITY -> ShieldColors(
         ShieldIdentityOuterRim, ShieldIdentityRim, ShieldIdentityInnerRim,
         ShieldIdentityLisere, ShieldIdentityFrontR, ShieldIdentityFrontL
+    )
+    CachetType.TRUSTED_HOST -> ShieldColors(
+        ShieldHostOuterRim, ShieldHostRim, ShieldHostInnerRim,
+        ShieldHostLisere, ShieldHostFrontR, ShieldHostFrontL
     )
 }
 
@@ -147,6 +151,7 @@ fun CachetMark(
                     CachetType.SELLER -> drawDollarSign()
                     CachetType.AGE -> drawAgeText()
                     CachetType.IDENTITY -> drawCheckmark()
+                    CachetType.TRUSTED_HOST -> drawHomeIcon()
                 }
             }
         }
@@ -217,6 +222,35 @@ private fun DrawScope.drawDollarSign() {
     drawPath(
         sPath, Color.White.copy(alpha = 0.9f),
         style = Stroke(width = 5.5f, cap = StrokeCap.Round)
+    )
+}
+
+private fun DrawScope.drawHomeIcon() {
+    val sw = 5f
+    // Roof (triangle)
+    val roofPath = androidx.compose.ui.graphics.Path().apply {
+        moveTo(200f, 192f)
+        lineTo(230f, 218f)
+        lineTo(170f, 218f)
+        close()
+    }
+    drawPath(
+        roofPath, Color.White.copy(alpha = 0.9f),
+        style = Stroke(width = sw, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
+    // House body
+    drawRect(
+        Color.White.copy(alpha = 0.9f),
+        topLeft = Offset(178f, 218f),
+        size = androidx.compose.ui.geometry.Size(44f, 32f),
+        style = Stroke(width = sw)
+    )
+    // Door
+    drawRect(
+        Color.White.copy(alpha = 0.9f),
+        topLeft = Offset(193f, 232f),
+        size = androidx.compose.ui.geometry.Size(14f, 18f),
+        style = Stroke(width = 3f)
     )
 }
 

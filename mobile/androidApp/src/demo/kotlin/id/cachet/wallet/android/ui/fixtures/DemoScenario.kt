@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui.fixtures
 
+import id.cachet.wallet.android.trusttrail.model.BehavioralCachetDetailUi
 import id.cachet.wallet.android.ui.model.*
 
 /**
@@ -17,6 +18,8 @@ interface DemoScenario {
     val historyGroups: List<HistoryGroup>
     val receipts: List<ReceiptItem>
     val cachetDetails: Map<String, CachetDetailUi>
+    /** Behavioral cachet details (v2 — tier dial, evidence breakdown). */
+    val behavioralCachetDetails: Map<String, BehavioralCachetDetailUi> get() = emptyMap()
     /** Which pack to use for QR scanner demo fallback. */
     val defaultScanPack: CachPackUi get() = cachPacks.first()
     /** Override the pass/fail decision for shareCredential demo. Default: seller fails, all others pass. */

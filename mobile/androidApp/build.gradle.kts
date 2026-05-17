@@ -42,10 +42,12 @@ android {
             dimension = "mode"
             applicationIdSuffix = ".demo"
             buildConfigField("boolean", "DEMO_ENABLED", "true")
+            buildConfigField("boolean", "TRUSTTRAIL_ENABLED", "true")
         }
         create("prod") {
             dimension = "mode"
             buildConfigField("boolean", "DEMO_ENABLED", "false")
+            buildConfigField("boolean", "TRUSTTRAIL_ENABLED", "false")
         }
     }
 
@@ -107,6 +109,15 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.sqldelight.android.driver)
+
+    // Google Sign-In for TrustTrail Gmail access
+    implementation(libs.play.services.auth)
+
+    // Ktor client for TrustTrail Gmail API calls
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     // QR code generation (encoding only, no camera/scanner)
     implementation(libs.zxing.core)

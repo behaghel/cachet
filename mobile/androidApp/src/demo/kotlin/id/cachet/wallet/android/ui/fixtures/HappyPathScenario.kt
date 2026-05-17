@@ -1,9 +1,12 @@
 package id.cachet.wallet.android.ui.fixtures
 
+import id.cachet.wallet.android.trusttrail.model.BehavioralCachetDetailUi
+import id.cachet.wallet.android.trusttrail.model.PlatformContributionUi
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.components.TrustStatus
 import id.cachet.wallet.android.ui.components.VerificationDirection
 import id.cachet.wallet.android.ui.model.*
+import id.cachet.wallet.trusttrail.strength.Tier
 
 /**
  * The default demo scenario: 3 credentials (Identity verified, Childcare verified, Seller pending),
@@ -45,10 +48,21 @@ object HappyPathScenario : DemoScenario {
             trustStatus = TrustStatus.PENDING,
             predicates = listOf("Fulfilment 95%+", "Low chargebacks"),
             sharesSummary = ""
+        ),
+        CredentialCardUi(
+            localId = "demo-trusted-host",
+            displayName = "Trusted Host",
+            issuerLine = "Issued by Cachet  \u00B7  Silver tier  \u00B7  72% strength",
+            freshnessLabel = "3d",
+            isRevoked = false,
+            cachetType = CachetType.TRUSTED_HOST,
+            trustStatus = TrustStatus.VERIFIED,
+            predicates = listOf("Hosting track record", "Identity verified"),
+            sharesSummary = "Shared 2 times  \u00B7  Last used 3 days ago"
         )
     )
 
-    override val vaultSummary = VaultSummaryUi(totalCount = 3, verifiedCount = 2, pendingCount = 1)
+    override val vaultSummary = VaultSummaryUi(totalCount = 4, verifiedCount = 3, pendingCount = 1)
 
     override val cachPacks = listOf(
         CachPackUi(id = PackIds.CHILDCARE_ES, question = "Safe for my kids?", description = "Identity, background check, references", proofCount = 4, cachetType = CachetType.CHILDCARE),
@@ -86,6 +100,26 @@ object HappyPathScenario : DemoScenario {
         ReceiptItem("r2", "Age verification", "Festival Entrada", "Mar 22, 2026", 1, ReceiptLogStatus.LOGGED, "Expires Jun 20"),
         ReceiptItem("r3", "Trusted seller check", "Marketplace buyer", "Mar 18, 2026", 4, ReceiptLogStatus.PENDING, "Expires Jun 16"),
         ReceiptItem("r4", "Identity check", "Freelance platform onboarding", "Mar 10, 2026", 2, ReceiptLogStatus.LOGGED, "Expires Jun 8")
+    )
+
+    override val behavioralCachetDetails = mapOf(
+        "demo-trusted-host" to BehavioralCachetDetailUi(
+            localId = "demo-trusted-host",
+            displayName = "Trusted Host",
+            strength = 0.72f,
+            tier = Tier.SILVER,
+            issuedDate = "Mar 15, 2026",
+            issuer = "Cachet",
+            foundationStatus = "Identity \u2713",
+            predicates = listOf(
+                RequestPredicate("Verified hosting track record", "Based on confirmed exchanges, not reviews"),
+                RequestPredicate("Identity verified", "Linked to a Gold identity cachet")
+            ),
+            evidencePlatforms = listOf(
+                PlatformContributionUi("HomeExchange", 7, 72),
+                PlatformContributionUi("Vinted", 3, 18),
+            ),
+        )
     )
 
     override val cachetDetails = mapOf(

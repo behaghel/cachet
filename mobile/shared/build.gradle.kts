@@ -14,6 +14,7 @@ kotlin {
         compileSdk = libs.versions.compileSdk.get().toInt()
         buildToolsVersion = libs.versions.buildTools.get()
         minSdk = libs.versions.minSdk.get().toInt()
+        withHostTest {}
     }
 
     iosX64()

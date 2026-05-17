@@ -1,5 +1,6 @@
 package id.cachet.wallet.android.ui.fixtures
 
+import id.cachet.wallet.android.trusttrail.model.BehavioralCachetDetailUi
 import id.cachet.wallet.android.ui.components.CachetType
 import id.cachet.wallet.android.ui.model.*
 import id.cachet.wallet.domain.model.CredentialSubject
@@ -77,7 +78,12 @@ object DemoFixtures {
         CachetType.SELLER -> true
         CachetType.IDENTITY -> true
         CachetType.AGE -> false
+        CachetType.TRUSTED_HOST -> false
     }
+
+    /** Look up a behavioral cachet detail by local ID. */
+    fun behavioralDetailFor(localId: String): BehavioralCachetDetailUi? =
+        activeScenario.behavioralCachetDetails[localId]
 
     // -- Static overlay fixtures (not scenario-dependent) --
 

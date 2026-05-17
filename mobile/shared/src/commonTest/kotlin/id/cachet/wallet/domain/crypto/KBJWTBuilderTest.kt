@@ -42,7 +42,7 @@ class KBJWTBuilderTest {
     }
 
     @Test
-    fun `build payload contains nonce, aud, iat, sd_hash`() {
+    fun `build payload contains nonce and aud and iat and sd_hash`() {
         val km = FakeKeyManager()
         km.generateKeyPair("k1")
 
