@@ -1,4 +1,4 @@
-@story:cachet-detail-v2 @domain:wallet/credentials @priority:must @status:draft
+@story:cachet-detail-v2 @domain:wallet/credentials @priority:must @status:done
 Feature: Behavioral Cachet Detail with Tier Dial
   As a returning-holder
   I want to see my cachet's strength, tier, and evidence breakdown
@@ -95,10 +95,10 @@ Feature: Behavioral Cachet Detail with Tier Dial
     Then I see a secondary button at the bottom with text "<cta_text>"
 
     Examples:
-      | current_tier | cta_text                                |
-      | BRONZE       | Scan for more evidence to reach Silver  |
-      | SILVER       | Scan for more evidence to reach Gold    |
-      | GOLD         | Scan to keep your Gold status fresh     |
+      | current_tier | cta_text              |
+      | BRONZE       | Scan to reach Silver  |
+      | SILVER       | Scan to reach Gold    |
+      | GOLD         | Scan to stay Gold     |
 
   # AC-9: Back navigation
   @wireframe:cachet-01-detail-v2.svg
@@ -114,4 +114,4 @@ Feature: Behavioral Cachet Detail with Tier Dial
     When I view the cachet detail
     Then the tier badge is not shown
     And the dial is filled to 15%
-    And the secondary CTA says "Scan for more evidence to reach Bronze"
+    And the secondary CTA says "Scan to reach Bronze"

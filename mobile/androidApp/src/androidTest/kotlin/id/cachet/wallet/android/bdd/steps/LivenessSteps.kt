@@ -212,5 +212,6 @@ class LivenessSteps {
             id.cachet.wallet.android.ui.components.CachetType.SELLER -> "Safe Seller"
             id.cachet.wallet.android.ui.components.CachetType.AGE -> "Age Verification"
             id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> "Identity Verification"
+            id.cachet.wallet.android.ui.components.CachetType.TRUSTED_HOST -> "Trusted Host"
         }
 }

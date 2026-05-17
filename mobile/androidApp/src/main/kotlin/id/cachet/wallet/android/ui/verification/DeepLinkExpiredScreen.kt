@@ -145,4 +145,5 @@ private fun cachetTypeName(type: CachetType): String = when (type) {
     CachetType.SELLER -> "Safe Seller"
     CachetType.AGE -> "Age Verification"
     CachetType.IDENTITY -> "Identity"
+    CachetType.TRUSTED_HOST -> "Trusted Host"
 }

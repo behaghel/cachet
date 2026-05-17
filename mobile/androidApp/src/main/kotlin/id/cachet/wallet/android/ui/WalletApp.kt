@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import id.cachet.wallet.android.BuildConfig
+import id.cachet.wallet.android.trusttrail.model.BehavioralCachetDetailUi
+import id.cachet.wallet.android.trusttrail.ui.BehavioralCachetDetailScreen
 import id.cachet.wallet.android.trusttrail.ui.TrustTrailTab
 import id.cachet.wallet.android.ui.components.BrandShieldMark
 import id.cachet.wallet.android.ui.components.CachetSegmentedControl
@@ -72,6 +74,7 @@ sealed class OverlayScreen {
     data class LivenessFailed(val request: VerificationRequest) : OverlayScreen()
     data class CachetResultOverlay(val result: CachetResult) : OverlayScreen()
     data class CachetDetail(val detail: CachetDetailUi) : OverlayScreen()
+    data class BehavioralCachetDetail(val detail: BehavioralCachetDetailUi) : OverlayScreen()
     data object QrScanner : OverlayScreen()
     data class ProximityQr(
         val question: String,
@@ -434,6 +437,10 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                     selectedTab = 1 // Activity tab
                 }
             )
+            is OverlayScreen.BehavioralCachetDetail -> BehavioralCachetDetailScreen(
+                detail = screen.detail,
+                onBack = { overlay = null },
+            )
             is OverlayScreen.DeepLinkExpired -> DeepLinkExpiredScreen(
                 onBackToVault = { overlay = null; qrPayload = "" },
                 onScanQr = { overlay = OverlayScreen.QrScanner }
@@ -496,9 +503,11 @@ fun WalletApp(demoMode: Boolean = false, demoEmpty: Boolean = false, demoScenari
                         },
                         onRefresh = { viewModel.loadCredentials() },
                         onCardTapped = { card ->
-                            val demoDetail = DemoFixtures.detailFor(card.localId)
-                            if (demoDetail != null) {
-                                overlay = OverlayScreen.CachetDetail(demoDetail)
+                            val behavioralDetail = DemoFixtures.behavioralDetailFor(card.localId)
+                            if (behavioralDetail != null) {
+                                overlay = OverlayScreen.BehavioralCachetDetail(behavioralDetail)
+                            } else if (DemoFixtures.detailFor(card.localId) != null) {
+                                overlay = OverlayScreen.CachetDetail(DemoFixtures.detailFor(card.localId)!!)
                             } else {
                                 // Build detail from real credential data
                                 scope.launch {
@@ -533,6 +542,7 @@ private fun defaultPackIdForType(type: id.cachet.wallet.android.ui.components.Ca
     id.cachet.wallet.android.ui.components.CachetType.SELLER -> PackIds.SAFE_SELLER
     id.cachet.wallet.android.ui.components.CachetType.AGE -> PackIds.CHILDCARE_BASE
     id.cachet.wallet.android.ui.components.CachetType.IDENTITY -> PackIds.IDENTITY_BASIC
+    id.cachet.wallet.android.ui.components.CachetType.TRUSTED_HOST -> PackIds.IDENTITY_BASIC
 }
 
 // -- Transient screens (loading, error, verification) --
