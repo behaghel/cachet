@@ -3,7 +3,7 @@ module github.com/cachet-id/cachet/services/common
 go 1.25.0
 
 require (
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.35.1
 	go.opentelemetry.io/otel v1.43.0

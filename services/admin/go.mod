@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/cachet-id/cachet/services/common v0.0.0
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
 )
