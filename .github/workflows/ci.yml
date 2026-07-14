@@ -16,7 +16,7 @@ jobs:
     outputs:
       android: ${{ steps.filter.outputs.android }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
@@ -72,7 +72,7 @@ jobs:
           echo "✅ All backend CI steps completed successfully"
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage/verifier.out,./coverage/registry.out,./coverage/receipts.out,./coverage/issuance.out
           flags: backend
@@ -89,7 +89,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
@@ -134,10 +134,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '18'
 
@@ -160,7 +160,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Enable KVM for emulator acceleration
         run: |
@@ -231,7 +231,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup devenv environment
         uses: ./.github/actions/setup-devenv
